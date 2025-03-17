@@ -60,6 +60,41 @@ def login():
         return jsonify({"error": "Contraseña incorrecta"}), 401
 
 
+# Registrar un nuevo usuario (cliente)
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    nombre_completo = data.get('nombre_completo')
+    email = data.get('email')
+    nombreusuario = data.get('nombreusuario')
+    password = data.get('password')
+
+    # Verificar si el email y/o el usuario ya están registrados
+    cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
+    if cursor.fetchone():
+        return jsonify({"error": "El email ya está registrado"}), 400
+
+    cursor.execute("SELECT usuarioid FROM usuarios WHERE nombreusuario = %s", (nombreusuario,))
+    if cursor.fetchone():
+        return jsonify({"error": "El nombre de usuario ya está en uso"}), 400
+
+    # Encriptar la contraseña
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    # Insertar en la tabla de usuarios y clientes
+    cursor.execute(
+        "INSERT INTO usuarios (nombreusuario, contraseña, rol, localid, email) VALUES (%s, %s, %s, %s, %s) RETURNING usuarioid",
+        (nombreusuario, hashed_password, 'cliente', None, email)
+    )
+    usuarioid = cursor.fetchone()[0]
+
+    cursor.execute(
+        "INSERT INTO clientes (usuarioid, nombre, telefono, fecharegistro, ultimacita) VALUES (%s, %s, NULL, NOW(), NULL)",
+        (usuarioid, nombre_completo)
+    )
+
+    connection.commit()
+    return jsonify({"message": "Registro realizado correctamente", "usuarioid": usuarioid}), 201
 
 if __name__ == '__main__':
     app.run(debug=True)
