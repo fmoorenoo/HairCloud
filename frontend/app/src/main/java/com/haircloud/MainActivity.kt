@@ -3,45 +3,32 @@ package com.haircloud
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.haircloud.ui.theme.HairCloudTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.haircloud.navigation.AppNavigation
+import com.haircloud.screens.LoginScreen
 
-class MainActivity : ComponentActivity() {  
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            HairCloudTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            HairCloudApp()
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun HairCloudApp() {
+    var userRole by rememberSaveable { mutableStateOf<String?>(null) }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    HairCloudTheme {
-        Greeting("Android")
+    Box {
+        if (userRole == null) {
+            LoginScreen { role ->
+                userRole = role
+            }
+        } else {
+            AppNavigation(userRole!!)
+        }
     }
 }
