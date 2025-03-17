@@ -1,23 +1,32 @@
 package com.haircloud.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.composable
+import com.haircloud.screens.LoginScreen
+import com.haircloud.screens.RegisterScreen
 
 @Composable
-fun AppNavigation(userRole: String) {
-    val navController = rememberNavController()
-
+fun AppNavigation(navController: NavHostController, userRole: String) {
     val startDestination = if (userRole == "cliente") "home_cliente" else "home_peluquero"
 
     NavHost(navController = navController, startDestination = startDestination) {
 
-        if (userRole == "cliente") {
-            print("Pantallas de cliente")
-        }
+        // PANTALLAS DE LOGIN Y REGISTRO
+        composable("login") { LoginScreen(navController) { role ->
+            navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
+                popUpTo("login") { inclusive = true }
+            }
+        }}
+        composable("register") { RegisterScreen(navController) }
 
-        if (userRole == "peluquero") {
-            print("Pantallas de peluquero")
-        }
+        // PANTALLAS CLIENTES
+
+
+        // PANTALLAS PELUQUEROS
+
     }
 }
+
+
