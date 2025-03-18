@@ -148,5 +148,69 @@ def forgot_password():
         return jsonify({"error": f"No se pudo enviar el email: {str(e)}"}), 500
 
 
+# Verificar código
+@app.route('/verify_code', methods=['POST'])
+def verify_code():
+    data = request.json
+    email = data.get('email')
+    codigo_ingresado = data.get('codigo')
+
+    # Buscar el código en la base de datos
+    cursor.execute("SELECT codigo, expiracion FROM codigos_recup_contrasenas WHERE email = %s", (email,))
+    record = cursor.fetchone()
+
+    if not record:
+        return jsonify({"error": "Código no encontrado"}), 404
+
+    codigo_correcto, expiracion = record
+
+    # Verificar si el código ha expirado
+    if datetime.datetime.now() > expiracion:
+        return jsonify({"error": "El código ha expirado"}), 400
+
+    # Verificar si el código es correcto
+    if codigo_correcto == codigo_ingresado:
+        return jsonify({"message": "Código verificado correctamente"}), 200
+    else:
+        return jsonify({"error": "Código incorrecto"}), 400
+
+
+# Restablecer la contraseña
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    data = request.json
+    email = data.get('email')
+    codigo_ingresado = data.get('codigo')
+    nueva_password = data.get('password')
+
+    # Verificar código antes de restablecer contraseña
+    cursor.execute("SELECT codigo, expiracion FROM codigos_recup_contrasenas WHERE email = %s", (email,))
+    record = cursor.fetchone()
+
+    if not record:
+        return jsonify({"error": "Código no encontrado"}), 404
+
+    codigo_correcto, expiracion = record
+
+    if datetime.datetime.now() > expiracion:
+        return jsonify({"error": "El código ha expirado"}), 400
+
+    if codigo_correcto != codigo_ingresado:
+        return jsonify({"error": "Código incorrecto"}), 400
+
+    # Encriptar la nueva contraseña
+    hashed_password = bcrypt.generate_password_hash(nueva_password).decode('utf-8')
+
+    # Actualizar la contraseña en la base de datos
+    cursor.execute("UPDATE usuarios SET contraseña = %s WHERE email = %s", (hashed_password, email))
+    connection.commit()
+
+    # Eliminar el código usado
+    cursor.execute("DELETE FROM codigos_verificacion WHERE email = %s", (email,))
+    connection.commit()
+
+    return jsonify({"message": "Contraseña restablecida correctamente"}), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
