@@ -6,27 +6,31 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.haircloud.screens.LoginScreen
 import com.haircloud.screens.RegisterScreen
+import com.haircloud.screens.barber.BarberHomeScreen
+import com.haircloud.screens.client.ClientHomeScreen
+import com.haircloud.viewmodel.UserViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController, userRole: String) {
-    val startDestination = if (userRole == "cliente") "home_cliente" else "home_peluquero"
+fun AppNavigation(navController: NavHostController, userRole: String?, userViewModel: UserViewModel) {
+    NavHost(navController = navController, startDestination = "login") {
 
-    NavHost(navController = navController, startDestination = startDestination) {
-
-        // PANTALLAS DE LOGIN Y REGISTRO
-        composable("login") { LoginScreen(navController) { role ->
-            navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
-                popUpTo("login") { inclusive = true }
+        // Login
+        composable("login") {
+            LoginScreen(navController, userViewModel) { role ->
+                navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
+                    popUpTo("login") { inclusive = true }
+                }
             }
-        }}
+        }
+
+        // Registro
         composable("register") { RegisterScreen(navController) }
 
-        // PANTALLAS CLIENTES
+        // Clientes Home
+        composable("home_cliente") { ClientHomeScreen(navController) }
 
-
-        // PANTALLAS PELUQUEROS
-
+        // Peluqueros Home
+        composable("home_peluquero") { BarberHomeScreen(navController) }
     }
 }
-
 

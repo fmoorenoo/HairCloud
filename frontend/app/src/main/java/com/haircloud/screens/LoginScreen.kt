@@ -1,5 +1,6 @@
 package com.haircloud.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,12 +31,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.viewmodel.LoginState
+import com.haircloud.viewmodel.UserViewModel
 
 @Composable
-fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) {
+fun LoginScreen(
+    navController: NavController,
+    userViewModel: UserViewModel,
+    onLoginSuccess: (String) -> Unit
+) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    val loginState by userViewModel.loginState.collectAsState()
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
     )
@@ -166,10 +174,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) 
                 Spacer(modifier = Modifier.height(35.dp))
                 val isFormFilled = username.isNotBlank() && password.isNotBlank()
                 Button(
-                    onClick = {
-                        val role = if (username == "admin") "peluquero" else "cliente"
-                        onLoginSuccess(role)
-                    },
+                    onClick = { userViewModel.login(username, password) },
                     enabled = isFormFilled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -181,6 +186,22 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) 
                     )
                 ) {
                     Text("Entrar", color = Color.White, style = defaultStyle, modifier = Modifier.padding(vertical = 6.dp))
+                }
+                when (loginState) {
+                    is LoginState.Loading -> CircularProgressIndicator()
+                    is LoginState.Success -> {
+                        val role = (loginState as LoginState.Success).response.rol
+                        Log.d("LoginScreen", "Login successful. Role: $role")
+                        LaunchedEffect(Unit) {
+                            navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    }
+                    is LoginState.Error -> {
+                        Text(text = (loginState as LoginState.Error).message, color = Color.Red)
+                    }
+                    else -> {}
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
