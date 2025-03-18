@@ -204,6 +204,14 @@ fun LoginScreen(
                     else -> {}
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "He olvidado mi contraseña",
+                    style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
+                    modifier = Modifier.clickable {
+                        navController.navigate("forgot_password")
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,

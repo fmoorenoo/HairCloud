@@ -37,4 +37,40 @@ class UserRepository {
             Result.failure(e)
         }
     }
+
+    // Solicitar un código de recuperación de contraseña
+    suspend fun forgotPassword(email: String): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.forgotPassword(mapOf("email" to email))
+            }
+            Result.success(response)
+        } catch (e: HttpException) {
+            Result.failure(e)
+        }
+    }
+
+    // Verificar el código recibido por email
+    suspend fun verifyCode(email: String, code: String): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.verifyCode(mapOf("email" to email, "codigo" to code))
+            }
+            Result.success(response)
+        } catch (e: HttpException) {
+            Result.failure(e)
+        }
+    }
+
+    // Restablecer la contraseña
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.resetPassword(mapOf("email" to email, "codigo" to code, "password" to newPassword))
+            }
+            Result.success(response)
+        } catch (e: HttpException) {
+            Result.failure(e)
+        }
+    }
 }

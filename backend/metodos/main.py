@@ -140,8 +140,21 @@ def forgot_password():
 
     # Enviar correo con el código
     try:
-        msg = Message("Recuperación de contraseña - HairCloud", recipients=[email])
-        msg.body = f"Tu código de verificación es: {codigo}\n\nEste código expirará en {expiracion} minutos."
+        msg = Message(
+            "Recuperación de contraseña - HairCloud",
+            recipients=[email]
+        )
+        msg.body = f"""
+        Hola,
+
+        Tu código de verificación es: {codigo}
+
+        Este código expirará en 3 minutos.
+
+        Saludos,  
+        El equipo de HairCloud
+        """
+
         mail.send(msg)
         return jsonify({"message": "Código de verificación enviado"}), 200
     except Exception as e:
@@ -206,7 +219,7 @@ def reset_password():
     connection.commit()
 
     # Eliminar el código usado
-    cursor.execute("DELETE FROM codigos_verificacion WHERE email = %s", (email,))
+    cursor.execute("DELETE FROM codigos_recup_contrasenas WHERE email = %s", (email,))
     connection.commit()
 
     return jsonify({"message": "Contraseña restablecida correctamente"}), 200
