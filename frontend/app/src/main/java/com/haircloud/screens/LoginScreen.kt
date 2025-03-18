@@ -5,6 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +23,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,7 +35,8 @@ import com.haircloud.R
 fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val blue_white_gradient = Brush.verticalGradient(
+    var passwordVisible by remember { mutableStateOf(false) }
+    val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
     )
     val headersFont = FontFamily(
@@ -48,7 +54,7 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) 
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = blue_white_gradient
+                brush = blueWhiteGradient
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -125,39 +131,54 @@ fun LoginScreen(navController: NavController, onLoginSuccess: (String) -> Unit) 
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    "Contraseña",
-                    style = defaultStyle,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                Text("Contraseña", style = defaultStyle, modifier = Modifier.padding(bottom = 8.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     singleLine = true,
                     placeholder = { Text("****", fontSize = 23.sp) },
-                    textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                    textStyle = defaultStyle,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.LightGray, RoundedCornerShape(12.dp))
                         .clip(RoundedCornerShape(12.dp)),
                     shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        if (password.isNotEmpty()) {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                    tint = Color(0XFF132946),
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFDEDEDE),
                         focusedContainerColor = Color(0xFFAFC9E1),
-                        unfocusedBorderColor =  Color(0xFF646464),
+                        unfocusedBorderColor = Color(0xFF646464),
                         focusedBorderColor = Color(0xFF77AEE2),
                     )
                 )
                 Spacer(modifier = Modifier.height(35.dp))
-
+                val isFormFilled = username.isNotBlank() && password.isNotBlank()
                 Button(
                     onClick = {
                         val role = if (username == "admin") "peluquero" else "cliente"
                         onLoginSuccess(role)
                     },
+                    enabled = isFormFilled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0XFF2C2C2C))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0XFF2C2C2C),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0XFF646464),
+                        disabledContentColor = Color.White
+                    )
                 ) {
                     Text("Entrar", color = Color.White, style = defaultStyle, modifier = Modifier.padding(vertical = 6.dp))
                 }
