@@ -1,9 +1,25 @@
+import os
 import psycopg2
 from flask import Flask, jsonify, request
 from flask_bcrypt import Bcrypt
+from flask_mail import Mail, Message
+import random
+import datetime
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
+
+# Configuración para enviar correos
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = "Soporte de HairCloud"
+
+mail = Mail(app)
 
 # Conexión a la base de datos
 connection = psycopg2.connect(
@@ -95,6 +111,42 @@ def register():
 
     connection.commit()
     return jsonify({"message": "Registro realizado correctamente", "usuarioid": usuarioid}), 201
+
+
+# Enviar correo por pérdida de contraseña
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    data = request.json
+    email = data.get('email')
+
+    # Verificar si el email está registrado
+    cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({"error": "No existe ninguna cuenta con ese email"}), 404
+
+    # Generar código de 6 dígitos
+    codigo = f"{random.randint(100000, 999999)}"
+    expiracion = datetime.datetime.now() + datetime.timedelta(minutes=3)
+
+    # Guardar el código en la base de datos (reemplazar si ya existe)
+    cursor.execute("""
+        INSERT INTO codigos_recup_contrasenas (email, codigo, expiracion)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (email) DO UPDATE SET codigo = EXCLUDED.codigo, expiracion = EXCLUDED.expiracion
+    """, (email, codigo, expiracion))
+    connection.commit()
+
+    # Enviar correo con el código
+    try:
+        msg = Message("Recuperación de contraseña - HairCloud", recipients=[email])
+        msg.body = f"Tu código de verificación es: {codigo}\n\nEste código expirará en {expiracion} minutos."
+        mail.send(msg)
+        return jsonify({"message": "Código de verificación enviado"}), 200
+    except Exception as e:
+        return jsonify({"error": f"No se pudo enviar el email: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
