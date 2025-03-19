@@ -142,7 +142,7 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        forgotPasswordViewModel.sendVerificationCode(email)
+                        forgotPasswordViewModel.sendVerificationCode(email, "password_reset")
                     },
                     enabled = email.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(),
@@ -232,7 +232,7 @@ fun ForgotPasswordScreen(
 
                     Button(
                         onClick = {
-                            forgotPasswordViewModel.verifyCode(email, code)
+                            forgotPasswordViewModel.verifyCode(email, code, "password_reset")
                         },
                         enabled = code.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),

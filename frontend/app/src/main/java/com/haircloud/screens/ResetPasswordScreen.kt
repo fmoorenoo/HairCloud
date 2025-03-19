@@ -108,7 +108,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                     onValueChange = { newPassword = it },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
-                    placeholder = { Text(text = "****", style = defaultStyle) },
+                    placeholder = { Text(text = "*****", style = defaultStyle) },
                     textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -131,10 +131,9 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "La contraseña debe tener al menos 5 caracteres y un número",
-                            color = Color(0xFFB74A5A),
-                            style = defaultStyle.copy(fontSize = 18.sp),
-                            modifier = Modifier.padding(top = 8.dp)
+                            text = "La contraseña debe tener al menos cuatro letras y un número",
+                            style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }

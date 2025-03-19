@@ -19,8 +19,8 @@ interface ApiService {
     @POST("register")
     fun register(@Body request: RegisterRequest): Call<RegisterResponse>
 
-    @POST("forgot_password")
-    suspend fun forgotPassword(@Body requestBody: Map<String, String>): ApiResponse
+    @POST("send_verification_code")
+    suspend fun sendVerificationCode(@Body requestBody: Map<String, String>): ApiResponse
 
     @POST("verify_code")
     suspend fun verifyCode(@Body requestBody: Map<String, String>): ApiResponse

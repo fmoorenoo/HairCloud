@@ -13,11 +13,11 @@ class ForgotPasswordViewModel : ViewModel() {
     private val _forgotPasswordState = MutableStateFlow<ForgotPasswordState>(ForgotPasswordState.Idle)
     val forgotPasswordState: StateFlow<ForgotPasswordState> = _forgotPasswordState
 
-    fun sendVerificationCode(email: String) {
+    fun sendVerificationCode(email: String, purpose: String) {
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.forgotPassword(email)
+                val result = repository.sendVerificationCode(email, purpose)
                 if (result.isSuccess) {
                     _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess("Código enviado con éxito")
                 } else {
@@ -29,11 +29,11 @@ class ForgotPasswordViewModel : ViewModel() {
         }
     }
 
-    fun verifyCode(email: String, code: String) {
+    fun verifyCode(email: String, code: String, purpose: String) {
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.verifyCode(email, code)
+                val result = repository.verifyCode(email, code, purpose)
                 if (result.isSuccess) {
                     _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedSuccess("Código verificado correctamente")
                 } else {
