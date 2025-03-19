@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import com.haircloud.data.UserRepository
-import com.haircloud.data.ApiResponse
 
 class ForgotPasswordViewModel : ViewModel() {
     private val repository = UserRepository()
@@ -22,10 +21,10 @@ class ForgotPasswordViewModel : ViewModel() {
                 if (result.isSuccess) {
                     _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess("Código enviado con éxito")
                 } else {
-                    _forgotPasswordState.value = ForgotPasswordState.Error("Error al enviar el código")
+                    _forgotPasswordState.value = ForgotPasswordState.CodeSentError("Error al enviar el código")
                 }
             } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.Error(e.message ?: "Error desconocido")
+                _forgotPasswordState.value = ForgotPasswordState.CodeSentError(e.message ?: "Error desconocido")
             }
         }
     }
@@ -38,10 +37,10 @@ class ForgotPasswordViewModel : ViewModel() {
                 if (result.isSuccess) {
                     _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedSuccess("Código verificado correctamente")
                 } else {
-                    _forgotPasswordState.value = ForgotPasswordState.Error("Código incorrecto o expirado")
+                    _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedError("Código incorrecto o expirado")
                 }
             } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.Error(e.message ?: "Error desconocido")
+                _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedError(e.message ?: "Error desconocido")
             }
         }
     }
@@ -53,12 +52,12 @@ class ForgotPasswordViewModel : ViewModel() {
             try {
                 val result = repository.resetPassword(email, code, newPassword)
                 if (result.isSuccess) {
-                    _forgotPasswordState.value = ForgotPasswordState.PasswordResetSuccess("Contraseña restablecida")
+                    _forgotPasswordState.value = ForgotPasswordState.ResetPasswordSuccess("Contraseña restablecida")
                 } else {
-                    _forgotPasswordState.value = ForgotPasswordState.Error("No se pudo restablecer la contraseña")
+                    _forgotPasswordState.value = ForgotPasswordState.ResetPasswordError("No se pudo restablecer la contraseña")
                 }
             } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.Error(e.message ?: "Error desconocido")
+                _forgotPasswordState.value = ForgotPasswordState.ResetPasswordError(e.message ?: "Error desconocido")
             }
         }
     }
@@ -73,6 +72,8 @@ sealed class ForgotPasswordState {
     object Loading : ForgotPasswordState()
     data class CodeSentSuccess(val message: String) : ForgotPasswordState()
     data class CodeVerifiedSuccess(val message: String) : ForgotPasswordState()
-    data class PasswordResetSuccess(val message: String) : ForgotPasswordState()
-    data class Error(val message: String) : ForgotPasswordState()
+    data class ResetPasswordSuccess(val message: String) : ForgotPasswordState()
+    data class CodeSentError(val message: String) : ForgotPasswordState()
+    data class CodeVerifiedError(val message: String) : ForgotPasswordState()
+    data class ResetPasswordError(val message: String) : ForgotPasswordState()
 }

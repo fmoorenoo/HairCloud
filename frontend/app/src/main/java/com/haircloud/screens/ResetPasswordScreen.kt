@@ -1,17 +1,33 @@
 package com.haircloud.screens
 
-import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.haircloud.R
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 
@@ -20,52 +36,186 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     var newPassword by remember { mutableStateOf("") }
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
+    val blueWhiteGradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
+    )
+    val headersFont = FontFamily(
+        Font(R.font.headers_font, FontWeight.Normal)
+    )
+    val defaultFont = FontFamily(
+        Font(R.font.default_font, FontWeight.Normal)
+    )
+    val defaultStyle = TextStyle(
+        fontFamily = defaultFont,
+        fontSize = 23.sp,
+    )
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = blueWhiteGradient
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = "Restablecer Contraseña", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo para ingresar la nueva contraseña
-        OutlinedTextField(
-            value = newPassword,
-            onValueChange = { newPassword = it },
-            label = { Text("Nueva Contraseña") },
-            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Botón para confirmar la nueva contraseña
-        Button(
-            onClick = { forgotPasswordViewModel.resetPassword(email, code, newPassword) },
-            enabled = newPassword.isNotEmpty()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 36.dp, end = 36.dp)
         ) {
-            Text("Confirmar Nueva Contraseña")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Manejo de estados del ViewModel
-        when (forgotPasswordState) {
-            is ForgotPasswordState.Loading -> CircularProgressIndicator()
-            is ForgotPasswordState.PasswordResetSuccess -> {
-                Text("Contraseña restablecida correctamente", color = Color.Green)
-                LaunchedEffect(Unit) {
-                    navController.navigate("login") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            }
-            is ForgotPasswordState.Error -> {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
-                    text = (forgotPasswordState as ForgotPasswordState.Error).message,
-                    color = Color.Red
+                    text = "HairCloud",
+                    style = TextStyle(fontFamily = headersFont, fontSize = 55.sp),
+                    textAlign = TextAlign.Center
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.app_logo),
+                    contentDescription = "Logo",
+                    modifier = Modifier.height(90.dp).wrapContentHeight(),
+                    contentScale = ContentScale.Inside
                 )
             }
-            else -> {}
+
+            Spacer(modifier = Modifier.height(40.dp))
+            Text(
+                text = "Cambiar contraseña",
+                color = Color(0XFF132946),
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    fontFamily = headersFont,
+                    fontSize = 35.sp,
+                    shadow = Shadow(
+                        color = Color(0xFF7C7C7C),
+                        offset = Offset(3f, 10f),
+                        blurRadius = 15f
+                    )
+                ),
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier
+                    .height(700.dp)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+                    .background(
+                        Color(0x8DFFFFFF),
+                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                    )
+                    .padding(top = 25.dp, start = 25.dp, end = 25.dp)
+            ) {
+                Text(
+                    text = "Nueva contraseña",
+                    style = defaultStyle,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
+                    placeholder = { Text(text = "****", style = defaultStyle) },
+                    textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.LightGray, RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(14.dp)),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFDEDEDE),
+                        focusedContainerColor = Color(0xFFAFC9E1),
+                        unfocusedBorderColor = Color(0xFF646464),
+                        focusedBorderColor = Color(0xFF77AEE2),
+                    )
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { forgotPasswordViewModel.resetPassword(email, code, newPassword) },
+                    enabled = newPassword.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0XFF2C2C2C),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0XFF646464),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "Confirmar",
+                        color = Color.White,
+                        style = defaultStyle,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Manejo de estados del ViewModel
+                when (forgotPasswordState) {
+                    is ForgotPasswordState.Loading ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                color = Color(0xFF2879E3),
+                                strokeWidth = 5.dp
+                            )
+                        }
+                    is ForgotPasswordState.ResetPasswordSuccess -> {
+                        LaunchedEffect(Unit) {
+                            navController.navigate("login") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Contraseña restablecida",
+                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                    }
+
+                    is ForgotPasswordState.ResetPasswordError -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = (forgotPasswordState as ForgotPasswordState.ResetPasswordError).message,
+                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                    else -> {}
+                }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Text(
+                        text = "Volver",
+                        style = defaultStyle.copy(color = Color(0XFF2879E3),fontWeight = FontWeight.Bold),
+                        modifier = Modifier.clickable {
+                            forgotPasswordViewModel.resetForgotPasswordState()
+                            navController.navigate("forgot_password")
+                        }
+                    )
+                }
+            }
         }
     }
 }

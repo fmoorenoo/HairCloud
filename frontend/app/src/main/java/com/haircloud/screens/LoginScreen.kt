@@ -174,7 +174,10 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(35.dp))
                 val isFormFilled = username.isNotBlank() && password.isNotBlank()
                 Button(
-                    onClick = { userViewModel.login(username, password) },
+                    onClick = {
+                        userViewModel.login(username, password)
+                        userViewModel.resetLoginState()
+                    },
                     enabled = isFormFilled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -188,10 +191,22 @@ fun LoginScreen(
                     Text("Entrar", color = Color.White, style = defaultStyle, modifier = Modifier.padding(vertical = 6.dp))
                 }
                 when (loginState) {
-                    is LoginState.Loading -> CircularProgressIndicator()
+                    is LoginState.Loading ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                color = Color(0xFF2879E3),
+                                strokeWidth = 5.dp
+                            )
+                        }
                     is LoginState.Success -> {
                         val role = (loginState as LoginState.Success).response.rol
-                        Log.d("LoginScreen", "Login successful. Role: $role")
+                        userViewModel.resetLoginState()
                         LaunchedEffect(Unit) {
                             navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
                                 popUpTo("login") { inclusive = true }
@@ -199,24 +214,31 @@ fun LoginScreen(
                         }
                     }
                     is LoginState.Error -> {
-                        Text(text = (loginState as LoginState.Error).message, color = Color.Red)
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                text = (loginState as LoginState.Error).message,
+                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
                     }
                     else -> {}
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "He olvidado mi contraseña",
-                    style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
-                    modifier = Modifier.clickable {
-                        navController.navigate("forgot_password")
-                    }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top,
                 ) {
+                    Text(
+                        text = "He olvidado mi contraseña",
+                        style = defaultStyle.copy(color = Color(0XFF132946), fontWeight = FontWeight.Bold),
+                        modifier = Modifier.clickable {
+                            userViewModel.resetLoginState()
+                            navController.navigate("forgot_password")
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
                     Text(
                         "¿Todavía no tienes una cuenta?",
                         style = defaultStyle
@@ -225,6 +247,7 @@ fun LoginScreen(
                         text = "Regístrate gratis",
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
+                            userViewModel.resetLoginState()
                             navController.navigate("register")
                         }
                     )
