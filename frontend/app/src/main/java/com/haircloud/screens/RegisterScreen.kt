@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,20 +26,24 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.viewmodel.ForgotPasswordViewModel
+import com.haircloud.viewmodel.ForgotPasswordState
 
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()) {
     var step by remember { mutableIntStateOf(1) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var verificationCode by remember { mutableStateOf("") }
 
-    val blueWhiteGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
-    )
+    val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
+
+    val blueWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF)))
     val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 23.sp)
@@ -57,11 +60,7 @@ fun RegisterScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 36.dp, end = 36.dp)
         ) {
             Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    "HairCloud",
-                    style = TextStyle(fontFamily = headersFont, fontSize = 55.sp),
-                    textAlign = TextAlign.Center
-                )
+                Text("HairCloud", style = TextStyle(fontFamily = headersFont, fontSize = 55.sp), textAlign = TextAlign.Center)
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
                     contentDescription = "Logo",
@@ -73,13 +72,14 @@ fun RegisterScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(40.dp))
 
             Text(
-                if (step == 1) "Crear una cuenta" else "Completar registro",
+                when (step) {
+                    1 -> "Crear una cuenta"
+                    2 -> "Verificar email"
+                    else -> "Completar registro"
+                },
                 color = Color(0XFF132946),
                 textAlign = TextAlign.Center,
-                style = TextStyle(
-                    fontFamily = headersFont,
-                    fontSize = 35.sp
-                ),
+                style = TextStyle(fontFamily = headersFont, fontSize = 35.sp),
                 modifier = Modifier.align(Alignment.Start)
             )
 
@@ -89,33 +89,45 @@ fun RegisterScreen(navController: NavController) {
                 modifier = Modifier
                     .height(700.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
-                    .background(
-                        Color(0x8DFFFFFF),
-                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
-                    )
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    .background(Color(0x8DFFFFFF))
                     .padding(top = 25.dp, start = 25.dp, end = 25.dp)
             ) {
-                if (step == 1) {
-                    InputField("Nombre completo", name) { name = it }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    InputField("Email", email, isEmail = true) { email = it }
-                } else {
-                    InputField("Nombre de usuario", username) { username = it }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    PasswordField(password) { password = it }
+                when (step) {
+                    1 -> {
+                        InputField("Nombre completo", name) { name = it }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        InputField("Email", email, isEmail = true) { email = it }
+                    }
+                    2 -> {
+                        InputField("Código de verificación", verificationCode) { verificationCode = it }
+                    }
+                    3 -> {
+                        InputField("Nombre de usuario", username) { username = it }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PasswordField(password) { password = it }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(35.dp))
 
                 val isStep1Filled = name.isNotBlank() && email.isNotBlank()
-                val isStep2Filled = username.isNotBlank() && password.isNotBlank()
+                val isStep2Filled = verificationCode.isNotBlank()
+                val isStep3Filled = username.isNotBlank() && password.isNotBlank()
 
                 Button(
                     onClick = {
-                        if (step == 1) step = 2 else navController.navigate("login")
+                        when (step) {
+                            1 -> forgotPasswordViewModel.sendVerificationCode(email, "email_verification")
+                            2 -> forgotPasswordViewModel.verifyCode(email, verificationCode, "email_verification")
+                            3 -> navController.navigate("login")
+                        }
                     },
-                    enabled = if (step == 1) isStep1Filled else isStep2Filled,
+                    enabled = when (step) {
+                        1 -> isStep1Filled
+                        2 -> isStep2Filled
+                        else -> isStep3Filled
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -126,13 +138,72 @@ fun RegisterScreen(navController: NavController) {
                     )
                 ) {
                     Text(
-                        if (step == 1) "Siguiente" else "Registrarme",
+                        text = when (step) {
+                            1 -> "Enviar Código"
+                            2 -> "Verificar Código"
+                            else -> "Registrarme"
+                        },
                         color = Color.White,
                         style = defaultStyle,
                         modifier = Modifier.padding(vertical = 6.dp)
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                when (forgotPasswordState) {
+                    is ForgotPasswordState.Loading ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                color = Color(0xFF2879E3),
+                                strokeWidth = 5.dp
+                            )
+                        }
+                    is ForgotPasswordState.CodeSentSuccess -> {
+                        step = 2
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                text = "Código enviado con éxito",
+                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
+                            )
+                        }
+                        forgotPasswordViewModel.resetForgotPasswordState()
+                    }
+                    is ForgotPasswordState.CodeVerifiedSuccess -> {
+                        step = 3
+                        verificationCode = ""
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                text = "Código verificado",
+                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
+                            )
+                        }
+                        forgotPasswordViewModel.resetForgotPasswordState()
+                    }
+                    is ForgotPasswordState.CodeSentError -> {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                text = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
+                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
+                            )
+                        }
+                    }
+                    is ForgotPasswordState.CodeVerifiedError -> {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text(
+                                text = (forgotPasswordState as ForgotPasswordState.CodeVerifiedError).message,
+                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
+                            )
+                        }
+                    }
+                    else -> {}
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -140,25 +211,30 @@ fun RegisterScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (step == 2) {
+                    if (step in 2..3) {
                         Text(
                             text = "Volver",
                             style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
-                            modifier = Modifier.clickable { step = 1 }
+                            modifier = Modifier.clickable {
+                                forgotPasswordViewModel.resetForgotPasswordState()
+                                step--
+                            }
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    Text(text = "¿Ya tienes una cuenta?", style = defaultStyle)
-                    Text(
-                        text = "Iniciar sesión",
-                        style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
-                        modifier = Modifier.clickable {
-                            navController.navigate("login") {
-                                popUpTo("register") { inclusive = true }
+                    if (step == 1) {
+                        Text(text = "¿Ya tienes una cuenta?", style = defaultStyle)
+                        Text(
+                            text = "Iniciar sesión",
+                            style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
+                            modifier = Modifier.clickable {
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -177,7 +253,7 @@ fun InputField(label: String, value: String, isEmail: Boolean = false, isPasswor
                 Text(
                     text = when {
                         isEmail -> "example@gmail.com"
-                        isPassword -> "****"
+                        isPassword -> "*****"
                         else -> "Introducir"
                     },
                     fontSize = 23.sp
@@ -208,7 +284,7 @@ fun PasswordField(value: String, onValueChange: (String) -> Unit) {
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
-            placeholder = { Text("****", fontSize = 23.sp) },
+            placeholder = { Text("*****", fontSize = 23.sp) },
             textStyle = TextStyle(fontSize = 23.sp, fontFamily = FontFamily(Font(R.font.default_font, FontWeight.Normal))),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
