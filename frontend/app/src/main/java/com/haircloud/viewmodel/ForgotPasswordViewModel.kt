@@ -16,16 +16,15 @@ class ForgotPasswordViewModel : ViewModel() {
     fun sendVerificationCode(email: String, purpose: String) {
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.sendVerificationCode(email, purpose)
-                if (result.isSuccess) {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess("Código enviado con éxito")
-                } else {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeSentError("Error al enviar el código")
+            val result = repository.sendVerificationCode(email, purpose)
+            result.fold(
+                onSuccess = {
+                    _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess(it)
+                },
+                onFailure = {
+                    _forgotPasswordState.value = ForgotPasswordState.CodeSentError(it.message ?: "Error desconocido")
                 }
-            } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.CodeSentError(e.message ?: "Error desconocido")
-            }
+            )
         }
     }
 

@@ -2,6 +2,7 @@ package com.haircloud.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import retrofit2.HttpException
 
 // Capa intermedia entre el viewModel y la API
@@ -39,14 +40,22 @@ class UserRepository {
     }
 
     // Solicitar un código de verificación (recuperar contraseña o verificar email)
-    suspend fun sendVerificationCode(email: String, purpose: String): Result<ApiResponse> {
+    suspend fun sendVerificationCode(email: String, purpose: String): Result<String> {
         return try {
             val response = withContext(Dispatchers.IO) {
                 api.sendVerificationCode(mapOf("email" to email, "purpose" to purpose))
             }
-            Result.success(response)
+            Result.success("Código enviado con éxito")
         } catch (e: HttpException) {
-            Result.failure(e)
+            val errorMessage = try {
+                val errorJson = e.response()?.errorBody()?.string()
+                JSONObject(errorJson).getString("error")
+            } catch (ex: Exception) {
+                "Error desconocido"
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (e: Exception) {
+            Result.failure(Exception("Error en la conexión"))
         }
     }
 

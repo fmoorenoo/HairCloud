@@ -26,7 +26,7 @@ class UserViewModel : ViewModel() {
                 if (result.isSuccess) {
                     _loginState.value = LoginState.Success(result.getOrThrow())
                 } else {
-                    _loginState.value = LoginState.Error("Usuario o contraseña incorrectos")
+                    _loginState.value = LoginState.Error("Credenciales incorrectas")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "Error desconocido")
