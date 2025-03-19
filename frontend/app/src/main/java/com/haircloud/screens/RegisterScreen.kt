@@ -222,7 +222,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
 
                 val isStep1Filled = name.isNotBlank() && email.isNotBlank()
                 val isStep2Filled = verificationCode.isNotBlank()
-                val isStep3Filled = username.isNotBlank() && password.isNotBlank()
+                val isStep3Filled = isUsernameValid && isPasswordValid
 
                 Button(
                     onClick = {
