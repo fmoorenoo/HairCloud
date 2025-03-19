@@ -34,9 +34,11 @@ import com.haircloud.R
 import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
+import com.haircloud.viewmodel.RegisterState
+import com.haircloud.viewmodel.UserViewModel
 
 @Composable
-fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()) {
+fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(), userViewModel: UserViewModel = viewModel()) {
     var step by remember { mutableIntStateOf(1) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -45,6 +47,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     var verificationCode by remember { mutableStateOf("") }
     val isPasswordValid = CredentialsValidator.isPasswordValid(password)
     val isUsernameValid = CredentialsValidator.isUsernameValid(username)
+    val registerState by userViewModel.registerState.collectAsState()
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -229,7 +232,10 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         when (step) {
                             1 -> forgotPasswordViewModel.sendVerificationCode(email, "email_verification")
                             2 -> forgotPasswordViewModel.verifyCode(email, verificationCode, "email_verification")
-                            3 -> navController.navigate("login")
+                            3 -> {
+                                userViewModel.register(name, email, username, password)
+                                navController.navigate("login")
+                            }
                         }
                     },
                     enabled = when (step) {
@@ -256,6 +262,52 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         style = defaultStyle,
                         modifier = Modifier.padding(vertical = 6.dp)
                     )
+                }
+                when (registerState) {
+                    is RegisterState.Loading ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(40.dp),
+                                color = Color(0xFF2879E3),
+                                strokeWidth = 5.dp
+                            )
+                        }
+                    is RegisterState.Success -> {
+                        userViewModel.resetRegisterState()
+                        LaunchedEffect(Unit) {
+                            navController.navigate("login") {
+                                popUpTo("register") { inclusive = true }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Registro exitoso. Puedes iniciar sesión",
+                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                    is RegisterState.Error -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = (registerState as RegisterState.Error).message,
+                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                    else -> {}
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
