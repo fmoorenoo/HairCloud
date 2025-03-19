@@ -114,47 +114,56 @@ def register():
 
 
 # Enviar correo por pérdida de contraseña
-@app.route('/forgot_password', methods=['POST'])
-def forgot_password():
+@app.route('/send_verification_code', methods=['POST'])
+def send_verification_code():
     data = request.json
     email = data.get('email')
+    purpose = data.get('purpose')  # "password_reset" o "email_verification"
 
-    # Verificar si el email está registrado
-    cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
-    user = cursor.fetchone()
+    if purpose not in ["password_reset", "email_verification"]:
+        return jsonify({"error": "Propósito no válido"}), 400
 
-    if not user:
-        return jsonify({"error": "No existe ninguna cuenta con ese email"}), 404
+    # Si es verificación de email, comprobar que el correo no esté registrado
+    if purpose == "email_verification":
+        cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
+        if cursor.fetchone():
+            return jsonify({"error": "El email ya está registrado"}), 400
+
+    # Si es recuperación de contraseña, verificar que el correo sí exista
+    elif purpose == "password_reset":
+        cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
+        if not cursor.fetchone():
+            return jsonify({"error": "No existe ninguna cuenta con ese email"}), 404
 
     # Generar código de 6 dígitos
     codigo = f"{random.randint(100000, 999999)}"
-    expiracion = datetime.datetime.now() + datetime.timedelta(minutes=3)
+    tiempo = datetime.timedelta(minutes=3)
+    expiracion = datetime.datetime.now() + tiempo
 
     # Guardar el código en la base de datos (reemplazar si ya existe)
     cursor.execute("""
-        INSERT INTO codigos_recup_contrasenas (email, codigo, expiracion)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (email) DO UPDATE SET codigo = EXCLUDED.codigo, expiracion = EXCLUDED.expiracion
-    """, (email, codigo, expiracion))
+            INSERT INTO codigos_verificacion (email, codigo, expiracion, tipo)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (email, tipo) DO UPDATE SET codigo = EXCLUDED.codigo, expiracion = EXCLUDED.expiracion
+        """, (email, codigo, expiracion, purpose))
     connection.commit()
 
-    # Enviar correo con el código
+    # Definir el asunto y mensaje del email
+    subject = "Verificación de correo - HairCloud" if purpose == "email_verification" else "Recuperación de contraseña - HairCloud"
+    message_body = f"""
+    Hola,
+
+    Tu código de verificación es: {codigo}
+
+    Este código expirará en {tiempo} minutos.
+
+    Saludos,  
+    El equipo de HairCloud
+    """
+
     try:
-        msg = Message(
-            "Recuperación de contraseña - HairCloud",
-            recipients=[email]
-        )
-        msg.body = f"""
-        Hola,
-
-        Tu código de verificación es: {codigo}
-
-        Este código expirará en 3 minutos.
-
-        Saludos,  
-        El equipo de HairCloud
-        """
-
+        msg = Message(subject, recipients=[email])
+        msg.body = message_body
         mail.send(msg)
         return jsonify({"message": "Código de verificación enviado"}), 200
     except Exception as e:
@@ -167,9 +176,13 @@ def verify_code():
     data = request.json
     email = data.get('email')
     codigo_ingresado = data.get('codigo')
+    purpose = data.get('purpose')
 
-    # Buscar el código en la base de datos
-    cursor.execute("SELECT codigo, expiracion FROM codigos_recup_contrasenas WHERE email = %s", (email,))
+    if purpose not in ["password_reset", "email_verification"]:
+        return jsonify({"error": "Propósito no válido"}), 400
+
+    # Buscar código en la base de datos
+    cursor.execute("SELECT codigo, expiracion FROM codigos_verificacion WHERE email = %s AND tipo = %s", (email, purpose))
     record = cursor.fetchone()
 
     if not record:
