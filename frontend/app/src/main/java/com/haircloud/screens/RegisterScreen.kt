@@ -4,8 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 
@@ -40,6 +43,8 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var verificationCode by remember { mutableStateOf("") }
+    val isPasswordValid = CredentialsValidator.isPasswordValid(password)
+    val isUsernameValid = CredentialsValidator.isUsernameValid(username)
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -104,8 +109,112 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                     }
                     3 -> {
                         InputField("Nombre de usuario", username) { username = it }
-                        Spacer(modifier = Modifier.height(16.dp))
+                        var showDialog by remember { mutableStateOf(false) }
+                        var dialogMessage by remember { mutableStateOf("") }
+                        var dialogTitle by remember { mutableStateOf("") }
+
+                        // Validar usuario
+                        if (!isUsernameValid && username.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceAround
+                            ) {
+                                Text(
+                                    text = "Ver requisitos",
+                                    style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                                    textAlign = TextAlign.Center
+                                )
+
+                                IconButton(onClick = {
+                                    dialogTitle = "Nombre de usuario"
+                                    dialogMessage = "Entre 6 y 20 caracteres\n" +
+                                            "Solo letras, números, '_' y '.'\n" +
+                                            "No puede contener espacios"
+                                    showDialog = true
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChecklistRtl,
+                                        contentDescription = "Información",
+                                        tint = Color(0xFFB74A5A),
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         PasswordField(password) { password = it }
+
+                        // Validar contraseña
+                        if (!isPasswordValid && password.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceAround
+                            ) {
+                                Text(
+                                    text = "Ver requisitos",
+                                    style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                                    textAlign = TextAlign.Center
+                                )
+
+                                IconButton(onClick = {
+                                    dialogTitle = "Contraseña"
+                                    dialogMessage = "Al menos cuatro letras\n" +
+                                            "Al menos un número\n" +
+                                            "Solo los símbolos: '-', '_', '.'\n" +
+                                            "No puede contener espacios"
+                                    showDialog = true
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ChecklistRtl,
+                                        contentDescription = "Información",
+                                        tint = Color(0xFFB74A5A),
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        if (showDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showDialog = false },
+                                confirmButton = {
+                                    Button(
+                                        onClick = { showDialog = false },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF132946),
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Text("Entendido", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                title = {
+                                    Text(
+                                        text = dialogTitle,
+                                        style = TextStyle(fontFamily = defaultFont, fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                                        color = Color(0xFF132946),
+                                        textAlign = TextAlign.Center
+                                    )
+                                },
+                                text = {
+                                    Text(
+                                        text = dialogMessage,
+                                        style = TextStyle(fontFamily = defaultFont, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                                        color = Color(0xFF333333),
+                                    )
+                                },
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White),
+                                containerColor = Color(0xFF9FCBE7),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
                     }
                 }
 
