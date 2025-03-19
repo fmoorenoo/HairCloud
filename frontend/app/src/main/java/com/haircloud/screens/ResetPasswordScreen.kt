@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.utils.PasswordValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 
@@ -36,26 +37,17 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     var newPassword by remember { mutableStateOf("") }
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
+    val isPasswordValid = PasswordValidator.isValid(newPassword)
+
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
     )
-    val headersFont = FontFamily(
-        Font(R.font.headers_font, FontWeight.Normal)
-    )
-    val defaultFont = FontFamily(
-        Font(R.font.default_font, FontWeight.Normal)
-    )
-    val defaultStyle = TextStyle(
-        fontFamily = defaultFont,
-        fontSize = 23.sp,
-    )
+    val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
+    val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 23.sp)
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = blueWhiteGradient
-            ),
+        modifier = Modifier.fillMaxSize().background(brush = blueWhiteGradient),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -102,11 +94,8 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                 modifier = Modifier
                     .height(700.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
-                    .background(
-                        Color(0x8DFFFFFF),
-                        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
-                    )
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    .background(Color(0x8DFFFFFF), shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                     .padding(top = 25.dp, start = 25.dp, end = 25.dp)
             ) {
                 Text(
@@ -133,11 +122,28 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         focusedBorderColor = Color(0xFF77AEE2),
                     )
                 )
+
+                // Validar contraseña
+                if (!isPasswordValid && newPassword.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "La contraseña debe tener al menos 5 caracteres y un número",
+                            color = Color(0xFFB74A5A),
+                            style = defaultStyle.copy(fontSize = 18.sp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
                     onClick = { forgotPasswordViewModel.resetPassword(email, code, newPassword) },
-                    enabled = newPassword.isNotEmpty(),
+                    enabled = isPasswordValid,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -161,9 +167,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                 when (forgotPasswordState) {
                     is ForgotPasswordState.Loading ->
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(
@@ -173,7 +177,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                             )
                         }
                     is ForgotPasswordState.ResetPasswordSuccess -> {
-                        LaunchedEffect(Unit) {
+                        LaunchedEffect(forgotPasswordState) {
                             navController.navigate("login") {
                                 popUpTo("login") { inclusive = true }
                             }
