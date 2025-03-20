@@ -18,8 +18,9 @@ class ForgotPasswordViewModel : ViewModel() {
         viewModelScope.launch {
             val result = repository.sendVerificationCode(email, purpose)
             result.fold(
-                onSuccess = {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess(it)
+                onSuccess = { response ->
+                    val username = response.username ?: "Usuario desconocido"
+                    _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess(response.message, username)
                 },
                 onFailure = {
                     _forgotPasswordState.value = ForgotPasswordState.CodeSentError(it.message ?: "Error desconocido")
@@ -69,10 +70,11 @@ class ForgotPasswordViewModel : ViewModel() {
 sealed class ForgotPasswordState {
     object Idle : ForgotPasswordState()
     object Loading : ForgotPasswordState()
-    data class CodeSentSuccess(val message: String) : ForgotPasswordState()
+    data class CodeSentSuccess(val message: String, val username: String?) : ForgotPasswordState()
     data class CodeVerifiedSuccess(val message: String) : ForgotPasswordState()
     data class ResetPasswordSuccess(val message: String) : ForgotPasswordState()
     data class CodeSentError(val message: String) : ForgotPasswordState()
     data class CodeVerifiedError(val message: String) : ForgotPasswordState()
     data class ResetPasswordError(val message: String) : ForgotPasswordState()
 }
+
