@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChecklistRtl
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -116,11 +117,18 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         .background(Color.LightGray, RoundedCornerShape(14.dp))
                         .clip(RoundedCornerShape(14.dp)),
                     shape = RoundedCornerShape(14.dp),
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Bloqueado",
+                            tint = Color(0xFF494949)
+                        )
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = Color(0xFFDEDEDE),
-                        focusedContainerColor = Color(0xFFAFC9E1),
+                        unfocusedContainerColor = Color(0xFF919191),
+                        focusedContainerColor = Color(0xFF919191),
                         unfocusedBorderColor = Color(0xFF646464),
-                        focusedBorderColor = Color(0xFF77AEE2),
+                        focusedBorderColor = Color(0xFF646464),
                     )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
