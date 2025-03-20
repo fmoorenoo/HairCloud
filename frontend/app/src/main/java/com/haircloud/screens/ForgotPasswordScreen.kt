@@ -160,8 +160,6 @@ fun ForgotPasswordScreen(
                 Button(
                     onClick = {
                         forgotPasswordViewModel.sendVerificationCode(email, "password_reset")
-                        isButtonEnabled = false
-                        remainingTime = 180
                     },
                     enabled = email.isNotEmpty() && isButtonEnabled,
                     modifier = Modifier.fillMaxWidth(),
@@ -199,6 +197,8 @@ fun ForgotPasswordScreen(
                         }
                     is ForgotPasswordState.CodeSentSuccess -> {
                         isCodeSent = true
+                        isButtonEnabled = false
+                        remainingTime = 180
                         verifiedUsername = (forgotPasswordState as ForgotPasswordState.CodeSentSuccess).username ?: "Usuario desconocido"
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Text(
@@ -209,6 +209,9 @@ fun ForgotPasswordScreen(
                     }
 
                     is ForgotPasswordState.CodeSentError -> {
+                        isCodeSent = false
+                        isButtonEnabled = true
+                        remainingTime = 0
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Text(
                                 text = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
