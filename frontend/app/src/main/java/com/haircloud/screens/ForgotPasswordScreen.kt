@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haircloud.R
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +32,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
+import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun ForgotPasswordScreen(
@@ -141,15 +145,29 @@ fun ForgotPasswordScreen(
                     )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
+                var isButtonEnabled by remember { mutableStateOf(true) }
+                var remainingTime by remember { mutableStateOf(0) }
+
+                LaunchedEffect(remainingTime) {
+                    if (remainingTime > 0) {
+                        delay(1000)
+                        remainingTime -= 1
+                    } else {
+                        isButtonEnabled = true
+                    }
+                }
+
                 Button(
                     onClick = {
                         forgotPasswordViewModel.sendVerificationCode(email, "password_reset")
+                        isButtonEnabled = false
+                        remainingTime = 180
                     },
-                    enabled = email.isNotEmpty(),
+                    enabled = email.isNotEmpty() && isButtonEnabled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0XFF2C2C2C),
+                        containerColor = if (isButtonEnabled) Color(0XFF2C2C2C) else Color(0XFF646464),
                         contentColor = Color.White,
                         disabledContainerColor = Color(0XFF646464),
                         disabledContentColor = Color.White
@@ -199,6 +217,25 @@ fun ForgotPasswordScreen(
                         }
                     }
                     else -> {}
+                }
+                if (!isButtonEnabled) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = "Timer",
+                            tint = Color(0XFF2879E3),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = String.format(Locale.getDefault(), "%02d:%02d", remainingTime / 60, remainingTime % 60),
+                            style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
+                        )
+                    }
                 }
 
                 // Sección para ingresar el código de verificación
