@@ -10,7 +10,7 @@ data class LoginResponse(val message: String, val usuarioid: Int, val nombreusua
 data class RegisterRequest(val nombre_completo: String, val email: String, val nombreusuario: String, val password: String)
 data class RegisterResponse(val message: String, val usuarioid: Int)
 
-data class ApiResponse(val message: String)
+data class ApiResponse(val message: String, val username: String?)
 
 interface ApiService {
     @POST("login")
