@@ -120,6 +120,8 @@ def send_verification_code():
     email = data.get('email')
     purpose = data.get('purpose')  # "password_reset" o "email_verification"
 
+    username = None
+
     if purpose not in ["password_reset", "email_verification"]:
         return jsonify({"error": "Propósito no válido"}), 400
 
@@ -131,9 +133,12 @@ def send_verification_code():
 
     # Si es recuperación de contraseña, verificar que el correo sí exista
     elif purpose == "password_reset":
-        cursor.execute("SELECT usuarioid FROM usuarios WHERE email = %s", (email,))
-        if not cursor.fetchone():
+        cursor.execute("SELECT usuarioid, nombreusuario FROM usuarios WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        if not user:
             return jsonify({"error": "No existe ninguna cuenta con ese email"}), 404
+
+        usuarioid, username = user
 
     # Generar código de 6 dígitos
     codigo = f"{random.randint(100000, 999999)}"
@@ -165,7 +170,13 @@ def send_verification_code():
         msg = Message(subject, recipients=[email])
         msg.body = message_body
         mail.send(msg)
-        return jsonify({"message": "Código de verificación enviado"}), 200
+
+        # Devolver el nombre de usuario si es recuperación de contraseña
+        response_data = {"message": "Código de verificación enviado"}
+        if purpose == "password_reset":
+            response_data["username"] = username
+
+        return jsonify(response_data), 200
     except Exception as e:
         return jsonify({"error": f"No se pudo enviar el email: {str(e)}"}), 500
 
