@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,16 +30,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
-import com.haircloud.utils.PasswordValidator
+import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 
 @Composable
-fun ResetPasswordScreen(navController: NavController, email: String, code: String) {
+fun ResetPasswordScreen(navController: NavController, email: String, code: String, username: String) {
     var newPassword by remember { mutableStateOf("") }
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
-    val isPasswordValid = PasswordValidator.isValid(newPassword)
+    val isPasswordValid = CredentialsValidator.isPasswordValid(newPassword)
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -99,6 +101,30 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                     .padding(top = 25.dp, start = 25.dp, end = 25.dp)
             ) {
                 Text(
+                    text = "Nombre de usuario",
+                    style = defaultStyle,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = {},
+                    readOnly = true,
+                    singleLine = true,
+                    textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.LightGray, RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(14.dp)),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color(0xFFDEDEDE),
+                        focusedContainerColor = Color(0xFFAFC9E1),
+                        unfocusedBorderColor = Color(0xFF646464),
+                        focusedBorderColor = Color(0xFF77AEE2),
+                    )
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
                     text = "Nueva contraseña",
                     style = defaultStyle,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -122,20 +148,77 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         focusedBorderColor = Color(0xFF77AEE2),
                     )
                 )
+                var showDialog by remember { mutableStateOf(false) }
+                var dialogMessage by remember { mutableStateOf("") }
+                var dialogTitle by remember { mutableStateOf("") }
 
                 // Validar contraseña
                 if (!isPasswordValid && newPassword.isNotEmpty()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         Text(
-                            text = "La contraseña debe tener al menos cuatro letras y un número",
-                            style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                            text = "Ver requisitos",
+                            style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold, fontSize = 20.sp),
                             textAlign = TextAlign.Center
                         )
+
+                        IconButton(onClick = {
+                            dialogTitle = "Contraseña"
+                            dialogMessage = "Al menos cuatro letras\n" +
+                                    "Al menos un número\n" +
+                                    "Solo los símbolos: '-', '_', '.'\n" +
+                                    "No puede contener espacios"
+                            showDialog = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ChecklistRtl,
+                                contentDescription = "Información",
+                                tint = Color(0xFFB74A5A),
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
+                }
+
+                if (showDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        confirmButton = {
+                            Button(
+                                onClick = { showDialog = false },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF132946),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text("Entendido", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            }
+                        },
+                        title = {
+                            Text(
+                                text = dialogTitle,
+                                style = TextStyle(fontFamily = defaultFont, fontSize = 30.sp, fontWeight = FontWeight.Bold),
+                                color = Color(0xFF132946),
+                                textAlign = TextAlign.Center
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = dialogMessage,
+                                style = TextStyle(fontFamily = defaultFont, fontSize = 20.sp, fontWeight = FontWeight.Bold),
+                                color = Color(0xFF333333),
+                            )
+                        },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White),
+                        containerColor = Color(0xFF9FCBE7),
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
