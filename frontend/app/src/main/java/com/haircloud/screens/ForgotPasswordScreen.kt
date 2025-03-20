@@ -40,6 +40,7 @@ fun ForgotPasswordScreen(
     var code by remember { mutableStateOf("") }
     var isCodeSent by remember { mutableStateOf(false) }
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
+    var verifiedUsername by remember { mutableStateOf("") }
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
     )
@@ -180,11 +181,11 @@ fun ForgotPasswordScreen(
                         }
                     is ForgotPasswordState.CodeSentSuccess -> {
                         isCodeSent = true
+                        verifiedUsername = (forgotPasswordState as ForgotPasswordState.CodeSentSuccess).username ?: "Usuario desconocido"
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                             Text(
                                 text = "Código enviado con éxito",
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold
-                                )
+                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
                             )
                         }
                     }
@@ -268,7 +269,7 @@ fun ForgotPasswordScreen(
                                 if (forgotPasswordState is ForgotPasswordState.CodeVerifiedSuccess) {
                                     val verifiedCode = code
                                     forgotPasswordViewModel.resetForgotPasswordState()
-                                    navController.navigate("reset_password/$email/$verifiedCode")
+                                    navController.navigate("reset_password/$email/$verifiedCode/$verifiedUsername")
                                 }
                             }
                         }
