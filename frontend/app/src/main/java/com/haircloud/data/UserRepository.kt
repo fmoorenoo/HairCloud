@@ -40,12 +40,12 @@ class UserRepository {
     }
 
     // Solicitar un código de verificación (recuperar contraseña o verificar email)
-    suspend fun sendVerificationCode(email: String, purpose: String): Result<String> {
+    suspend fun sendVerificationCode(email: String, purpose: String): Result<ApiResponse> {
         return try {
             val response = withContext(Dispatchers.IO) {
                 api.sendVerificationCode(mapOf("email" to email, "purpose" to purpose))
             }
-            Result.success("Código enviado con éxito")
+            Result.success(response)
         } catch (e: HttpException) {
             val errorMessage = try {
                 val errorJson = e.response()?.errorBody()?.string()
