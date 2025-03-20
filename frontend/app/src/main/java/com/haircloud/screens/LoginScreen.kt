@@ -1,6 +1,5 @@
 package com.haircloud.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,8 +36,7 @@ import com.haircloud.viewmodel.UserViewModel
 @Composable
 fun LoginScreen(
     navController: NavController,
-    userViewModel: UserViewModel,
-    onLoginSuccess: (String) -> Unit
+    userViewModel: UserViewModel
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -144,7 +142,7 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { password = it },
                     singleLine = true,
-                    placeholder = { Text("****", fontSize = 23.sp) },
+                    placeholder = { Text("*****", fontSize = 23.sp) },
                     textStyle = defaultStyle,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier
@@ -232,13 +230,13 @@ fun LoginScreen(
                 ) {
                     Text(
                         text = "He olvidado mi contraseña",
-                        style = defaultStyle.copy(color = Color(0XFF132946), fontWeight = FontWeight.Bold),
+                        style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
                             userViewModel.resetLoginState()
                             navController.navigate("forgot_password")
                         }
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
                     Text(
                         "¿Todavía no tienes una cuenta?",
                         style = defaultStyle
