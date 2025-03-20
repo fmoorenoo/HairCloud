@@ -137,8 +137,8 @@ def send_verification_code():
 
     # Generar código de 6 dígitos
     codigo = f"{random.randint(100000, 999999)}"
-    tiempo = datetime.timedelta(minutes=3)
-    expiracion = datetime.datetime.now() + tiempo
+    minutos = 3
+    expiracion = datetime.datetime.now() + datetime.timedelta(minutes=minutos)
 
     # Guardar el código en la base de datos (reemplazar si ya existe)
     cursor.execute("""
@@ -155,7 +155,7 @@ def send_verification_code():
 
     Tu código de verificación es: {codigo}
 
-    Este código expirará en {tiempo} minutos.
+    Este código expirará en {minutos} minutos.
 
     Saludos,  
     El equipo de HairCloud
@@ -210,7 +210,7 @@ def reset_password():
     nueva_password = data.get('password')
 
     # Verificar código antes de restablecer contraseña
-    cursor.execute("SELECT codigo, expiracion FROM codigos_recup_contrasenas WHERE email = %s", (email,))
+    cursor.execute("SELECT codigo, expiracion FROM codigos_verificacion WHERE email = %s", (email,))
     record = cursor.fetchone()
 
     if not record:
@@ -232,7 +232,7 @@ def reset_password():
     connection.commit()
 
     # Eliminar el código usado
-    cursor.execute("DELETE FROM codigos_recup_contrasenas WHERE email = %s", (email,))
+    cursor.execute("DELETE FROM codigos_verificacion WHERE email = %s", (email,))
     connection.commit()
 
     return jsonify({"message": "Contraseña restablecida correctamente"}), 200
