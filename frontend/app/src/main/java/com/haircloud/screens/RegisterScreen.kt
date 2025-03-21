@@ -52,6 +52,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val isUsernameValid = CredentialsValidator.isUsernameValid(username)
     val registerState by userViewModel.registerState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var codeSentSuccessfully by remember { mutableStateOf(false) }
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -87,6 +88,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     LaunchedEffect(forgotPasswordState) {
         when (forgotPasswordState) {
             is ForgotPasswordState.CodeSentSuccess -> {
+                codeSentSuccessfully = true
                 step = 2
                 snackbarHostState.showTypedSnackbar(
                     message = "Código enviado con éxito",
@@ -168,15 +170,15 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
             ) {
                 when (step) {
                     1 -> {
-                        InputField("Nombre completo", name) { name = it }
+                        InputField("Nombre completo", name, defaultStyle = defaultStyle) { name = it }
                         Spacer(modifier = Modifier.height(16.dp))
-                        InputField("Email", email, isEmail = true) { email = it }
+                        InputField("Email", email, isEmail = true, defaultStyle = defaultStyle) { email = it }
                     }
                     2 -> {
-                        InputField("Código de verificación", verificationCode) { verificationCode = it }
+                        InputField("Código de verificación", verificationCode, defaultStyle = defaultStyle) { verificationCode = it }
                     }
                     3 -> {
-                        InputField("Nombre de usuario", username) { username = it }
+                        InputField("Nombre de usuario", username, defaultStyle = defaultStyle) { username = it }
                         var showDialog by remember { mutableStateOf(false) }
                         var dialogMessage by remember { mutableStateOf("") }
                         var dialogTitle by remember { mutableStateOf("") }
@@ -213,7 +215,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        PasswordField(password) { password = it }
+                        PasswordField(password, defaultStyle) { password = it }
 
                         // Validar contraseña
                         if (!isPasswordValid && password.isNotEmpty()) {
@@ -367,6 +369,17 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    if (step == 1 && codeSentSuccessfully) {
+                        Text(
+                            text = "Verificar código",
+                            style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
+                            modifier = Modifier.clickable {
+                                step = 2
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
                     if (step in 2..3) {
                         Text(
                             text = "Volver",
@@ -374,6 +387,9 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                             modifier = Modifier.clickable {
                                 forgotPasswordViewModel.resetForgotPasswordState()
                                 step--
+                                if (step == 1) {
+                                    verificationCode = ""
+                                }
                             }
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -407,7 +423,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
 }
 
 @Composable
-fun InputField(label: String, value: String, isEmail: Boolean = false, isPassword: Boolean = false, onValueChange: (String) -> Unit) {
+fun InputField(label: String, value: String, isEmail: Boolean = false, isPassword: Boolean = false, defaultStyle: TextStyle, onValueChange: (String) -> Unit) {
     Column {
         Text(label, style = TextStyle(fontSize = 23.sp, fontFamily = FontFamily(Font(R.font.default_font, FontWeight.Normal))), modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
@@ -421,10 +437,10 @@ fun InputField(label: String, value: String, isEmail: Boolean = false, isPasswor
                         isPassword -> "*****"
                         else -> "Introducir"
                     },
-                    fontSize = 23.sp
+                    style = defaultStyle
                 )
             },
-            textStyle = TextStyle(fontSize = 23.sp, fontFamily = FontFamily(Font(R.font.default_font, FontWeight.Normal))),
+            textStyle = defaultStyle,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp)),
@@ -440,17 +456,17 @@ fun InputField(label: String, value: String, isEmail: Boolean = false, isPasswor
 }
 
 @Composable
-fun PasswordField(value: String, onValueChange: (String) -> Unit) {
+fun PasswordField(value: String, defaultStyle: TextStyle, onValueChange: (String) -> Unit) {
     var passwordVisible by remember { mutableStateOf(true) }
 
     Column {
-        Text("Contraseña", style = TextStyle(fontSize = 23.sp, fontFamily = FontFamily(Font(R.font.default_font, FontWeight.Normal))), modifier = Modifier.padding(bottom = 8.dp))
+        Text("Contraseña", style = defaultStyle, modifier = Modifier.padding(bottom = 8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
             placeholder = { Text("*****", fontSize = 23.sp) },
-            textStyle = TextStyle(fontSize = 23.sp, fontFamily = FontFamily(Font(R.font.default_font, FontWeight.Normal))),
+            textStyle = defaultStyle,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
