@@ -160,14 +160,6 @@ def send_verification_code():
     codigo = f"{random.randint(100000, 999999)}"
     expiracion = datetime.datetime.now() + datetime.timedelta(minutes=minutos)
 
-    # Guardar el código en la base de datos (reemplazar si ya existe)
-    cursor.execute("""
-            INSERT INTO codigos_verificacion (email, codigo, expiracion, tipo)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (email, tipo) DO UPDATE SET codigo = EXCLUDED.codigo, expiracion = EXCLUDED.expiracion
-        """, (email, codigo, expiracion, purpose))
-    connection.commit()
-
     # Definir el asunto y mensaje del email
     subject = "Verificación de correo - HairCloud" if purpose == "email_verification" else "Recuperación de contraseña - HairCloud"
     message_body = f"""
@@ -186,6 +178,14 @@ def send_verification_code():
         msg.body = message_body
         mail.send(msg)
 
+        # Guardar el código en la base de datos (reemplazar si ya existe)
+        cursor.execute("""
+            INSERT INTO codigos_verificacion (email, codigo, expiracion, tipo)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (email, tipo) DO UPDATE SET codigo = EXCLUDED.codigo, expiracion = EXCLUDED.expiracion
+        """, (email, codigo, expiracion, purpose))
+        connection.commit()
+
         # Devolver el nombre de usuario si es recuperación de contraseña
         response_data = {"message": "Código de verificación enviado"}
         if purpose == "password_reset":
@@ -193,7 +193,7 @@ def send_verification_code():
 
         return jsonify(response_data), 200
     except Exception as e:
-        return jsonify({"error": f"No se pudo enviar el email"}), 500
+        return jsonify({"error": "No se pudo enviar el email"}), 500
 
 
 # Verificar código
