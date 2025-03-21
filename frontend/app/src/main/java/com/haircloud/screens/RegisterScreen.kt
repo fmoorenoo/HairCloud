@@ -36,6 +36,9 @@ import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 import com.haircloud.viewmodel.RegisterState
 import com.haircloud.viewmodel.UserViewModel
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
 
 @Composable
 fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(), userViewModel: UserViewModel = viewModel()) {
@@ -48,6 +51,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val isPasswordValid = CredentialsValidator.isPasswordValid(password)
     val isUsernameValid = CredentialsValidator.isUsernameValid(username)
     val registerState by userViewModel.registerState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -55,6 +59,67 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 23.sp)
+
+    // Manejar el estado del registro
+    LaunchedEffect(registerState) {
+        when (registerState) {
+            is RegisterState.Success -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = "Cuenta creada con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                navController.navigate("login") {
+                    popUpTo("register") { inclusive = true }
+                }
+                userViewModel.resetRegisterState()
+            }
+            is RegisterState.Error -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (registerState as RegisterState.Error).message,
+                    type = SnackbarType.ERROR
+                )
+            }
+            else -> {}
+        }
+    }
+
+    // Manejar los estados de ForgotPassword
+    LaunchedEffect(forgotPasswordState) {
+        when (forgotPasswordState) {
+            is ForgotPasswordState.CodeSentSuccess -> {
+                step = 2
+                snackbarHostState.showTypedSnackbar(
+                    message = "Código enviado con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
+            }
+            is ForgotPasswordState.CodeVerifiedSuccess -> {
+                step = 3
+                verificationCode = ""
+                snackbarHostState.showTypedSnackbar(
+                    message = "Código verificado correctamente",
+                    type = SnackbarType.SUCCESS
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
+            }
+            is ForgotPasswordState.CodeSentError -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
+                    type = SnackbarType.ERROR
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
+            }
+            is ForgotPasswordState.CodeVerifiedError -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (forgotPasswordState as ForgotPasswordState.CodeVerifiedError).message,
+                    type = SnackbarType.ERROR
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
+            }
+            else -> {}
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -232,10 +297,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         when (step) {
                             1 -> forgotPasswordViewModel.sendVerificationCode(email, "email_verification")
                             2 -> forgotPasswordViewModel.verifyCode(email, verificationCode, "email_verification")
-                            3 -> {
-                                userViewModel.register(name, email, username, password)
-                                navController.navigate("login")
-                            }
+                            3 -> userViewModel.register(name, email, username, password)
                         }
                     },
                     enabled = when (step) {
@@ -277,36 +339,6 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                                 strokeWidth = 5.dp
                             )
                         }
-                    is RegisterState.Success -> {
-                        userViewModel.resetRegisterState()
-                        LaunchedEffect(Unit) {
-                            navController.navigate("login") {
-                                popUpTo("register") { inclusive = true }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Registro exitoso. Puedes iniciar sesión",
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
-                    is RegisterState.Error -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = (registerState as RegisterState.Error).message,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
                     else -> {}
                 }
 
@@ -326,43 +358,6 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                                 strokeWidth = 5.dp
                             )
                         }
-                    is ForgotPasswordState.CodeSentSuccess -> {
-                        step = 2
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                text = "Código enviado con éxito",
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
-                            )
-                        }
-                        forgotPasswordViewModel.resetForgotPasswordState()
-                    }
-                    is ForgotPasswordState.CodeVerifiedSuccess -> {
-                        step = 3
-                        verificationCode = ""
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                text = "Código verificado",
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
-                            )
-                        }
-                        forgotPasswordViewModel.resetForgotPasswordState()
-                    }
-                    is ForgotPasswordState.CodeSentError -> {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                text = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
-                            )
-                        }
-                    }
-                    is ForgotPasswordState.CodeVerifiedError -> {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                text = (forgotPasswordState as ForgotPasswordState.CodeVerifiedError).message,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
-                            )
-                        }
-                    }
                     else -> {}
                 }
 
@@ -399,6 +394,15 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                 }
             }
         }
+
+        // SnackbarHost para mostrar el Snackbar
+        CustomSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 30.dp),
+            defaultFont = defaultFont
+        )
     }
 }
 
