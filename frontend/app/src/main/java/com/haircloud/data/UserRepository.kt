@@ -32,9 +32,25 @@ class UserRepository {
             if (response.isSuccessful) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Error en el registro"))
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = try {
+                    val jsonObject = JSONObject(errorBody)
+                    jsonObject.getString("error")
+                } catch (e: Exception) {
+                    "Error en el registro"
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            val errorMessage = try {
+                val jsonObject = JSONObject(errorBody)
+                jsonObject.getString("error")
+            } catch (ex: Exception) {
+                "Error en el registro"
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
