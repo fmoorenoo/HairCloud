@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
@@ -34,6 +35,7 @@ import com.haircloud.R
 import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
+import kotlinx.coroutines.launch
 
 @Composable
 fun ResetPasswordScreen(navController: NavController, email: String, code: String, username: String) {
@@ -41,6 +43,8 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
     val isPasswordValid = CredentialsValidator.isPasswordValid(newPassword)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -268,21 +272,17 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         }
                     is ForgotPasswordState.ResetPasswordSuccess -> {
                         LaunchedEffect(forgotPasswordState) {
-                            navController.navigate("login") {
-                                popUpTo("login") { inclusive = true }
+                            // Snackbar
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Contraseña cambiada",
+                                    duration = SnackbarDuration.Short,
+                                )
+                                navController.navigate("login") {
+                                    popUpTo("login") { inclusive = true }
+                                }
                             }
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Contraseña restablecida",
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
-                            )
-                        }
-
                     }
 
                     is ForgotPasswordState.ResetPasswordError -> {
@@ -311,5 +311,38 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                 }
             }
         }
+
+        // SnackbarHost para mostrar el Snackbar
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 30.dp),
+            snackbar = { data ->
+                Snackbar(
+                    containerColor = Color(0xFF439B3E),
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.padding(30.dp).height(60.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = data.visuals.message,
+                            style = TextStyle(fontFamily = defaultFont, fontSize = 26.sp, fontWeight = FontWeight.Bold),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Check",
+                            tint = Color.White,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
+            }
+        )
     }
 }
