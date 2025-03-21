@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.LoginState
 import com.haircloud.viewmodel.UserViewModel
 
@@ -42,6 +45,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val loginState by userViewModel.loginState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
     )
@@ -174,7 +178,6 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         userViewModel.login(username, password)
-                        userViewModel.resetLoginState()
                     },
                     enabled = isFormFilled,
                     modifier = Modifier.fillMaxWidth(),
@@ -188,39 +191,40 @@ fun LoginScreen(
                 ) {
                     Text("Entrar", color = Color.White, style = defaultStyle, modifier = Modifier.padding(vertical = 6.dp))
                 }
-                when (loginState) {
-                    is LoginState.Loading ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(40.dp),
-                                color = Color(0xFF2879E3),
-                                strokeWidth = 5.dp
-                            )
-                        }
-                    is LoginState.Success -> {
-                        val role = (loginState as LoginState.Success).response.rol
-                        userViewModel.resetLoginState()
-                        LaunchedEffect(Unit) {
+
+                // Manejar estados del login
+                LaunchedEffect(loginState) {
+                    when (loginState) {
+                        is LoginState.Success -> {
+                            val role = (loginState as LoginState.Success).response.rol
+                            userViewModel.resetLoginState()
                             navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
-                    }
-                    is LoginState.Error -> {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Text(
-                                text = (loginState as LoginState.Error).message,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold
-                                )
+                        is LoginState.Error -> {
+                            snackbarHostState.showTypedSnackbar(
+                                message = (loginState as LoginState.Error).message,
+                                type = SnackbarType.ERROR
                             )
+                            userViewModel.resetLoginState()
                         }
+                        else -> {}
                     }
-                    else -> {}
+                }
+                if (loginState is LoginState.Loading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(40.dp),
+                            color = Color(0xFF2879E3),
+                            strokeWidth = 5.dp
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -251,7 +255,15 @@ fun LoginScreen(
                     )
                 }
             }
-
         }
+
+        // SnackbarHost para mostrar el Snackbar
+        CustomSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 30.dp),
+            defaultFont = defaultFont
+        )
     }
 }
