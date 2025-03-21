@@ -140,6 +140,20 @@ def send_verification_code():
 
         usuarioid, username = user
 
+    # Comprobar si ya existe un código no expirado para el mismo propósito
+    cursor.execute("""
+        SELECT expiracion FROM codigos_verificacion 
+        WHERE email = %s AND tipo = %s AND expiracion > NOW()
+    """, (email, purpose))
+    existing_code = cursor.fetchone()
+
+    if existing_code:
+        # Calcular el tiempo restante
+        tiempo_restante = existing_code[0] - datetime.datetime.now()
+        minutos_restantes, segundos_restantes = divmod(tiempo_restante.total_seconds(), 60)
+        tiempo_formateado = f"{int(minutos_restantes):02d}:{int(segundos_restantes):02d}"
+        return jsonify({"error": f"Debes esperar {tiempo_formateado} minutos para recibir otro código"}), 429
+
     # Generar código de 6 dígitos
     codigo = f"{random.randint(100000, 999999)}"
     minutos = 3
@@ -178,7 +192,7 @@ def send_verification_code():
 
         return jsonify(response_data), 200
     except Exception as e:
-        return jsonify({"error": f"No se pudo enviar el email: {str(e)}"}), 500
+        return jsonify({"error": f"No se pudo enviar el email"}), 500
 
 
 # Verificar código
