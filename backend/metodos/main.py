@@ -26,8 +26,8 @@ connection = psycopg2.connect(
     host="localhost",
     port="5432",
     dbname="HairCloud",
-    user="postgres",
-    password="profesor1234",
+    user=os.getenv('DB_USER'),
+    password=os.getenv('DB_PASSWORD'),
     options="-c search_path=public"
 )
 cursor = connection.cursor()
