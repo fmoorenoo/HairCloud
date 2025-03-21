@@ -146,17 +146,18 @@ def send_verification_code():
         WHERE email = %s AND tipo = %s AND expiracion > NOW()
     """, (email, purpose))
     existing_code = cursor.fetchone()
+    minutos = 3
 
     if existing_code:
         # Calcular el tiempo restante
         tiempo_restante = existing_code[0] - datetime.datetime.now()
-        minutos_restantes, segundos_restantes = divmod(tiempo_restante.total_seconds(), 60)
-        tiempo_formateado = f"{int(minutos_restantes):02d}:{int(segundos_restantes):02d}"
-        return jsonify({"error": f"Debes esperar {tiempo_formateado} minutos para recibir otro código"}), 429
+        if tiempo_restante.total_seconds() > 0:
+            minutos_restantes, segundos_restantes = divmod(tiempo_restante.total_seconds(), 60)
+            tiempo_formateado = f"{int(minutos_restantes):02d}:{int(segundos_restantes):02d}"
+            return jsonify({"error": f"Espera {minutos} minutos para solicitar otro código.\nRestante: {tiempo_formateado}"}), 429
 
     # Generar código de 6 dígitos
     codigo = f"{random.randint(100000, 999999)}"
-    minutos = 3
     expiracion = datetime.datetime.now() + datetime.timedelta(minutes=minutos)
 
     # Guardar el código en la base de datos (reemplazar si ya existe)
