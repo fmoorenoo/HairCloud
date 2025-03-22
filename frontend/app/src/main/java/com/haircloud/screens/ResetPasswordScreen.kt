@@ -35,6 +35,9 @@ import com.haircloud.R
 import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -274,9 +277,9 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         LaunchedEffect(forgotPasswordState) {
                             // Snackbar
                             scope.launch {
-                                snackbarHostState.showSnackbar(
+                                snackbarHostState.showTypedSnackbar(
                                     message = "Contraseña cambiada",
-                                    duration = SnackbarDuration.Short,
+                                    type = SnackbarType.SUCCESS
                                 )
                                 navController.navigate("login") {
                                     popUpTo("login") { inclusive = true }
@@ -286,15 +289,13 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                     }
 
                     is ForgotPasswordState.ResetPasswordError -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = (forgotPasswordState as ForgotPasswordState.ResetPasswordError).message,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold)
-                            )
+                        LaunchedEffect(forgotPasswordState) {
+                            scope.launch {
+                                snackbarHostState.showTypedSnackbar(
+                                    message = (forgotPasswordState as ForgotPasswordState.ResetPasswordError).message,
+                                    type = SnackbarType.ERROR
+                                )
+                            }
                         }
                     }
                     else -> {}
@@ -312,37 +313,11 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
             }
         }
 
-        // SnackbarHost para mostrar el Snackbar
-        SnackbarHost(
+        // SnackbarHost con CustomSnackbarHost
+        CustomSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 30.dp),
-            snackbar = { data ->
-                Snackbar(
-                    containerColor = Color(0xFF439B3E),
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.padding(30.dp).height(60.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = data.visuals.message,
-                            style = TextStyle(fontFamily = defaultFont, fontSize = 26.sp, fontWeight = FontWeight.Bold),
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.width(20.dp))
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Check",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
-            }
+            defaultFont = defaultFont
         )
     }
 }

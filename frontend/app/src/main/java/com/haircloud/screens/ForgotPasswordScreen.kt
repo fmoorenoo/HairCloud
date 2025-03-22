@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -22,18 +23,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haircloud.R
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
-import kotlinx.coroutines.delay
-import java.util.Locale
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
 
 @Composable
 fun ForgotPasswordScreen(
@@ -45,8 +44,7 @@ fun ForgotPasswordScreen(
     var isCodeSent by remember { mutableStateOf(false) }
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
     var verifiedUsername by remember { mutableStateOf("") }
-    var isButtonEnabled by remember { mutableStateOf(true) }
-    var remainingTime by remember { mutableStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -62,33 +60,39 @@ fun ForgotPasswordScreen(
         fontSize = 23.sp,
     )
 
-    // LaunchedEffect para manejar el temporizador de cuenta regresiva
-    LaunchedEffect(remainingTime) {
-        if (remainingTime > 0) {
-            while (remainingTime > 0) {
-                delay(1000)
-                remainingTime--
-            }
-            isButtonEnabled = true
-        }
-    }
-
     LaunchedEffect(forgotPasswordState) {
         when (forgotPasswordState) {
             is ForgotPasswordState.CodeSentSuccess -> {
                 isCodeSent = true
-                isButtonEnabled = false
-                remainingTime = 180
                 verifiedUsername = (forgotPasswordState as ForgotPasswordState.CodeSentSuccess).username ?: "Usuario desconocido"
+                snackbarHostState.showTypedSnackbar(
+                    message = "Código enviado con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
             }
             is ForgotPasswordState.CodeVerifiedSuccess -> {
                 val verifiedCode = code
+                snackbarHostState.showTypedSnackbar(
+                    message = "Código verificado correctamente",
+                    type = SnackbarType.SUCCESS
+                )
                 forgotPasswordViewModel.resetForgotPasswordState()
                 navController.navigate("reset_password/$email/$verifiedCode/$verifiedUsername")
             }
             is ForgotPasswordState.CodeSentError -> {
-                isButtonEnabled = true
-                remainingTime = 0
+                snackbarHostState.showTypedSnackbar(
+                    message = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
+                    type = SnackbarType.ERROR
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
+            }
+            is ForgotPasswordState.CodeVerifiedError -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (forgotPasswordState as ForgotPasswordState.CodeVerifiedError).message,
+                    type = SnackbarType.ERROR
+                )
+                forgotPasswordViewModel.resetForgotPasswordState()
             }
             else -> {}
         }
@@ -185,11 +189,11 @@ fun ForgotPasswordScreen(
                     onClick = {
                         forgotPasswordViewModel.sendVerificationCode(email, "password_reset")
                     },
-                    enabled = email.isNotEmpty() && isButtonEnabled,
+                    enabled = email.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isButtonEnabled) Color(0XFF2C2C2C) else Color(0XFF646464),
+                        containerColor = Color(0XFF2C2C2C),
                         contentColor = Color.White,
                         disabledContainerColor = Color(0XFF646464),
                         disabledContentColor = Color.White
@@ -216,53 +220,6 @@ fun ForgotPasswordScreen(
                             modifier = Modifier.size(40.dp),
                             color = Color(0xFF2879E3),
                             strokeWidth = 5.dp
-                        )
-                    }
-                }
-
-                // Mostrar mensajes de éxito o error para el envío del código
-                if (forgotPasswordState is ForgotPasswordState.CodeSentSuccess) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Código enviado con éxito",
-                            style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold)
-                        )
-                    }
-                } else if (forgotPasswordState is ForgotPasswordState.CodeSentError) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = (forgotPasswordState as ForgotPasswordState.CodeSentError).message,
-                            textAlign = TextAlign.Center,
-                            style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
-                        )
-                    }
-                }
-                if (remainingTime > 0) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = "Timer",
-                            tint = Color(0XFF2879E3),
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = String.format(Locale.getDefault(), "%02d:%02d", remainingTime / 60, remainingTime % 60),
-                            style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         )
                     }
                 }
@@ -319,33 +276,6 @@ fun ForgotPasswordScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    // Mostrar mensajes de éxito o error para la verificación del código
-                    if (forgotPasswordState is ForgotPasswordState.CodeVerifiedSuccess) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Código verificado",
-                                textAlign = TextAlign.Center,
-                                style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
-                            )
-                        }
-                    } else if (forgotPasswordState is ForgotPasswordState.CodeVerifiedError) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = (forgotPasswordState as ForgotPasswordState.CodeVerifiedError).message,
-                                textAlign = TextAlign.Center,
-                                style = defaultStyle.copy(color = Color(0xFFB74A5A), fontWeight = FontWeight.Bold),
-                            )
-                        }
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -365,5 +295,14 @@ fun ForgotPasswordScreen(
                 }
             }
         }
+
+        // SnackbarHost para mostrar el Snackbar
+        CustomSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 30.dp),
+            defaultFont = defaultFont
+        )
     }
 }
