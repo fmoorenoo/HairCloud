@@ -5,11 +5,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,9 +46,7 @@ import com.haircloud.utils.showTypedSnackbar
 fun ClientHomeScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val blueWhiteGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
-    )
+    val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
@@ -53,29 +59,106 @@ fun ClientHomeScreen(navController: NavController) {
 
     Box(
         modifier = Modifier
+            .background(brush = blackWhiteGradient)
             .fillMaxSize()
-            .background(brush = blueWhiteGradient),
-        contentAlignment = Alignment.Center
+            .padding(top = 16.dp)
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxWidth().padding(top = 40.dp, start = 36.dp, end = 36.dp)
+            modifier = Modifier.fillMaxSize(),
         ) {
             Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.app_lightlogo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .height(50.dp)
+                            .wrapContentHeight(),
+                        contentScale = ContentScale.Inside
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.user_profile_1),
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .height(55.dp)
+                            .wrapContentHeight(),
+                        contentScale = ContentScale.Inside
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "HairCloud",
-                    style = TextStyle(fontFamily = headersFont, fontSize = 55.sp),
-                    textAlign = TextAlign.Center
+                    text = "Barberías",
+                    color = Color.White,
+                    style = TextStyle(fontFamily = defaultFont),
+                    fontSize = 40.sp,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
-                Image(
-                    painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier.height(90.dp).wrapContentHeight(),
-                    contentScale = ContentScale.Inside
+            }
+        }
+
+        // Bottom menu - placed directly in the Box to ensure it's at the bottom
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .padding(16.dp)
+                .align(Alignment.BottomCenter),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(75.dp)
+                    .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Bookmarks,
+                    contentDescription = "Favoritos",
+                    tint = Color(0xFF282828),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(45.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .align(Alignment.Top)
+                    .background(Color(0xA9FFFFFF), shape = RoundedCornerShape(20.dp))
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.scissors_icon),
+                    contentDescription = "Barberías",
+                    tint = Color(0xFF282828),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(55.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(75.dp)
+                    .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CalendarMonth,
+                    contentDescription = "Calendario",
+                    tint = Color(0xFF282828),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(45.dp)
                 )
             }
         }
