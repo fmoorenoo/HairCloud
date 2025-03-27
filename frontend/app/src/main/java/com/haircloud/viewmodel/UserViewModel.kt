@@ -42,7 +42,7 @@ class UserViewModel : ViewModel() {
                 if (result.isSuccess) {
                     _registerState.value = RegisterState.Success(result.getOrThrow())
                 } else {
-                    _registerState.value = RegisterState.Error("No se pudo registrar el usuario")
+                    _registerState.value = RegisterState.Error(result.exceptionOrNull()?.message ?: "No se pudo registrar el usuario")
                 }
             } catch (e: Exception) {
                 _registerState.value = RegisterState.Error(e.message ?: "Error desconocido")
