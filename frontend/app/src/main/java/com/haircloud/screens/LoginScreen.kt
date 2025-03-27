@@ -126,7 +126,7 @@ fun LoginScreen(
                     onValueChange = { username = it },
                     singleLine = true,
                     placeholder = { Text("Introducir", style = defaultStyle) },
-                    textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                    textStyle = defaultStyle,
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.LightGray, RoundedCornerShape(14.dp))
@@ -146,7 +146,7 @@ fun LoginScreen(
                     value = password,
                     onValueChange = { password = it },
                     singleLine = true,
-                    placeholder = { Text("*****", fontSize = 23.sp) },
+                    placeholder = { Text("*****", style = defaultStyle) },
                     textStyle = defaultStyle,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier
@@ -197,8 +197,9 @@ fun LoginScreen(
                     when (loginState) {
                         is LoginState.Success -> {
                             val role = (loginState as LoginState.Success).response.rol
+                            val userID = (loginState as LoginState.Success).response.usuarioid
                             userViewModel.resetLoginState()
-                            navController.navigate(if (role == "cliente") "home_cliente" else "home_peluquero") {
+                            navController.navigate(if (role == "cliente") "client_home/$userID" else "barber_home/$userID") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
