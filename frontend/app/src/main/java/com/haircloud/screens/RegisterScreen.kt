@@ -15,8 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -53,6 +55,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val registerState by userViewModel.registerState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var codeSentSuccessfully by remember { mutableStateOf(false) }
+    var buttonsEnabled by remember { mutableStateOf(true) }
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -65,6 +68,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     LaunchedEffect(registerState) {
         when (registerState) {
             is RegisterState.Success -> {
+                buttonsEnabled = false
                 snackbarHostState.showTypedSnackbar(
                     message = "Cuenta creada con éxito",
                     type = SnackbarType.SUCCESS
@@ -154,7 +158,15 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                 },
                 color = Color(0XFF132946),
                 textAlign = TextAlign.Center,
-                style = TextStyle(fontFamily = headersFont, fontSize = 35.sp),
+                style = TextStyle(
+                    fontFamily = headersFont,
+                    fontSize = 35.sp,
+                    shadow = Shadow(
+                        color = Color(0xFF7C7C7C),
+                        offset = Offset(3f, 10f),
+                        blurRadius = 15f
+                    )
+                ),
                 modifier = Modifier.align(Alignment.Start)
             )
 
@@ -303,9 +315,9 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         }
                     },
                     enabled = when (step) {
-                        1 -> isStep1Filled
-                        2 -> isStep2Filled
-                        else -> isStep3Filled
+                        1 -> isStep1Filled && buttonsEnabled
+                        2 -> isStep2Filled && buttonsEnabled
+                        else -> isStep3Filled && buttonsEnabled
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -385,10 +397,12 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                             text = "Volver",
                             style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                             modifier = Modifier.clickable {
-                                forgotPasswordViewModel.resetForgotPasswordState()
-                                step--
-                                if (step == 1) {
-                                    verificationCode = ""
+                                if (buttonsEnabled) {
+                                    forgotPasswordViewModel.resetForgotPasswordState()
+                                    step--
+                                    if (step == 1) {
+                                        verificationCode = ""
+                                    }
                                 }
                             }
                         )
@@ -401,8 +415,10 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                             text = "Iniciar sesión",
                             style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                             modifier = Modifier.clickable {
-                                navController.navigate("login") {
-                                    popUpTo("register") { inclusive = true }
+                                if (buttonsEnabled) {
+                                    navController.navigate("login") {
+                                        popUpTo("register") { inclusive = true }
+                                    }
                                 }
                             }
                         )
@@ -457,7 +473,7 @@ fun InputField(label: String, value: String, isEmail: Boolean = false, isPasswor
 
 @Composable
 fun PasswordField(value: String, defaultStyle: TextStyle, onValueChange: (String) -> Unit) {
-    var passwordVisible by remember { mutableStateOf(true) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column {
         Text("Contraseña", style = defaultStyle, modifier = Modifier.padding(bottom = 8.dp))

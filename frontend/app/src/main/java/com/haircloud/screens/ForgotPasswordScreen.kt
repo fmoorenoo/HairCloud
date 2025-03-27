@@ -45,6 +45,7 @@ fun ForgotPasswordScreen(
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
     var verifiedUsername by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
+    var buttonsEnabled by remember { mutableStateOf(true) }
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -72,6 +73,7 @@ fun ForgotPasswordScreen(
                 forgotPasswordViewModel.resetForgotPasswordState()
             }
             is ForgotPasswordState.CodeVerifiedSuccess -> {
+                buttonsEnabled = false
                 val verifiedCode = code
                 snackbarHostState.showTypedSnackbar(
                     message = "Código verificado correctamente",
@@ -189,7 +191,7 @@ fun ForgotPasswordScreen(
                     onClick = {
                         forgotPasswordViewModel.sendVerificationCode(email, "password_reset")
                     },
-                    enabled = email.isNotEmpty(),
+                    enabled = email.isNotEmpty() && buttonsEnabled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -258,7 +260,7 @@ fun ForgotPasswordScreen(
                         onClick = {
                             forgotPasswordViewModel.verifyCode(email, code, "password_reset")
                         },
-                        enabled = code.isNotEmpty(),
+                        enabled = code.isNotEmpty() && buttonsEnabled,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -288,8 +290,10 @@ fun ForgotPasswordScreen(
                         text = "Volver",
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
-                            forgotPasswordViewModel.resetForgotPasswordState()
-                            navController.navigate("login")
+                            if (buttonsEnabled) {
+                                forgotPasswordViewModel.resetForgotPasswordState()
+                                navController.navigate("login")
+                            }
                         }
                     )
                 }

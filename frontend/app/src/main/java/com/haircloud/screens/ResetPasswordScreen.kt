@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +51,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     val isPasswordValid = CredentialsValidator.isPasswordValid(newPassword)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var buttonsEnabled by remember { mutableStateOf(true) }
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -144,18 +148,33 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                     style = defaultStyle,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
+                var passwordVisible by remember { mutableStateOf(false) }
+
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password),
                     placeholder = { Text(text = "*****", style = defaultStyle) },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.LightGray, RoundedCornerShape(14.dp))
                         .clip(RoundedCornerShape(14.dp)),
                     shape = RoundedCornerShape(14.dp),
+                    trailingIcon = {
+                        if (newPassword.isNotEmpty()) {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                                    tint = Color(0XFF132946),
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color(0xFFDEDEDE),
                         focusedContainerColor = Color(0xFFAFC9E1),
@@ -240,7 +259,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
 
                 Button(
                     onClick = { forgotPasswordViewModel.resetPassword(email, code, newPassword) },
-                    enabled = isPasswordValid,
+                    enabled = isPasswordValid && buttonsEnabled,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -305,8 +324,10 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         text = "Volver",
                         style = defaultStyle.copy(color = Color(0XFF2879E3),fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
-                            forgotPasswordViewModel.resetForgotPasswordState()
-                            navController.navigate("forgot_password")
+                            if (buttonsEnabled) {
+                                forgotPasswordViewModel.resetForgotPasswordState()
+                                navController.navigate("forgot_password")
+                            }
                         }
                     )
                 }
