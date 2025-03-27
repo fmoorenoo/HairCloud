@@ -4,17 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.haircloud.screens.ForgotPasswordScreen
-import com.haircloud.screens.LoginScreen
-import com.haircloud.screens.RegisterScreen
-import com.haircloud.screens.ResetPasswordScreen
+import com.haircloud.screens.*
 import com.haircloud.screens.barber.BarberHomeScreen
 import com.haircloud.screens.client.ClientHomeScreen
 import com.haircloud.viewmodel.UserViewModel
 
 @Composable
 fun AppNavigation(navController: NavHostController, userViewModel: UserViewModel) {
-    NavHost(navController = navController, startDestination = "login") {
+    val startDestination = "login"
+    NavHost(navController = navController, startDestination = startDestination) {
 
         // Login
         composable("login") {
@@ -35,12 +33,23 @@ fun AppNavigation(navController: NavHostController, userViewModel: UserViewModel
             ResetPasswordScreen(navController, email, code, username)
         }
 
+        composable("profile/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            ProfileScreen(navController, userId)
+        }
 
         // Clientes Home
-        composable("home_cliente") { ClientHomeScreen(navController) }
+        composable("client_home/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            ClientHomeScreen(navController, userId)
+        }
 
         // Peluqueros Home
-        composable("home_peluquero") { BarberHomeScreen(navController) }
+        composable("barber_home/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            BarberHomeScreen(navController)
+        }
+
     }
 }
 
