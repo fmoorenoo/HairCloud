@@ -13,18 +13,18 @@ data class RegisterResponse(val message: String, val usuarioid: Int)
 data class ApiResponse(val message: String, val username: String?)
 
 interface ApiService {
-    @POST("login")
+    @POST("/api/auth/login")
     fun login(@Body request: LoginRequest): Call<LoginResponse>
 
-    @POST("register")
+    @POST("/api/auth/register")
     fun register(@Body request: RegisterRequest): Call<RegisterResponse>
 
-    @POST("send_verification_code")
+    @POST("/api/auth/send_verification_code")
     suspend fun sendVerificationCode(@Body requestBody: Map<String, String>): ApiResponse
 
-    @POST("verify_code")
+    @POST("/api/auth/verify_code")
     suspend fun verifyCode(@Body requestBody: Map<String, String>): ApiResponse
 
-    @POST("reset_password")
+    @POST("/api/auth/reset_password")
     suspend fun resetPassword(@Body requestBody: Map<String, String>): ApiResponse
 }
