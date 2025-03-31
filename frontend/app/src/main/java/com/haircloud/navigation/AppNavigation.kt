@@ -7,16 +7,16 @@ import androidx.navigation.compose.composable
 import com.haircloud.screens.*
 import com.haircloud.screens.barber.BarberHomeScreen
 import com.haircloud.screens.client.ClientHomeScreen
-import com.haircloud.viewmodel.UserViewModel
+import com.haircloud.viewmodel.AuthViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController, userViewModel: UserViewModel) {
+fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel) {
     val startDestination = "login"
     NavHost(navController = navController, startDestination = startDestination) {
 
         // Login
         composable("login") {
-            LoginScreen(navController, userViewModel)
+            LoginScreen(navController, authViewModel)
         }
 
         // Registro

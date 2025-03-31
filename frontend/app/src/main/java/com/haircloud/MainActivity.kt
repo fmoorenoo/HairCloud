@@ -8,24 +8,24 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.navigation.compose.rememberNavController
 import com.haircloud.navigation.AppNavigation
-import com.haircloud.viewmodel.UserViewModel
+import com.haircloud.viewmodel.AuthViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val userViewModel: UserViewModel = viewModel()
-            HairCloudApp(userViewModel)
+            val authViewModel: AuthViewModel = viewModel()
+            HairCloudApp(authViewModel)
         }
     }
 }
 
 @Composable
-fun HairCloudApp(userViewModel: UserViewModel) {
+fun HairCloudApp(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
     var userRole by rememberSaveable { mutableStateOf<String?>(null) }
 
-    AppNavigation(navController, userViewModel)
+    AppNavigation(navController, authViewModel)
 
     LaunchedEffect(userRole) {
         userRole?.let {

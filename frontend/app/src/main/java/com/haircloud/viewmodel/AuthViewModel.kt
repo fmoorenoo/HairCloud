@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.haircloud.data.LoginResponse
-import com.haircloud.data.RegisterResponse
-import com.haircloud.data.UserRepository
+import com.haircloud.data.model.LoginResponse
+import com.haircloud.data.model.RegisterResponse
+import com.haircloud.data.repository.AuthRepository
 
-class UserViewModel : ViewModel() {
-    private val repository = UserRepository()
+class AuthViewModel : ViewModel() {
+    private val repository = AuthRepository()
 
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState

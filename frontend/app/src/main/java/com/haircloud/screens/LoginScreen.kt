@@ -34,17 +34,17 @@ import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.LoginState
-import com.haircloud.viewmodel.UserViewModel
+import com.haircloud.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    userViewModel: UserViewModel
+    authViewModel: AuthViewModel
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    val loginState by userViewModel.loginState.collectAsState()
+    val loginState by authViewModel.loginState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -177,7 +177,7 @@ fun LoginScreen(
                 val isFormFilled = username.isNotBlank() && password.isNotBlank()
                 Button(
                     onClick = {
-                        userViewModel.login(username, password)
+                        authViewModel.login(username, password)
                     },
                     enabled = isFormFilled,
                     modifier = Modifier.fillMaxWidth(),
@@ -197,9 +197,9 @@ fun LoginScreen(
                     when (loginState) {
                         is LoginState.Success -> {
                             val role = (loginState as LoginState.Success).response.rol
-                            val userID = (loginState as LoginState.Success).response.usuarioid
-                            userViewModel.resetLoginState()
-                            navController.navigate(if (role == "cliente") "client_home/$userID" else "barber_home/$userID") {
+                            val userData = (loginState as LoginState.Success).response
+                            authViewModel.resetLoginState()
+                            navController.navigate(if (role == "cliente") "client_home/$userData" else "barber_home/$userData") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
@@ -208,7 +208,7 @@ fun LoginScreen(
                                 message = (loginState as LoginState.Error).message,
                                 type = SnackbarType.ERROR
                             )
-                            userViewModel.resetLoginState()
+                            authViewModel.resetLoginState()
                         }
                         else -> {}
                     }
@@ -237,7 +237,7 @@ fun LoginScreen(
                         text = "He olvidado mi contraseña",
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
-                            userViewModel.resetLoginState()
+                            authViewModel.resetLoginState()
                             navController.navigate("forgot_password")
                         }
                     )
@@ -250,7 +250,7 @@ fun LoginScreen(
                         text = "Regístrate gratis",
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
-                            userViewModel.resetLoginState()
+                            authViewModel.resetLoginState()
                             navController.navigate("register")
                         }
                     )

@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.haircloud.data.UserRepository
+import com.haircloud.data.repository.AuthRepository
 
 class ForgotPasswordViewModel : ViewModel() {
-    private val repository = UserRepository()
+    private val repository = AuthRepository()
 
     private val _forgotPasswordState = MutableStateFlow<ForgotPasswordState>(ForgotPasswordState.Idle)
     val forgotPasswordState: StateFlow<ForgotPasswordState> = _forgotPasswordState

@@ -37,13 +37,13 @@ import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ForgotPasswordViewModel
 import com.haircloud.viewmodel.ForgotPasswordState
 import com.haircloud.viewmodel.RegisterState
-import com.haircloud.viewmodel.UserViewModel
+import com.haircloud.viewmodel.AuthViewModel
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
 
 @Composable
-fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(), userViewModel: UserViewModel = viewModel()) {
+fun RegisterScreen(navController: NavController, forgotPasswordViewModel: ForgotPasswordViewModel = viewModel(), authViewModel: AuthViewModel = viewModel()) {
     var step by remember { mutableIntStateOf(1) }
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -52,7 +52,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     var verificationCode by remember { mutableStateOf("") }
     val isPasswordValid = CredentialsValidator.isPasswordValid(password)
     val isUsernameValid = CredentialsValidator.isUsernameValid(username)
-    val registerState by userViewModel.registerState.collectAsState()
+    val registerState by authViewModel.registerState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var codeSentSuccessfully by remember { mutableStateOf(false) }
     var buttonsEnabled by remember { mutableStateOf(true) }
@@ -76,7 +76,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                 navController.navigate("login") {
                     popUpTo("register") { inclusive = true }
                 }
-                userViewModel.resetRegisterState()
+                authViewModel.resetRegisterState()
             }
             is RegisterState.Error -> {
                 snackbarHostState.showTypedSnackbar(
@@ -311,7 +311,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         when (step) {
                             1 -> forgotPasswordViewModel.sendVerificationCode(email, "email_verification")
                             2 -> forgotPasswordViewModel.verifyCode(email, verificationCode, "email_verification")
-                            3 -> userViewModel.register(name, email, username, password)
+                            3 -> authViewModel.register(name, email, username, password)
                         }
                     },
                     enabled = when (step) {

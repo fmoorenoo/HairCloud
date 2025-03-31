@@ -1,12 +1,15 @@
-package com.haircloud.data
+package com.haircloud.data.repository
 
+import com.haircloud.data.ApiClient
+import com.haircloud.data.ApiResponse
+import com.haircloud.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import retrofit2.HttpException
 
 // Capa intermedia entre el viewModel y la API
-class UserRepository {
+class AuthRepository {
     private val api = ApiClient.instance
 
     suspend fun login(username: String, password: String): Result<LoginResponse> {
@@ -32,21 +35,21 @@ class UserRepository {
             if (response.isSuccessful) {
                 Result.success(response.body()!!)
             } else {
-                val errorBody = response.errorBody()?.string()
+                val errorBody = response.errorBody()?.string() ?: "{}"
                 val errorMessage = try {
                     val jsonObject = JSONObject(errorBody)
                     jsonObject.getString("error")
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "Error en el registro"
                 }
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: HttpException) {
-            val errorBody = e.response()?.errorBody()?.string()
+            val errorBody = e.response()?.errorBody()?.string() ?: "{}"
             val errorMessage = try {
                 val jsonObject = JSONObject(errorBody)
                 jsonObject.getString("error")
-            } catch (ex: Exception) {
+            } catch (_: Exception) {
                 "Error en el registro"
             }
             Result.failure(Exception(errorMessage))
@@ -64,13 +67,13 @@ class UserRepository {
             Result.success(response)
         } catch (e: HttpException) {
             val errorMessage = try {
-                val errorJson = e.response()?.errorBody()?.string()
+                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
                 JSONObject(errorJson).getString("error")
-            } catch (ex: Exception) {
+            } catch (_: Exception) {
                 "Error desconocido"
             }
             Result.failure(Exception(errorMessage))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.failure(Exception("Error en la conexión"))
         }
     }
