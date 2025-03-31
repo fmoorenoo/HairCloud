@@ -14,6 +14,9 @@ class ClientViewModel : ViewModel() {
     private val _clientState = MutableStateFlow<ClientState>(ClientState.Idle)
     val clientState: StateFlow<ClientState> = _clientState
 
+    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    val updateState: StateFlow<UpdateState> = _updateState
+
     fun getClient(usuarioId: Int) {
         _clientState.value = ClientState.Loading
         viewModelScope.launch {
@@ -30,6 +33,26 @@ class ClientViewModel : ViewModel() {
         }
     }
 
+    fun updateClient(usuarioId: Int, updateData: Map<String, String?>) {
+        _updateState.value = UpdateState.Updating
+        viewModelScope.launch {
+            try {
+                val result = repository.updateClient(usuarioId, updateData)
+                if (result.isSuccess) {
+                    _updateState.value = UpdateState.UpdateSuccess(result.getOrThrow().message)
+                } else {
+                    _updateState.value = UpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al actualizar cliente")
+                }
+            } catch (e: Exception) {
+                _updateState.value = UpdateState.UpdateError(e.message ?: "Error desconocido")
+            }
+        }
+    }
+
+    fun resetUpdateState() {
+        _updateState.value = UpdateState.Idle
+    }
+
     fun resetClientState() {
         _clientState.value = ClientState.Idle
     }
@@ -40,4 +63,11 @@ sealed class ClientState {
     object Loading : ClientState()
     data class Success(val client: ClientResponse) : ClientState()
     data class Error(val message: String) : ClientState()
+}
+
+sealed class UpdateState {
+    object Idle : UpdateState()
+    object Updating : UpdateState()
+    data class UpdateSuccess(val message: String) : UpdateState()
+    data class UpdateError(val message: String) : UpdateState()
 }
