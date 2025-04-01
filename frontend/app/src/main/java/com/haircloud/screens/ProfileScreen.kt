@@ -133,18 +133,19 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                     var nombre by remember { mutableStateOf(client.nombre) }
                     var email by remember { mutableStateOf(client.email) }
                     var nombreUsuario by remember { mutableStateOf(client.nombreusuario) }
-                    var telefono by remember { mutableStateOf(client.telefono ?: "") }
+                    var telefono by remember { mutableStateOf(client.telefono ?: "Sin especificar") }
 
                     var showDialog by remember { mutableStateOf(false) }
                     var dialogMessage by remember { mutableStateOf("") }
                     var dialogTitle by remember { mutableStateOf("") }
 
                     val isUsernameValid = CredentialsValidator.isUsernameValid(nombreUsuario)
+                    val isPhoneValid = CredentialsValidator.isPhoneValid(telefono)
 
                     val hasChanges = nombre != client.nombre ||
                             email != client.email ||
                             nombreUsuario != client.nombreusuario ||
-                            telefono != (client.telefono ?: "")
+                            telefono != (client.telefono ?: "Sin especificar")
 
                     val allFieldsValid = isUsernameValid && nombre.isNotEmpty() && email.isNotEmpty()
 
@@ -157,11 +158,12 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                     }
 
                     fun saveChanges() {
-                        val updateData = mapOf(
+                        val phone = if (telefono.trim().isEmpty() || telefono == "Sin especificar") "nulo" else telefono
+                        val updateData = mutableMapOf<String, String?>(
                             "nombre" to nombre,
                             "email" to email,
                             "nombreusuario" to nombreUsuario,
-                            "telefono" to telefono
+                            "telefono" to phone
                         )
 
                         clientViewModel.updateClient(client.usuarioid, updateData)
@@ -321,8 +323,82 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                             }
                                         }
 
-                                        EditInfoField(Icons.Default.Phone, "Teléfono", telefono,
-                                            onValueChange = { telefono = it }, defaultFont)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Phone,
+                                                contentDescription = "Teléfono",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(32.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(14.dp))
+                                            Column {
+                                                Text(
+                                                    "Teléfono",
+                                                    fontSize = 22.sp,
+                                                    fontFamily = defaultFont,
+                                                    color = Color(0xFFD9D9D9)
+                                                )
+                                                OutlinedTextField(
+                                                    value = telefono,
+                                                    onValueChange = { telefono = it },
+                                                    textStyle = TextStyle(
+                                                        fontSize = 20.sp,
+                                                        fontFamily = defaultFont,
+                                                        color = Color.White
+                                                    ),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = if (isPhoneValid || telefono.isEmpty()) Color.White else Color(0xFFB74A5A),
+                                                        unfocusedBorderColor = if (isPhoneValid || telefono.isEmpty()) Color(0xFFD9D9D9) else Color(0xFFB74A5A),
+                                                        focusedTextColor = Color.White,
+                                                        unfocusedTextColor = Color.White,
+                                                        cursorColor = Color.White
+                                                    ),
+                                                    singleLine = true,
+                                                    modifier = Modifier.fillMaxWidth()
+                                                )
+                                            }
+                                        }
+
+                                        if (!isPhoneValid && telefono.isNotEmpty()) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceAround
+                                            ) {
+                                                Text(
+                                                    text = "Ver requisitos",
+                                                    style = TextStyle(
+                                                        fontFamily = defaultFont,
+                                                        color = Color(0xFFBD727D),
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 20.sp
+                                                    ),
+                                                    textAlign = TextAlign.Center
+                                                )
+
+                                                IconButton(onClick = {
+                                                    dialogTitle = "Teléfono"
+                                                    dialogMessage = "Solo puede contener dígitos\n" +
+                                                            "Longitud entre 9 y 15 caracteres\n" +
+                                                            "No puede contener espacios"
+                                                    showDialog = true
+                                                }) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.ChecklistRtl,
+                                                        contentDescription = "Información",
+                                                        tint = Color(0xFFBD727D),
+                                                        modifier = Modifier.size(30.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+
+
 
                                         Row(
                                             modifier = Modifier
@@ -333,7 +409,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                             Button(
                                                 onClick = { resetValues() },
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xA6FF5959)
+                                                    containerColor = Color(0xFFB74A5A)
                                                 ),
                                                 enabled = updateState !is UpdateState.Updating,
                                                 modifier = Modifier
@@ -344,6 +420,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     "Cancelar",
                                                     color = Color.White,
                                                     fontFamily = defaultFont,
+                                                    fontWeight = FontWeight.Bold,
                                                     fontSize = 18.sp
                                                 )
                                             }
@@ -353,7 +430,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                 enabled = hasChanges && allFieldsValid && updateState !is UpdateState.Updating,
                                                 colors = ButtonDefaults.buttonColors(
                                                     containerColor = Color(0xFF439B3E),
-                                                    disabledContainerColor = Color(0x66317734)
+                                                    disabledContainerColor = Color(0x66545454)
                                                 ),
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -363,6 +440,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     "Guardar",
                                                     color = Color.White,
                                                     fontFamily = defaultFont,
+                                                    fontWeight = FontWeight.Bold,
                                                     fontSize = 18.sp
                                                 )
                                             }
@@ -569,7 +647,7 @@ fun EditInfoField(
                     fontFamily = fontFamily,
                     color = Color.White
                 ),
-                enabled = if (label == "Email") false else true,
+                enabled = label != "Email",
                 trailingIcon = {
                     if (label == "Email")
                         Icon(
