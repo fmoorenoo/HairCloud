@@ -197,9 +197,9 @@ fun LoginScreen(
                     when (loginState) {
                         is LoginState.Success -> {
                             val role = (loginState as LoginState.Success).response.rol
-                            val userData = (loginState as LoginState.Success).response
+                            val userId = (loginState as LoginState.Success).response.usuarioid
                             authViewModel.resetLoginState()
-                            navController.navigate(if (role == "cliente") "client_home/$userData" else "barber_home/$userData") {
+                            navController.navigate(if (role == "cliente") "client_home/$userId" else "barber_home/$userId") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
