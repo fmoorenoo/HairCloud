@@ -207,16 +207,17 @@ def verify_code():
     )
     record = cursor.fetchone()
 
-    cursor.close()
-    connection.close()
-
     if not record:
+        cursor.close()
+        connection.close()
         return jsonify({"error": "Código no encontrado"}), 404
 
     codigo_correcto, expiracion = record
 
     # Verificar si el código ha expirado
     if datetime.now() > expiracion:
+        cursor.close()
+        connection.close()
         return jsonify({"error": "El código ha expirado"}), 400
 
     # Verificar si el código es correcto
@@ -224,8 +225,13 @@ def verify_code():
         if purpose == "email_verification":
             # Eliminar el código usado
             cursor.execute("DELETE FROM codigos_verificacion WHERE email = %s AND tipo = 'email_verification'", (email,))
+            connection.commit()
+        cursor.close()
+        connection.close()
         return jsonify({"message": "Código verificado correctamente"}), 200
     else:
+        cursor.close()
+        connection.close()
         return jsonify({"error": "Código incorrecto"}), 400
 
 
