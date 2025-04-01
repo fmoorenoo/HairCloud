@@ -28,4 +28,17 @@ object CredentialsValidator {
 
         return isCorrectLength && hasOnlyAllowedChars && hasNoSpaces
     }
+
+    /* Requisitos del número de teléfono:
+     - Solo puede contener dígitos
+     - Mínimo 9 caracteres y máximo 15
+     - No puede contener espacios
+     - Puede estar vacío
+    */
+    fun isPhoneValid(phone: String): Boolean {
+        if (phone == "") return true
+        val onlyDigits = phone.all { it.isDigit() }
+        val correctLength = phone.length in 9..15
+        return onlyDigits && correctLength
+    }
 }
