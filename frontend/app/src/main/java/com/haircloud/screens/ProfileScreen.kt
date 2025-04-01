@@ -352,8 +352,8 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                 onClick = { saveChanges() },
                                                 enabled = hasChanges && allFieldsValid && updateState !is UpdateState.Updating,
                                                 colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xA64CAF50),
-                                                    disabledContainerColor = Color(0x664CAF50)
+                                                    containerColor = Color(0xFF439B3E),
+                                                    disabledContainerColor = Color(0x66317734)
                                                 ),
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -569,12 +569,22 @@ fun EditInfoField(
                     fontFamily = fontFamily,
                     color = Color.White
                 ),
+                enabled = if (label == "Email") false else true,
+                trailingIcon = {
+                    if (label == "Email")
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Bloqueado",
+                            tint = Color(0xFF494949)
+                        ) else null
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color(0xFFD9D9D9),
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    cursorColor = Color.White
+                    cursorColor = Color.White,
+                    disabledBorderColor = Color(0xFFD9D9D9)
                 ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
