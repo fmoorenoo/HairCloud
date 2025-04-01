@@ -2,31 +2,16 @@ package com.haircloud.screens.client
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,24 +32,16 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.utils.CustomSnackbarHost
-import com.haircloud.utils.SnackbarType
-import com.haircloud.utils.showTypedSnackbar
 
 @Composable
-fun ClientHomeScreen(navController: NavController) {
+fun ClientHomeScreen(navController: NavController, userId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var searchQuery by remember { mutableStateOf("") }
 
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
-    val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
+    // val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
-    LaunchedEffect(key1 = true) {
-        snackbarHostState.showTypedSnackbar(
-            message = "Inicio de sesión exitoso",
-            type = SnackbarType.SUCCESS
-        )
-    }
 
     Box(
         modifier = Modifier
@@ -97,7 +74,10 @@ fun ClientHomeScreen(navController: NavController) {
                     contentDescription = "Profile",
                     modifier = Modifier
                         .height(55.dp)
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .clickable(onClick = {
+                            navController.navigate("profile/$userId")
+                        }),
                     contentScale = ContentScale.Inside
                 )
             }
