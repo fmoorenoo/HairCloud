@@ -81,7 +81,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
                     contentDescription = "Logo",
-                    modifier = Modifier.height(90.dp).wrapContentHeight(),
+                    modifier = Modifier.height(70.dp).wrapContentHeight(),
                     contentScale = ContentScale.Inside
                 )
             }
