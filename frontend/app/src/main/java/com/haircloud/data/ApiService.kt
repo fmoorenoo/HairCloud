@@ -36,4 +36,6 @@ interface ApiService {
         @Body updateData: Map<String, String?>
     ): Call<ApiResponse>
 
+    @GET("/api/barbershops/get_barbershops")
+    fun getBarbershops(): Call<List<BarbershopResponse>>
 }
