@@ -299,7 +299,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     text = "Ver requisitos",
                                                     style = TextStyle(
                                                         fontFamily = defaultFont,
-                                                        color = Color(0xFFBD727D),
+                                                        color = Color(0xFF9A3939),
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 20.sp
                                                     ),
@@ -316,7 +316,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     Icon(
                                                         imageVector = Icons.Filled.ChecklistRtl,
                                                         contentDescription = "Información",
-                                                        tint = Color(0xFFBD727D),
+                                                        tint = Color(0xFF9A3939),
                                                         modifier = Modifier.size(30.dp)
                                                     )
                                                 }
@@ -374,7 +374,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     text = "Ver requisitos",
                                                     style = TextStyle(
                                                         fontFamily = defaultFont,
-                                                        color = Color(0xFFBD727D),
+                                                        color = Color(0xFF9A3939),
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 20.sp
                                                     ),
@@ -391,7 +391,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                                     Icon(
                                                         imageVector = Icons.Filled.ChecklistRtl,
                                                         contentDescription = "Información",
-                                                        tint = Color(0xFFBD727D),
+                                                        tint = Color(0xFF9A3939),
                                                         modifier = Modifier.size(30.dp)
                                                     )
                                                 }
