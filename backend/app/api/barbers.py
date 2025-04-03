@@ -39,6 +39,43 @@ def get_barbershops(clienteid):
     return jsonify(result), 200
 
 
+@barbershops_bp.route('/get_favorite_barbershops/<int:clienteid>', methods=['GET'])
+def get_favorite_barbershops(clienteid):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT 
+            l.*,
+            ROUND(AVG(r.calificacion)::numeric, 1) AS rating,
+            COUNT(r.resenaid) AS cantidad_resenas,
+            true AS es_favorito
+        FROM favoritos_clientes fc
+        JOIN local l ON fc.localid = l.localid
+        LEFT JOIN resenas r ON l.localid = r.localid AND r.peluqueroid IS NULL
+        WHERE fc.clienteid = %s
+        GROUP BY l.localid
+        ORDER BY l.localid
+    """, (clienteid,))
+
+    favoritos = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+    cursor.close()
+    connection.close()
+
+    result = []
+    for b in favoritos:
+        item = {}
+        for i, value in enumerate(b):
+            if isinstance(value, (time, datetime, date)):
+                item[column_names[i]] = value.isoformat()
+            else:
+                item[column_names[i]] = value
+        result.append(item)
+
+    return jsonify(result), 200
+
+
 @barbershops_bp.route('/add_favorite', methods=['POST'])
 def add_favorite():
     data = request.get_json()
