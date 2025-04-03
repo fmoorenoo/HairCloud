@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Snackbar
@@ -35,7 +36,8 @@ import com.haircloud.R
 enum class SnackbarType {
     ERROR,
     SUCCESS,
-    WARNING
+    WARNING,
+    INFO
 }
 
 // Datos del mensaje
@@ -55,6 +57,7 @@ fun CustomSnackbar(
         SnackbarType.ERROR -> Pair(Color(0xFFB74A5A), Icons.Default.Cancel)
         SnackbarType.SUCCESS -> Pair(Color(0xFF439B3E), Icons.Default.CheckCircle)
         SnackbarType.WARNING -> Pair(Color(0xFFE6B83D), Icons.Default.Warning)
+        SnackbarType.INFO -> Pair(Color(0xFF3D8EE6), Icons.Default.Info)
     }
     Snackbar(
         containerColor = backgroundColor,
