@@ -1,24 +1,25 @@
-from flask import jsonify
+from flask import jsonify, request
 from app.api import barbershops_bp
 from app.db.connection import get_connection
 from datetime import time, date, datetime
 
-@barbershops_bp.route('/get_barbershops', methods=['GET'])
-def get_barbershops():
+@barbershops_bp.route('/get_barbershops/<int:clienteid>', methods=['GET'])
+def get_barbershops(clienteid):
     connection = get_connection()
     cursor = connection.cursor()
 
-    # Traemos barberías con calificación promedio y número de reseñas hechas al local
     cursor.execute("""
         SELECT 
             l.*,
             ROUND(AVG(r.calificacion)::numeric, 1) AS rating,
-            COUNT(r.resenaid) AS cantidad_resenas
+            COUNT(r.resenaid) AS cantidad_resenas,
+            CASE WHEN fc.localid IS NOT NULL THEN true ELSE false END AS es_favorito
         FROM local l
         LEFT JOIN resenas r ON l.localid = r.localid AND r.peluqueroid IS NULL
-        GROUP BY l.localid
+        LEFT JOIN favoritos_clientes fc ON fc.localid = l.localid AND fc.clienteid = %s
+        GROUP BY l.localid, fc.localid
         ORDER BY l.localid
-    """)
+    """, (clienteid,))
 
     barberias = cursor.fetchall()
     column_names = [desc[0] for desc in cursor.description]
@@ -29,11 +30,7 @@ def get_barbershops():
     for b in barberias:
         item = {}
         for i, value in enumerate(b):
-            if isinstance(value, time):
-                item[column_names[i]] = value.strftime('%H:%M:%S')
-            elif isinstance(value, datetime):
-                item[column_names[i]] = value.isoformat()
-            elif isinstance(value, date):
+            if isinstance(value, (time, datetime, date)):
                 item[column_names[i]] = value.isoformat()
             else:
                 item[column_names[i]] = value
@@ -42,4 +39,42 @@ def get_barbershops():
     return jsonify(result), 200
 
 
+@barbershops_bp.route('/add_favorite', methods=['POST'])
+def add_favorite():
+    data = request.get_json()
+    clienteid = data['clienteid']
+    localid = data['localid']
 
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        INSERT INTO favoritos_clientes (clienteid, localid, fecha_agregado)
+        VALUES (%s, %s, NOW())
+        ON CONFLICT DO NOTHING
+    """, (clienteid, localid))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Favorito agregado"}), 201
+
+
+@barbershops_bp.route('/remove_favorite', methods=['DELETE'])
+def remove_favorite():
+    data = request.get_json()
+    clienteid = data['clienteid']
+    localid = data['localid']
+
+    connection = get_connection()
+    cursor = connection.cursor()
+    cursor.execute("""
+        DELETE FROM favoritos_clientes
+        WHERE clienteid = %s AND localid = %s
+    """, (clienteid, localid))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Favorito eliminado"}), 200
