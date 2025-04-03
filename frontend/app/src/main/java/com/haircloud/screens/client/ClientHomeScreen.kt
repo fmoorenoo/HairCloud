@@ -9,15 +9,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.StarHalf
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,119 +38,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarbershopState
 import com.haircloud.viewmodel.BarbershopViewModel
-import kotlin.math.roundToInt
+import com.haircloud.viewmodel.ClientState
+import com.haircloud.viewmodel.ClientViewModel
 
-@Composable
-fun BarbershopCard(
-    name: String,
-    address: String,
-    rating: Float,
-    totalRating: Int,
-    modifier: Modifier = Modifier,
-    onFavoriteClick: () -> Unit = {},
-    isFavorite: Boolean = false
-) {
-    var isMarkedFavorite by remember { mutableStateOf(isFavorite) }
-
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 9.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEAEAEA)),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .height(100.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color(0xFFCCCCCC), RoundedCornerShape(10.dp))
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.scissors_icon),
-                    contentDescription = "Barbería",
-                    tint = Color(0xFF282828),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(30.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)
-            ) {
-                Text(
-                    text = name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color(0xFF1C1C1C)
-                )
-                Text(
-                    text = address,
-                    fontSize = 16.sp,
-                    color = Color(0xFF4D4D4D)
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    val roundedRating = (rating * 2).roundToInt() / 2f
-
-                    repeat(5) { index ->
-                        val starFill = when {
-                            index < roundedRating.toInt() -> Icons.Filled.Star
-                            index == roundedRating.toInt() && roundedRating % 1 == 0.5f -> Icons.AutoMirrored.Filled.StarHalf
-                            else -> Icons.Filled.StarBorder
-                        }
-                        Icon(
-                            imageVector = starFill,
-                            contentDescription = "Star $index",
-                            tint = Color(0xFF282828),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Text(
-                        text = "($totalRating)",
-                        fontSize = 16.sp,
-                        color = Color(0xFF4D4D4D),
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
-            }
-
-            // Botón de favorito
-            IconButton(
-                onClick = {
-                    isMarkedFavorite = !isMarkedFavorite
-                    onFavoriteClick()
-                },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color(0x22000000), CircleShape)
-            ) {
-                Icon(
-                    imageVector = if (isMarkedFavorite) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                    contentDescription = "Favorito",
-                    tint = Color(0xFF282828),
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-    }
-}
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -164,15 +53,34 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
     var searchQuery by remember { mutableStateOf("") }
     val barbershopViewModel = remember { BarbershopViewModel() }
     val barbershopState by barbershopViewModel.barbershopState.collectAsState()
+    val clientViewModel = remember { ClientViewModel() }
+    val clientState by clientViewModel.clientState.collectAsState()
+    var favoriteButtonsEnabled by remember { mutableStateOf(true) }
 
-    // Recordar favoritos
-    var favorites by remember { mutableStateOf(setOf<Int>()) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
 
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
-    LaunchedEffect(Unit) {
-        barbershopViewModel.getBarbershops()
+    LaunchedEffect(userId) {
+        userId?.let {
+            clientViewModel.getClient(it)
+        }
+    }
+
+    LaunchedEffect(clientState) {
+        if (clientState is ClientState.Success) {
+            val client = (clientState as ClientState.Success).client
+            barbershopViewModel.getBarbershops(client.clienteid)
+        }
+    }
+
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+            snackbarHostState.showTypedSnackbar(it, type = snackbarType)
+            snackbarMessage = null
+        }
     }
 
     Scaffold(
@@ -302,6 +210,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
+                        .padding(bottom = 130.dp)
                 ) {
                     when (barbershopState) {
                         is BarbershopState.Loading -> {
@@ -313,31 +222,61 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         }
                         is BarbershopState.Success -> {
                             val barberias = (barbershopState as BarbershopState.Success).barbershops
+                            val client = (clientState as? ClientState.Success)?.client
 
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 10.dp),
-                            ) {
-                                items(barberias.size) { index ->
-                                    val barbershop = barberias[index]
-                                    val isFavorite = favorites.contains(barbershop.localid)
+                            Box {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                                ) {
+                                    items(barberias.size) { index ->
+                                        val barbershop = barberias[index]
+                                        val isFavorite = barbershop.es_favorito
 
-                                    BarbershopCard(
-                                        name = barbershop.nombre,
-                                        address = barbershop.direccion,
-                                        rating = barbershop.rating ?: 0f,
-                                        totalRating = barbershop.cantidad_resenas,
-                                        isFavorite = isFavorite,
-                                        onFavoriteClick = {
-                                            favorites = if (isFavorite) {
-                                                favorites - barbershop.localid
-                                            } else {
-                                                favorites + barbershop.localid
-                                            }
-                                        }
-                                    )
+                                        BarbershopCard(
+                                            name = barbershop.nombre,
+                                            address = barbershop.direccion,
+                                            rating = barbershop.rating ?: 0f,
+                                            totalRating = barbershop.cantidad_resenas,
+                                            isFavorite = isFavorite,
+                                            onFavoriteClick = {
+                                                client?.let {
+                                                    favoriteButtonsEnabled = false
+
+                                                    val action = if (isFavorite) {
+                                                        barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid)
+                                                        "eliminada de favoritos"
+                                                    } else {
+                                                        barbershopViewModel.addFavorite(it.clienteid, barbershop.localid)
+                                                        "añadida a favoritos"
+                                                    }
+
+                                                    snackbarMessage = "Barbería \"${barbershop.nombre}\" $action"
+                                                    snackbarType = SnackbarType.SUCCESS
+
+                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                                        favoriteButtonsEnabled = true
+                                                    }, 4000)
+                                                }
+                                            },
+                                            favoriteButtonEnabled = favoriteButtonsEnabled
+                                        )
+                                    }
                                 }
+
+                                // FADE OUT EFFECT
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(90.dp)
+                                        .align(Alignment.BottomCenter)
+                                        .background(
+                                            brush = Brush.verticalGradient(
+                                                colors = listOf(Color.Transparent, Color(0xFF5B6269))
+                                            )
+                                        )
+                                )
                             }
                         }
                         is BarbershopState.Error -> {
