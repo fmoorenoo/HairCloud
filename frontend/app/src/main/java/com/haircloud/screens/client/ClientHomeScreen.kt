@@ -221,8 +221,16 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             )
                         }
                         is BarbershopState.Success -> {
-                            val barberias = (barbershopState as BarbershopState.Success).barbershops
+                            val allBarberias = (barbershopState as BarbershopState.Success).barbershops
                             val client = (clientState as? ClientState.Success)?.client
+
+                            val filteredBarberias = if (searchQuery.isEmpty()) {
+                                allBarberias
+                            } else {
+                                allBarberias.filter { barbershop ->
+                                    barbershop.nombre.contains(searchQuery, ignoreCase = true)
+                                }
+                            }
 
                             Box {
                                 LazyColumn(
@@ -230,8 +238,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                         .fillMaxSize()
                                         .padding(horizontal = 8.dp, vertical = 10.dp),
                                 ) {
-                                    items(barberias.size) { index ->
-                                        val barbershop = barberias[index]
+                                    items(filteredBarberias.size) { index ->
+                                        val barbershop = filteredBarberias[index]
                                         val isFavorite = barbershop.es_favorito
 
                                         BarbershopCard(
@@ -265,7 +273,6 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                     }
                                 }
 
-                                // FADE OUT EFFECT
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
