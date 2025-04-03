@@ -7,6 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import com.haircloud.data.model.*
+import retrofit2.http.HTTP
 
 
 data class ApiResponse(val message: String, val username: String?)
@@ -36,6 +37,13 @@ interface ApiService {
         @Body updateData: Map<String, String?>
     ): Call<ApiResponse>
 
-    @GET("/api/barbershops/get_barbershops")
-    fun getBarbershops(): Call<List<BarbershopResponse>>
+    @GET("/api/barbershops/get_barbershops/{client_id}")
+    fun getBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+
+    @POST("/api/barbershops/add_favorite")
+    fun addFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
+
+    @HTTP(method = "DELETE", path = "/api/barbershops/remove_favorite", hasBody = true)
+    fun removeFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
+
 }

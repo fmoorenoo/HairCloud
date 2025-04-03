@@ -11,5 +11,6 @@ data class BarbershopResponse(
     val puntos_habilitados: Boolean,
     val localidad: String,
     val rating: Float?,
-    val cantidad_resenas: Int
+    val cantidad_resenas: Int,
+    val es_favorito: Boolean
 )

@@ -10,10 +10,10 @@ import retrofit2.HttpException
 class BarbershopRepository {
     private val api = ApiClient.instance
 
-    suspend fun getBarbershops(): Result<List<BarbershopResponse>> {
+    suspend fun getBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
         return try {
             val response = withContext(Dispatchers.IO) {
-                api.getBarbershops().execute()
+                api.getBarbershops(clienteId).execute()
             }
 
             if (response.isSuccessful) {
@@ -37,6 +37,38 @@ class BarbershopRepository {
             Result.failure(Exception(errorMessage))
         } catch (_: Exception) {
             Result.failure(Exception("Error en la conexión"))
+        }
+    }
+
+    suspend fun addFavorite(clienteId: Int, localId: Int): Result<String> {
+        return try {
+            val body = mapOf("clienteid" to clienteId, "localid" to localId)
+            val response = withContext(Dispatchers.IO) {
+                api.addFavorite(body).execute()
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Favorito agregado")
+            } else {
+                Result.failure(Exception("Error al agregar favorito"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error al conectar con el servidor"))
+        }
+    }
+
+    suspend fun removeFavorite(clienteId: Int, localId: Int): Result<String> {
+        return try {
+            val body = mapOf("clienteid" to clienteId, "localid" to localId)
+            val response = withContext(Dispatchers.IO) {
+                api.removeFavorite(body).execute()
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Favorito eliminado")
+            } else {
+                Result.failure(Exception("Error al eliminar favorito"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error al conectar con el servidor"))
         }
     }
 }

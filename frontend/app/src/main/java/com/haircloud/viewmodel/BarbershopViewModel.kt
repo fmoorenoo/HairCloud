@@ -14,11 +14,11 @@ class BarbershopViewModel : ViewModel() {
     private val _barbershopState = MutableStateFlow<BarbershopState>(BarbershopState.Idle)
     val barbershopState: StateFlow<BarbershopState> = _barbershopState
 
-    fun getBarbershops() {
+    fun getBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.getBarbershops()
+                val result = repository.getBarbershops(clienteId)
                 if (result.isSuccess) {
                     _barbershopState.value = BarbershopState.Success(result.getOrThrow())
                 } else {
@@ -29,6 +29,21 @@ class BarbershopViewModel : ViewModel() {
             }
         }
     }
+
+    fun addFavorite(clienteId: Int, localId: Int) {
+        viewModelScope.launch {
+            repository.addFavorite(clienteId, localId)
+            getBarbershops(clienteId)
+        }
+    }
+
+    fun removeFavorite(clienteId: Int, localId: Int) {
+        viewModelScope.launch {
+            repository.removeFavorite(clienteId, localId)
+            getBarbershops(clienteId)
+        }
+    }
+
 
     fun resetBarbershopState() {
         _barbershopState.value = BarbershopState.Idle
