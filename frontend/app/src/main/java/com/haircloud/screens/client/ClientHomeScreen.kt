@@ -233,43 +233,78 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             }
 
                             Box {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 8.dp, vertical = 10.dp),
-                                ) {
-                                    items(filteredBarberias.size) { index ->
-                                        val barbershop = filteredBarberias[index]
-                                        val isFavorite = barbershop.es_favorito
-
-                                        BarbershopCard(
-                                            name = barbershop.nombre,
-                                            address = barbershop.direccion,
-                                            rating = barbershop.rating ?: 0f,
-                                            totalRating = barbershop.cantidad_resenas,
-                                            isFavorite = isFavorite,
-                                            onFavoriteClick = {
-                                                client?.let {
-                                                    favoriteButtonsEnabled = false
-
-                                                    val action = if (isFavorite) {
-                                                        barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid)
-                                                        "eliminada de favoritos"
-                                                    } else {
-                                                        barbershopViewModel.addFavorite(it.clienteid, barbershop.localid)
-                                                        "añadida a favoritos"
-                                                    }
-
-                                                    snackbarMessage = "Barbería \"${barbershop.nombre}\" $action"
-                                                    snackbarType = SnackbarType.SUCCESS
-
-                                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                                        favoriteButtonsEnabled = true
-                                                    }, 4000)
-                                                }
-                                            },
-                                            favoriteButtonEnabled = favoriteButtonsEnabled
+                                if (filteredBarberias.isEmpty()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "No results",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(60.dp)
                                         )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Text(
+                                            text = "No se encontraron barberías",
+                                            color = Color.White,
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 24.sp,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        if (searchQuery.isNotEmpty()) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "Intenta con otro nombre",
+                                                color = Color(0xFFD9D9D9),
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 20.sp,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                                    ) {
+                                        items(filteredBarberias.size) { index ->
+                                            val barbershop = filteredBarberias[index]
+                                            val isFavorite = barbershop.es_favorito
+
+                                            BarbershopCard(
+                                                name = barbershop.nombre,
+                                                address = barbershop.direccion,
+                                                rating = barbershop.rating ?: 0f,
+                                                totalRating = barbershop.cantidad_resenas,
+                                                isFavorite = isFavorite,
+                                                onFavoriteClick = {
+                                                    client?.let {
+                                                        favoriteButtonsEnabled = false
+
+                                                        val action = if (isFavorite) {
+                                                            barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid)
+                                                            "eliminada de favoritos"
+                                                        } else {
+                                                            barbershopViewModel.addFavorite(it.clienteid, barbershop.localid)
+                                                            "añadida a favoritos"
+                                                        }
+
+                                                        snackbarMessage = "Barbería \"${barbershop.nombre}\" $action"
+                                                        snackbarType = SnackbarType.SUCCESS
+
+                                                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                                            favoriteButtonsEnabled = true
+                                                        }, 4000)
+                                                    }
+                                                },
+                                                favoriteButtonEnabled = favoriteButtonsEnabled
+                                            )
+                                        }
                                     }
                                 }
 
