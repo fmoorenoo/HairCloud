@@ -3,6 +3,7 @@ package com.haircloud.screens.client
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -45,17 +46,25 @@ import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.ClientState
 import com.haircloud.viewmodel.ClientViewModel
 
+enum class SortType {
+    NONE,
+    ALPHABETICAL,
+    RATING
+}
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ClientHomeScreen(navController: NavController, userId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
-    var searchQuery by remember { mutableStateOf("") }
     val barbershopViewModel = remember { BarbershopViewModel() }
     val barbershopState by barbershopViewModel.barbershopState.collectAsState()
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
     var favoriteButtonsEnabled by remember { mutableStateOf(true) }
+
+    var searchQuery by remember { mutableStateOf("") }
+    var sortType by remember { mutableStateOf(SortType.NONE) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
@@ -189,7 +198,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                     )
 
                     IconButton(
-                        onClick = {},
+                        onClick = { showSortMenu = true },
                         modifier = Modifier
                             .size(67.dp)
                             .background(
@@ -202,6 +211,95 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             contentDescription = "Filter",
                             tint = Color(0xFF3B3B3B),
                             modifier = Modifier.size(36.dp)
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                    .fillMaxWidth()
+                ) {
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .border(2.dp, Color(0xFF3B3B3B))
+                            .background(Color(0xFFD9D9D9))
+                            .width(150.dp)
+                    ) {
+                        Text(
+                            text = "Ordenar por:",
+                            color = Color.Black,
+                            style = TextStyle(fontFamily = defaultFont, fontWeight = FontWeight.Bold),
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                        HorizontalDivider(color = Color(0xFF3B3B3B), thickness = 2.dp)
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Sin filtro",
+                                    color = Color.Black,
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 20.sp
+                                )
+                            },
+                            onClick = {
+                                sortType = SortType.NONE
+                                showSortMenu = false
+                                snackbarMessage = "Mostrando barberías sin filtrar"
+                                snackbarType = SnackbarType.INFO
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                if (sortType == SortType.NONE) Color(0xFFB0BEC5) else Color.Transparent,
+                                shape = RoundedCornerShape(5.dp)
+                                )
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "A-Z",
+                                    color = Color.Black,
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 20.sp
+                                )
+                            },
+                            onClick = {
+                                sortType = SortType.ALPHABETICAL
+                                showSortMenu = false
+                                snackbarMessage = "Barberías ordenadas de A-Z"
+                                snackbarType = SnackbarType.INFO
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (sortType == SortType.ALPHABETICAL) Color(0xFFB0BEC5) else Color.Transparent,
+                                    shape = RoundedCornerShape(5.dp)
+                                )
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Calificación",
+                                    color = Color.Black,
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 20.sp
+                                )
+                            },
+                            onClick = {
+                                sortType = SortType.RATING
+                                showSortMenu = false
+                                snackbarMessage = "Barberías ordenadas por calificación"
+                                snackbarType = SnackbarType.INFO
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (sortType == SortType.RATING) Color(0xFFB0BEC5) else Color.Transparent,
+                                    shape = RoundedCornerShape(5.dp)
+                                )
                         )
                     }
                 }
@@ -232,8 +330,14 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                 }
                             }
 
+                            val sortedBarberias = when (sortType) {
+                                SortType.NONE -> filteredBarberias
+                                SortType.ALPHABETICAL -> filteredBarberias.sortedBy { it.nombre }
+                                SortType.RATING -> filteredBarberias.sortedByDescending { it.rating ?: 0f }
+                            }
+
                             Box {
-                                if (filteredBarberias.isEmpty()) {
+                                if (sortedBarberias.isEmpty()) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -272,8 +376,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                             .fillMaxSize()
                                             .padding(horizontal = 8.dp, vertical = 10.dp),
                                     ) {
-                                        items(filteredBarberias.size) { index ->
-                                            val barbershop = filteredBarberias[index]
+                                        items(sortedBarberias.size) { index ->
+                                            val barbershop = sortedBarberias[index]
                                             val isFavorite = barbershop.es_favorito
 
                                             BarbershopCard(
@@ -295,7 +399,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                         }
 
                                                         snackbarMessage = "Barbería \"${barbershop.nombre}\" $action"
-                                                        snackbarType = SnackbarType.SUCCESS
+                                                        snackbarType = SnackbarType.INFO
 
                                                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                                                             favoriteButtonsEnabled = true
