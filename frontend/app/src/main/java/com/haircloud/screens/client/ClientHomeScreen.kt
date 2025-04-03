@@ -315,7 +315,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             CircularProgressIndicator(
                                 modifier = Modifier
                                     .padding(24.dp)
-                                    .align(Alignment.Center)
+                                    .align(Alignment.Center),
+                                color = Color(0xFFEAEAEA)
                             )
                         }
                         is BarbershopState.Success -> {
@@ -385,6 +386,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                 address = barbershop.direccion,
                                                 rating = barbershop.rating ?: 0f,
                                                 totalRating = barbershop.cantidad_resenas,
+                                                pointsEnabled = barbershop.puntos_habilitados,
                                                 isFavorite = isFavorite,
                                                 onFavoriteClick = {
                                                     client?.let {
@@ -398,7 +400,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                             "añadida a favoritos"
                                                         }
 
-                                                        snackbarMessage = "Barbería \"${barbershop.nombre}\" $action"
+                                                        snackbarMessage = "\"${barbershop.nombre}\" $action"
                                                         snackbarType = SnackbarType.INFO
 
                                                         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
@@ -452,6 +454,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         .size(75.dp)
                         .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
                         .clickable {
+                            navController.navigate("client_favs/$userId")
                         }
                 ) {
                     Icon(
