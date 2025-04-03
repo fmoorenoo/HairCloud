@@ -40,6 +40,9 @@ interface ApiService {
     @GET("/api/barbershops/get_barbershops/{client_id}")
     fun getBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
 
+    @GET("/api/barbershops/get_favorite_barbershops/{client_id}")
+    fun getFavoriteBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+
     @POST("/api/barbershops/add_favorite")
     fun addFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
 

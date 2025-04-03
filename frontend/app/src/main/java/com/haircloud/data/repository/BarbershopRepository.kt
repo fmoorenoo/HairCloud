@@ -40,6 +40,36 @@ class BarbershopRepository {
         }
     }
 
+    suspend fun getFavoriteBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getFavoriteBarbershops(clienteId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMessage = try {
+                    val errorJson = response.errorBody()?.string() ?: "{}"
+                    JSONObject(errorJson).getString("error")
+                } catch (_: Exception) {
+                    "Error al obtener favoritos"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: HttpException) {
+            val errorMessage = try {
+                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
+                JSONObject(errorJson).getString("error")
+            } catch (_: Exception) {
+                "Error HTTP"
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (_: Exception) {
+            Result.failure(Exception("Error en la conexión"))
+        }
+    }
+
     suspend fun addFavorite(clienteId: Int, localId: Int): Result<String> {
         return try {
             val body = mapOf("clienteid" to clienteId, "localid" to localId)

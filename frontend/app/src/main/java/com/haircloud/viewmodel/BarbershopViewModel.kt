@@ -30,20 +30,44 @@ class BarbershopViewModel : ViewModel() {
         }
     }
 
-    fun addFavorite(clienteId: Int, localId: Int) {
+    fun getFavoriteBarbershops(clienteId: Int) {
+        _barbershopState.value = BarbershopState.Loading
+        viewModelScope.launch {
+            try {
+                val result = repository.getFavoriteBarbershops(clienteId)
+                if (result.isSuccess) {
+                    _barbershopState.value = BarbershopState.Success(result.getOrThrow())
+                } else {
+                    _barbershopState.value = BarbershopState.Error(result.exceptionOrNull()?.message ?: "No se pudieron obtener las barberías favoritas")
+                }
+            } catch (e: Exception) {
+                _barbershopState.value = BarbershopState.Error(e.message ?: "Error desconocido")
+            }
+        }
+    }
+
+
+    fun addFavorite(clienteId: Int, localId: Int, onlyFavorites: Boolean = false) {
         viewModelScope.launch {
             repository.addFavorite(clienteId, localId)
-            getBarbershops(clienteId)
+            if (onlyFavorites) {
+                getFavoriteBarbershops(clienteId)
+            } else {
+                getBarbershops(clienteId)
+            }
         }
     }
 
-    fun removeFavorite(clienteId: Int, localId: Int) {
+    fun removeFavorite(clienteId: Int, localId: Int, onlyFavorites: Boolean = false) {
         viewModelScope.launch {
             repository.removeFavorite(clienteId, localId)
-            getBarbershops(clienteId)
+            if (onlyFavorites) {
+                getFavoriteBarbershops(clienteId)
+            } else {
+                getBarbershops(clienteId)
+            }
         }
     }
-
 
     fun resetBarbershopState() {
         _barbershopState.value = BarbershopState.Idle
