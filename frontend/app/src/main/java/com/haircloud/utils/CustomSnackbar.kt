@@ -132,7 +132,7 @@ private fun parseSnackbarMessage(encodedMessage: String): SnackbarMessage {
         val type = SnackbarType.valueOf(parts[0])
         val message = parts[1]
         SnackbarMessage(message, type)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         SnackbarMessage(encodedMessage, SnackbarType.ERROR)
     }
 }

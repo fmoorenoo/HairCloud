@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.haircloud.screens.*
 import com.haircloud.screens.barber.BarberHomeScreen
+import com.haircloud.screens.client.ClientFavsScreen
 import com.haircloud.screens.client.ClientHomeScreen
 import com.haircloud.viewmodel.AuthViewModel
 
@@ -42,6 +43,12 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         composable("client_home/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             ClientHomeScreen(navController, userId)
+        }
+
+        // Favs cliente
+        composable("client_favs/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            ClientFavsScreen(navController, userId)
         }
 
         // Peluqueros Home
