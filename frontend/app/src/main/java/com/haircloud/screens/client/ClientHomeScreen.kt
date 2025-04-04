@@ -49,7 +49,8 @@ import com.haircloud.viewmodel.ClientViewModel
 enum class SortType {
     NONE,
     ALPHABETICAL,
-    RATING
+    RATING,
+    POINTS_ENABLED
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -216,7 +217,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                 }
                 Column(
                     modifier = Modifier
-                    .fillMaxWidth()
+                        .fillMaxWidth()
                 ) {
                     DropdownMenu(
                         expanded = showSortMenu,
@@ -225,7 +226,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             .clip(RoundedCornerShape(10.dp))
                             .border(2.dp, Color(0xFF3B3B3B))
                             .background(Color(0xFFD9D9D9))
-                            .width(150.dp)
+                            .width(200.dp)
                     ) {
                         Text(
                             text = "Ordenar por:",
@@ -253,8 +254,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
-                                if (sortType == SortType.NONE) Color(0xFFB0BEC5) else Color.Transparent,
-                                shape = RoundedCornerShape(5.dp)
+                                    if (sortType == SortType.NONE) Color(0xFFB0BEC5) else Color.Transparent,
+                                    shape = RoundedCornerShape(5.dp)
                                 )
                         )
                         DropdownMenuItem(
@@ -301,6 +302,28 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                     shape = RoundedCornerShape(5.dp)
                                 )
                         )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = "Puntos habilitados",
+                                    color = Color.Black,
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 20.sp
+                                )
+                            },
+                            onClick = {
+                                sortType = SortType.POINTS_ENABLED
+                                showSortMenu = false
+                                snackbarMessage = "Barberías con puntos habilitados primero"
+                                snackbarType = SnackbarType.INFO
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (sortType == SortType.POINTS_ENABLED) Color(0xFFB0BEC5) else Color.Transparent,
+                                    shape = RoundedCornerShape(5.dp)
+                                )
+                        )
                     }
                 }
 
@@ -335,6 +358,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                 SortType.NONE -> filteredBarberias
                                 SortType.ALPHABETICAL -> filteredBarberias.sortedBy { it.nombre }
                                 SortType.RATING -> filteredBarberias.sortedByDescending { it.rating ?: 0f }
+                                SortType.POINTS_ENABLED -> filteredBarberias.sortedByDescending { it.puntos_habilitados }
                             }
 
                             Box {
