@@ -1,6 +1,7 @@
 package com.haircloud.screens.client
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +54,8 @@ fun BarbershopCard(
     pointsEnabled: Boolean,
     onFavoriteClick: () -> Unit = {},
     isFavorite: Boolean = false,
-    favoriteButtonEnabled: Boolean = true
+    favoriteButtonEnabled: Boolean = true,
+    onClick: () -> Unit = {}
 ) {
     var isMarkedFavorite by remember { mutableStateOf(isFavorite) }
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
@@ -66,6 +68,7 @@ fun BarbershopCard(
             .fillMaxWidth()
             .padding(vertical = 10.dp)
             .height(110.dp)
+            .clickable(onClick = onClick)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Row(
@@ -148,8 +151,6 @@ fun BarbershopCard(
                 enabled = favoriteButtonEnabled,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(32.dp)
             ) {
                 Icon(
                     imageVector = if (isMarkedFavorite) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,

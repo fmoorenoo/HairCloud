@@ -82,7 +82,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
     LaunchedEffect(clientState) {
         if (clientState is ClientState.Success) {
             val client = (clientState as ClientState.Success).client
-            barbershopViewModel.getBarbershops(client.clienteid)
+            barbershopViewModel.getAllBarbershops(client.clienteid)
         }
     }
 
@@ -432,7 +432,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                         }, 4000)
                                                     }
                                                 },
-                                                favoriteButtonEnabled = favoriteButtonsEnabled
+                                                favoriteButtonEnabled = favoriteButtonsEnabled,
+                                                onClick = {
+                                                    navController.navigate("client_barber_info/${userId}/${barbershop.localid}")
+                                                }
                                             )
                                         }
                                     }
