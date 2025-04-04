@@ -10,10 +10,10 @@ import retrofit2.HttpException
 class BarbershopRepository {
     private val api = ApiClient.instance
 
-    suspend fun getBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
+    suspend fun getAllBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
         return try {
             val response = withContext(Dispatchers.IO) {
-                api.getBarbershops(clienteId).execute()
+                api.getAllBarbershops(clienteId).execute()
             }
 
             if (response.isSuccessful) {
@@ -24,6 +24,38 @@ class BarbershopRepository {
                     JSONObject(errorJson).getString("error")
                 } catch (_: Exception) {
                     "Error al obtener las barberías"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: HttpException) {
+            val errorMessage = try {
+                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
+                JSONObject(errorJson).getString("error")
+            } catch (_: Exception) {
+                "Error HTTP"
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (_: Exception) {
+            Result.failure(Exception("Error en la conexión"))
+        }
+    }
+
+    suspend fun getBarbershopById(clienteId: Int, localId: Int): Result<BarbershopResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getBarbershopById(clienteId, localId).execute()
+            }
+
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("No se encontró la barbería"))
+            } else {
+                val errorMessage = try {
+                    val errorJson = response.errorBody()?.string() ?: "{}"
+                    JSONObject(errorJson).getString("error")
+                } catch (_: Exception) {
+                    "Error al obtener la barbería"
                 }
                 Result.failure(Exception(errorMessage))
             }

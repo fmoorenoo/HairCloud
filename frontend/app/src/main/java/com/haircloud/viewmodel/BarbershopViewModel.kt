@@ -14,11 +14,15 @@ class BarbershopViewModel : ViewModel() {
     private val _barbershopState = MutableStateFlow<BarbershopState>(BarbershopState.Idle)
     val barbershopState: StateFlow<BarbershopState> = _barbershopState
 
-    fun getBarbershops(clienteId: Int) {
+    private val _singleBarbershopState = MutableStateFlow<SingleBarbershopState>(SingleBarbershopState.Idle)
+    val singleBarbershopState: StateFlow<SingleBarbershopState> = _singleBarbershopState
+
+
+    fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
             try {
-                val result = repository.getBarbershops(clienteId)
+                val result = repository.getAllBarbershops(clienteId)
                 if (result.isSuccess) {
                     _barbershopState.value = BarbershopState.Success(result.getOrThrow())
                 } else {
@@ -26,6 +30,22 @@ class BarbershopViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _barbershopState.value = BarbershopState.Error(e.message ?: "Error desconocido")
+            }
+        }
+    }
+
+    fun getBarbershopById(clienteId: Int, localId: Int) {
+        _singleBarbershopState.value = SingleBarbershopState.Loading
+        viewModelScope.launch {
+            try {
+                val result = repository.getBarbershopById(clienteId, localId)
+                if (result.isSuccess) {
+                    _singleBarbershopState.value = SingleBarbershopState.Success(result.getOrThrow())
+                } else {
+                    _singleBarbershopState.value = SingleBarbershopState.Error(result.exceptionOrNull()?.message ?: "No se pudo obtener la barbería")
+                }
+            } catch (e: Exception) {
+                _singleBarbershopState.value = SingleBarbershopState.Error(e.message ?: "Error desconocido")
             }
         }
     }
@@ -53,7 +73,7 @@ class BarbershopViewModel : ViewModel() {
             if (onlyFavorites) {
                 getFavoriteBarbershops(clienteId)
             } else {
-                getBarbershops(clienteId)
+                getAllBarbershops(clienteId)
             }
         }
     }
@@ -64,7 +84,7 @@ class BarbershopViewModel : ViewModel() {
             if (onlyFavorites) {
                 getFavoriteBarbershops(clienteId)
             } else {
-                getBarbershops(clienteId)
+                getAllBarbershops(clienteId)
             }
         }
     }
@@ -79,6 +99,13 @@ sealed class BarbershopState {
     object Loading : BarbershopState()
     data class Success(val barbershops: List<BarbershopResponse>) : BarbershopState()
     data class Error(val message: String) : BarbershopState()
+}
+
+sealed class SingleBarbershopState {
+    object Idle : SingleBarbershopState()
+    object Loading : SingleBarbershopState()
+    data class Success(val barbershop: BarbershopResponse) : SingleBarbershopState()
+    data class Error(val message: String) : SingleBarbershopState()
 }
 
 

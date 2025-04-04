@@ -37,8 +37,14 @@ interface ApiService {
         @Body updateData: Map<String, String?>
     ): Call<ApiResponse>
 
-    @GET("/api/barbershops/get_barbershops/{client_id}")
-    fun getBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+    @GET("/api/barbershops/get_all_barbershops/{client_id}")
+    fun getAllBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+
+    @GET("/api/barbershops/get_barbershop/{client_id}/{local_id}")
+    fun getBarbershopById(
+        @Path("client_id") clientId: Int,
+        @Path("local_id") localId: Int
+    ): Call<BarbershopResponse>
 
     @GET("/api/barbershops/get_favorite_barbershops/{client_id}")
     fun getFavoriteBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
