@@ -3,8 +3,8 @@ from app.api import barbershops_bp
 from app.db.connection import get_connection
 from datetime import time, date, datetime
 
-@barbershops_bp.route('/get_barbershops/<int:clienteid>', methods=['GET'])
-def get_barbershops(clienteid):
+@barbershops_bp.route('/get_all_barbershops/<int:clienteid>', methods=['GET'])
+def get_all_barbershops(clienteid):
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -37,6 +37,42 @@ def get_barbershops(clienteid):
         result.append(item)
 
     return jsonify(result), 200
+
+
+@barbershops_bp.route('/get_barbershop/<int:clienteid>/<int:localid>', methods=['GET'])
+def get_barbershop(clienteid, localid):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT 
+            l.*,
+            ROUND(AVG(r.calificacion)::numeric, 1) AS rating,
+            COUNT(r.resenaid) AS cantidad_resenas,
+            CASE WHEN fc.localid IS NOT NULL THEN true ELSE false END AS es_favorito
+        FROM local l
+        LEFT JOIN resenas r ON l.localid = r.localid AND r.peluqueroid IS NULL
+        LEFT JOIN favoritos_clientes fc ON fc.localid = l.localid AND fc.clienteid = %s
+        WHERE l.localid = %s
+        GROUP BY l.localid, fc.localid
+    """, (clienteid, localid))
+
+    row = cursor.fetchone()
+    column_names = [desc[0] for desc in cursor.description]
+    cursor.close()
+    connection.close()
+
+    if row is None:
+        return jsonify({"error": "Barbería no encontrada"}), 404
+
+    item = {}
+    for i, value in enumerate(row):
+        if isinstance(value, (time, datetime, date)):
+            item[column_names[i]] = value.isoformat()
+        else:
+            item[column_names[i]] = value
+
+    return jsonify(item), 200
 
 
 @barbershops_bp.route('/get_favorite_barbershops/<int:clienteid>', methods=['GET'])
