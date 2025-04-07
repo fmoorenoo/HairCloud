@@ -55,4 +55,6 @@ interface ApiService {
     @HTTP(method = "DELETE", path = "/api/barbershops/remove_favorite", hasBody = true)
     fun removeFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
 
+    @GET("/api/barbershops/get_services/{local_id}")
+    fun getServicesByLocalId(@Path("local_id") localId: Int): Call<List<ServiceResponse>>
 }

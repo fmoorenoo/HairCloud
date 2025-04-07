@@ -14,3 +14,12 @@ data class BarbershopResponse(
     val cantidad_resenas: Int,
     val es_favorito: Boolean
 )
+
+data class ServiceResponse(
+    val servicioid: Int,
+    val nombre: String,
+    val descripcion: String?,
+    val duracion: Int,
+    val precio: Double,
+    val localid: Int
+)
