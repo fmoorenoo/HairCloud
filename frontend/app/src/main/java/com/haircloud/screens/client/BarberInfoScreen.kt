@@ -1,5 +1,10 @@
 package com.haircloud.screens.client
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,6 +42,10 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Schedule
@@ -57,6 +66,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
     var clienteId by remember { mutableIntStateOf(-1) }
+    var infoSectionExpanded by remember { mutableStateOf(true) }
 
     LaunchedEffect(userId) {
         userId?.let {
@@ -103,19 +113,19 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                     onClick = { navController.popBackStack() },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .size(40.dp)
+                        .size(35.dp)
                 ) {
                     Icon(
                         Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Volver",
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(35.dp)
                     )
                 }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 40.dp)
+                        .padding(horizontal = 50.dp)
                         .align(Alignment.Center)
                 ) {
                     Text(
@@ -152,7 +162,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                         imageVector = if (isFavorite) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                         contentDescription = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos",
                         tint = Color.White,
-                        modifier = Modifier.size(35.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
@@ -162,50 +172,136 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
             when (singleBarbershopState) {
                 is SingleBarbershopState.Success -> {
                     val barbershop = (singleBarbershopState as SingleBarbershopState.Success).barbershop
-                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Column(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF2A2A2A)
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 4.dp
+                        )
                     ) {
-                        InfoRow(
-                            label = "Horario",
-                            value = "${
-                                barbershop.horarioapertura.substring(
-                                    0,
-                                    5
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = String.format(Locale.US, "%.1f", barbershop.rating ?: 0f),
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 42.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
-                            } - ${barbershop.horariocierre.substring(0, 5)}",
-                            icon = Icons.Default.Schedule
-                        )
-                        InfoRow(
-                            label = "Teléfono",
-                            value = barbershop.telefono,
-                            icon = Icons.Default.Phone
-                        )
-                        InfoRow(
-                            label = "Dirección",
-                            value = "${barbershop.direccion}, ${barbershop.localidad}",
-                            icon = Icons.Default.LocationOn
-                        )
-                        ExpandableInfoRow(
-                            label = "Descripción",
-                            value = barbershop.descripcion ?: "Sin descripción",
-                            icon = Icons.Default.ChatBubble
-                        )
-                        InfoRow(
-                            label = "HairCloud Points",
-                            value = if (barbershop.puntos_habilitados) "Habilitado" else "No habilitado",
-                            icon = Icons.Filled.CheckCircle
-                        )
-                        InfoRow(
-                            label = "Valoración",
-                            value = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
-                            icon = Icons.Filled.Star,
-                            rating = barbershop.rating ?: 0f
-                        )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    StarRating(barbershop.rating ?: 0f, "")
+                                    Text(
+                                        text = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp,
+                                        color = Color(0xFFD9D9D9)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { infoSectionExpanded = !infoSectionExpanded },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF181818)
+                        ),
+                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
+                            bottomStart = if (!infoSectionExpanded) 16.dp else 0.dp,
+                            bottomEnd = if (!infoSectionExpanded) 16.dp else 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Información de la barbería",
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                            Icon(
+                                imageVector = if (infoSectionExpanded)
+                                    Icons.Default.KeyboardArrowUp
+                                else
+                                    Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (infoSectionExpanded)
+                                    "Ocultar información"
+                                else
+                                    "Mostrar información",
+                                tint = Color.White
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = infoSectionExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2A2A2A)
+                            ),
+                            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                InfoRow(
+                                    label = "Horario",
+                                    value = "${barbershop.horarioapertura.substring(0, 5)} - ${barbershop.horariocierre.substring(0, 5)}",
+                                    icon = Icons.Default.Schedule
+                                )
+                                InfoRow(
+                                    label = "Teléfono",
+                                    value = barbershop.telefono,
+                                    icon = Icons.Default.Phone
+                                )
+                                InfoRow(
+                                    label = "Dirección",
+                                    value = "${barbershop.direccion}, ${barbershop.localidad}",
+                                    icon = Icons.Default.LocationOn
+                                )
+                                ExpandableInfoRow(
+                                    label = "Descripción",
+                                    value = barbershop.descripcion ?: "Sin descripción",
+                                    icon = Icons.Default.ChatBubble
+                                )
+                                InfoRow(
+                                    label = "HairCloud Points",
+                                    value = if (barbershop.puntos_habilitados) "Habilitado" else "No habilitado",
+                                    icon = Icons.Filled.CheckCircle
+                                )
+                            }
+                        }
                     }
                 }
                 is SingleBarbershopState.Loading -> {
@@ -293,14 +389,14 @@ fun InfoRow(label: String, value: String, icon: ImageVector, rating: Float? = nu
             contentDescription = label,
             tint = Color(0xFF3D8EE6),
             modifier = Modifier
-                .padding(end = 8.dp, top = 2.dp)
-                .size(25.dp)
+                .padding(end = 12.dp, top = 2.dp)
+                .size(24.dp)
         )
         Column {
             Text(
                 text = label,
                 style = TextStyle(fontFamily = defaultFont),
-                fontSize = 20.sp,
+                fontSize = 16.sp,
                 color = Color(0xFFAAAAAA)
             )
 
@@ -320,7 +416,7 @@ fun InfoRow(label: String, value: String, icon: ImageVector, rating: Float? = nu
                 Text(
                     text = value,
                     style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 22.sp,
+                    fontSize = 18.sp,
                     color = Color.White
                 )
             }
@@ -334,39 +430,56 @@ fun ExpandableInfoRow(label: String, value: String, icon: ImageVector) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     var expanded by remember { mutableStateOf(false) }
 
-    Row(
-        verticalAlignment = Alignment.Top,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = Color(0xFF3D8EE6),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(end = 8.dp, top = 2.dp)
-                .size(25.dp)
-        )
-        Column {
-            Text(
-                text = label,
-                style = TextStyle(fontFamily = defaultFont),
-                fontSize = 20.sp,
-                color = Color(0xFFAAAAAA)
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color(0xFF3D8EE6),
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .size(24.dp)
             )
-            Text(
-                text = value,
-                style = TextStyle(fontFamily = defaultFont),
-                fontSize = 22.sp,
-                color = Color.White,
-                maxLines = if (expanded) Int.MAX_VALUE else 2,
-                overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = label,
+                    style = TextStyle(fontFamily = defaultFont),
+                    fontSize = 16.sp,
+                    color = Color(0xFFAAAAAA)
+                )
+                Text(
+                    text = if (expanded) value else if (value.length > 50) value.take(50) + "..." else value,
+                    style = TextStyle(fontFamily = defaultFont),
+                    fontSize = 18.sp,
+                    color = Color.White,
+                    maxLines = if (expanded) Int.MAX_VALUE else 2,
+                    overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (expanded) "Mostrar menos" else "Mostrar más",
+                tint = Color(0xFF3D8EE6),
+                modifier = Modifier.size(24.dp)
             )
+        }
+
+        if (expanded) {
+            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
-
 
 @Composable
 fun StarRating(rating: Float, value: String) {
@@ -383,15 +496,17 @@ fun StarRating(rating: Float, value: String) {
                 imageVector = star,
                 contentDescription = "Star $index",
                 tint = Color(0xFF3D8EE6),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = value,
-            style = TextStyle(fontFamily = defaultFont),
-            fontSize = 17.sp,
-            color = Color(0xFFD9D9D9)
-        )
+        if (value.isNotEmpty()) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = value,
+                style = TextStyle(fontFamily = defaultFont),
+                fontSize = 17.sp,
+                color = Color(0xFFD9D9D9)
+            )
+        }
     }
 }
