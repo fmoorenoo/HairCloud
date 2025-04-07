@@ -2,6 +2,7 @@ package com.haircloud.data.repository
 
 import com.haircloud.data.ApiClient
 import com.haircloud.data.model.BarbershopResponse
+import com.haircloud.data.model.ServiceResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -131,6 +132,22 @@ class BarbershopRepository {
             }
         } catch (_: Exception) {
             Result.failure(Exception("Error al conectar con el servidor"))
+        }
+    }
+
+    suspend fun getServicesById(localId: Int): Result<List<ServiceResponse>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.instance.getServicesByLocalId(localId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al obtener los servicios"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
         }
     }
 }
