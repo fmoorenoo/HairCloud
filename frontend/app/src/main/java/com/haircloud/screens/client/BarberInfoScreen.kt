@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ import com.haircloud.R
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.SingleBarbershopState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CheckCircle
@@ -173,135 +175,143 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                 is SingleBarbershopState.Success -> {
                     val barbershop = (singleBarbershopState as SingleBarbershopState.Success).barbershop
 
-                    Card(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF2A2A2A)
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(
-                            defaultElevation = 4.dp
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = String.format(Locale.US, "%.1f", barbershop.rating ?: 0f),
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 42.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    StarRating(barbershop.rating ?: 0f, "")
-                                    Text(
-                                        text = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
-                                        style = TextStyle(fontFamily = defaultFont),
-                                        fontSize = 16.sp,
-                                        color = Color(0xFFD9D9D9)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { infoSectionExpanded = !infoSectionExpanded },
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF181818)
-                        ),
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
-                            bottomStart = if (!infoSectionExpanded) 16.dp else 0.dp,
-                            bottomEnd = if (!infoSectionExpanded) 16.dp else 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Información de la barbería",
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                            Icon(
-                                imageVector = if (infoSectionExpanded)
-                                    Icons.Default.KeyboardArrowUp
-                                else
-                                    Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (infoSectionExpanded)
-                                    "Ocultar información"
-                                else
-                                    "Mostrar información",
-                                tint = Color.White
-                            )
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = infoSectionExpanded,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
+                            .verticalScroll(rememberScrollState())
                     ) {
                         Card(
                             modifier = Modifier
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF2A2A2A)
+                                containerColor = Color(0xFF1F1F1F)
                             ),
-                            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 10.dp
+                            )
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                InfoRow(
-                                    label = "Horario",
-                                    value = "${barbershop.horarioapertura.substring(0, 5)} - ${barbershop.horariocierre.substring(0, 5)}",
-                                    icon = Icons.Default.Schedule
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = String.format(Locale.US, "%.1f", barbershop.rating ?: 0f),
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 42.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        StarRating(barbershop.rating ?: 0f, "")
+                                        Text(
+                                            text = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 16.sp,
+                                            color = Color(0xFFD9D9D9)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { infoSectionExpanded = !infoSectionExpanded },
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF3D8EE6)
+                            ),
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
+                                bottomStart = if (!infoSectionExpanded) 16.dp else 0.dp,
+                                bottomEnd = if (!infoSectionExpanded) 16.dp else 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Información de la barbería",
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
                                 )
-                                InfoRow(
-                                    label = "Teléfono",
-                                    value = barbershop.telefono,
-                                    icon = Icons.Default.Phone
-                                )
-                                InfoRow(
-                                    label = "Dirección",
-                                    value = "${barbershop.direccion}, ${barbershop.localidad}",
-                                    icon = Icons.Default.LocationOn
-                                )
-                                ExpandableInfoRow(
-                                    label = "Descripción",
-                                    value = barbershop.descripcion ?: "Sin descripción",
-                                    icon = Icons.Default.ChatBubble
-                                )
-                                InfoRow(
-                                    label = "HairCloud Points",
-                                    value = if (barbershop.puntos_habilitados) "Habilitado" else "No habilitado",
-                                    icon = Icons.Filled.CheckCircle
+                                Icon(
+                                    imageVector = if (infoSectionExpanded)
+                                        Icons.Default.KeyboardArrowUp
+                                    else
+                                        Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (infoSectionExpanded)
+                                        "Ocultar información"
+                                    else
+                                        "Mostrar información",
+                                    tint = Color.White
                                 )
                             }
                         }
+
+                        AnimatedVisibility(
+                            visible = infoSectionExpanded,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF2A2A2A)
+                                ),
+                                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    InfoRow(
+                                        label = "Horario",
+                                        value = "${barbershop.horarioapertura.substring(0, 5)} - ${barbershop.horariocierre.substring(0, 5)}",
+                                        icon = Icons.Default.Schedule
+                                    )
+                                    InfoRow(
+                                        label = "Teléfono",
+                                        value = barbershop.telefono,
+                                        icon = Icons.Default.Phone
+                                    )
+                                    InfoRow(
+                                        label = "Dirección",
+                                        value = "${barbershop.direccion}, ${barbershop.localidad}",
+                                        icon = Icons.Default.LocationOn
+                                    )
+                                    ExpandableInfoRow(
+                                        label = "Descripción",
+                                        value = barbershop.descripcion ?: "Sin descripción",
+                                        icon = Icons.Default.ChatBubble
+                                    )
+                                    InfoRow(
+                                        label = "HairCloud Points",
+                                        value = if (barbershop.puntos_habilitados) "Habilitado" else "No habilitado",
+                                        icon = Icons.Filled.CheckCircle
+                                    )
+                                }
+                            }
+                        }
+
+                        ServicesSection(navController, userId, localId)
                     }
                 }
                 is SingleBarbershopState.Loading -> {
@@ -459,7 +469,7 @@ fun ExpandableInfoRow(label: String, value: String, icon: ImageVector) {
                     color = Color(0xFFAAAAAA)
                 )
                 Text(
-                    text = if (expanded) value else if (value.length > 50) value.take(50) + "..." else value,
+                    text = if (expanded) value else if (value.length > 60) value.take(60) + "..." else value,
                     style = TextStyle(fontFamily = defaultFont),
                     fontSize = 18.sp,
                     color = Color.White,
@@ -496,7 +506,7 @@ fun StarRating(rating: Float, value: String) {
                 imageVector = star,
                 contentDescription = "Star $index",
                 tint = Color(0xFF3D8EE6),
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(23.dp)
             )
         }
         if (value.isNotEmpty()) {
@@ -504,7 +514,7 @@ fun StarRating(rating: Float, value: String) {
             Text(
                 text = value,
                 style = TextStyle(fontFamily = defaultFont),
-                fontSize = 17.sp,
+                fontSize = 19.sp,
                 color = Color(0xFFD9D9D9)
             )
         }
