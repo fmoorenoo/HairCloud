@@ -411,10 +411,10 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                                                         favoriteButtonsEnabled = false
 
                                                         val action = if (isFavorite) {
-                                                            barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid, onlyFavorites = true)
+                                                            barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid, show = "Favorites")
                                                             "eliminada de favoritos"
                                                         } else {
-                                                            barbershopViewModel.addFavorite(it.clienteid, barbershop.localid, onlyFavorites = true)
+                                                            barbershopViewModel.addFavorite(it.clienteid, barbershop.localid, show = "Favorites")
                                                             "añadida a favoritos"
                                                         }
 

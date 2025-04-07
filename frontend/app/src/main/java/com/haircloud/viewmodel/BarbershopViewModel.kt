@@ -67,24 +67,28 @@ class BarbershopViewModel : ViewModel() {
     }
 
 
-    fun addFavorite(clienteId: Int, localId: Int, onlyFavorites: Boolean = false) {
+    fun addFavorite(clienteId: Int, localId: Int, show: String = "All") {
         viewModelScope.launch {
             repository.addFavorite(clienteId, localId)
-            if (onlyFavorites) {
+            if (show == "Favorites") {
                 getFavoriteBarbershops(clienteId)
-            } else {
+            } else if (show == "All") {
                 getAllBarbershops(clienteId)
+            } else if (show == "One") {
+                getBarbershopById(clienteId, localId)
             }
         }
     }
 
-    fun removeFavorite(clienteId: Int, localId: Int, onlyFavorites: Boolean = false) {
+    fun removeFavorite(clienteId: Int, localId: Int, show: String = "All") {
         viewModelScope.launch {
             repository.removeFavorite(clienteId, localId)
-            if (onlyFavorites) {
+            if (show == "Favorites") {
                 getFavoriteBarbershops(clienteId)
-            } else {
+            } else if (show == "All") {
                 getAllBarbershops(clienteId)
+            } else if (show == "One") {
+                getBarbershopById(clienteId, localId)
             }
         }
     }

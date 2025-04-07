@@ -399,7 +399,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                     LazyColumn(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                                            .padding(horizontal = 8.dp)
+                                            .padding(bottom = 10.dp, top = 18.dp),
                                     ) {
                                         items(sortedBarberias.size) { index ->
                                             val barbershop = sortedBarberias[index]
@@ -417,10 +418,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                         favoriteButtonsEnabled = false
 
                                                         val action = if (isFavorite) {
-                                                            barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid)
+                                                            barbershopViewModel.removeFavorite(it.clienteid, barbershop.localid, show = "All")
                                                             "eliminada de favoritos"
                                                         } else {
-                                                            barbershopViewModel.addFavorite(it.clienteid, barbershop.localid)
+                                                            barbershopViewModel.addFavorite(it.clienteid, barbershop.localid, show = "All")
                                                             "añadida a favoritos"
                                                         }
 
