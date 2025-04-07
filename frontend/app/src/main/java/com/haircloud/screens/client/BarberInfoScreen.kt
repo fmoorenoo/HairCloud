@@ -44,6 +44,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import com.haircloud.viewmodel.ClientState
+import com.haircloud.viewmodel.ClientViewModel
 import java.util.Locale
 
 @Composable
@@ -52,18 +54,33 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val barbershopViewModel = remember { BarbershopViewModel() }
     val singleBarbershopState by barbershopViewModel.singleBarbershopState.collectAsState()
+    val clientViewModel = remember { ClientViewModel() }
+    val clientState by clientViewModel.clientState.collectAsState()
+    var clienteId by remember { mutableIntStateOf(-1) }
+
+    LaunchedEffect(userId) {
+        userId?.let {
+            clientViewModel.getClient(it)
+        }
+    }
+    LaunchedEffect(clientState) {
+        if (clientState is ClientState.Success) {
+            clienteId = (clientState as ClientState.Success).client.clienteid
+        }
+    }
 
     var isFavorite by remember { mutableStateOf(false) }
 
-    LaunchedEffect(userId, localId) {
-        if (userId != null && localId != null) {
-            barbershopViewModel.getBarbershopById(userId, localId)
+    LaunchedEffect(clienteId, localId) {
+        if (localId != null) {
+            barbershopViewModel.getBarbershopById(clienteId, localId)
         }
     }
 
     LaunchedEffect(singleBarbershopState) {
         if (singleBarbershopState is SingleBarbershopState.Success) {
-            isFavorite = (singleBarbershopState as SingleBarbershopState.Success).barbershop.es_favorito
+            val barbershop = (singleBarbershopState as SingleBarbershopState.Success).barbershop
+            isFavorite = barbershop.es_favorito
         }
     }
 
@@ -117,14 +134,23 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                 }
 
                 IconButton(
-                    onClick = {},
+                    onClick = {
+                        if (localId != null) {
+                            if (isFavorite) {
+                                barbershopViewModel.removeFavorite(clienteId, localId, show = "One")
+                            } else {
+                                barbershopViewModel.addFavorite(clienteId, localId, show = "One")
+                            }
+                            barbershopViewModel.getBarbershopById(userId!!, localId)
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(40.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                        contentDescription = "Favorito",
+                        contentDescription = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos",
                         tint = Color.White,
                         modifier = Modifier.size(35.dp)
                     )
@@ -364,7 +390,7 @@ fun StarRating(rating: Float, value: String) {
         Text(
             text = value,
             style = TextStyle(fontFamily = defaultFont),
-            fontSize = 16.sp,
+            fontSize = 17.sp,
             color = Color(0xFFD9D9D9)
         )
     }
