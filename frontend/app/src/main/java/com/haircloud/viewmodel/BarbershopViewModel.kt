@@ -3,6 +3,7 @@ package com.haircloud.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.BarbershopResponse
+import com.haircloud.data.model.ServiceResponse
 import com.haircloud.data.repository.BarbershopRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,65 +18,60 @@ class BarbershopViewModel : ViewModel() {
     private val _singleBarbershopState = MutableStateFlow<SingleBarbershopState>(SingleBarbershopState.Idle)
     val singleBarbershopState: StateFlow<SingleBarbershopState> = _singleBarbershopState
 
+    private val _servicesState = MutableStateFlow<ServiceState>(ServiceState.Idle)
+    val servicesState: StateFlow<ServiceState> = _servicesState
 
     fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.getAllBarbershops(clienteId)
-                if (result.isSuccess) {
-                    _barbershopState.value = BarbershopState.Success(result.getOrThrow())
-                } else {
-                    _barbershopState.value = BarbershopState.Error(result.exceptionOrNull()?.message ?: "No se pudieron obtener las barberías")
-                }
-            } catch (e: Exception) {
-                _barbershopState.value = BarbershopState.Error(e.message ?: "Error desconocido")
-            }
+            val result = repository.getAllBarbershops(clienteId)
+            _barbershopState.value = result.fold(
+                onSuccess = { BarbershopState.Success(it) },
+                onFailure = { BarbershopState.Error(it.message ?: "Error al cargar barberías") }
+            )
         }
     }
 
     fun getBarbershopById(clienteId: Int, localId: Int) {
         _singleBarbershopState.value = SingleBarbershopState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.getBarbershopById(clienteId, localId)
-                if (result.isSuccess) {
-                    _singleBarbershopState.value = SingleBarbershopState.Success(result.getOrThrow())
-                } else {
-                    _singleBarbershopState.value = SingleBarbershopState.Error(result.exceptionOrNull()?.message ?: "No se pudo obtener la barbería")
-                }
-            } catch (e: Exception) {
-                _singleBarbershopState.value = SingleBarbershopState.Error(e.message ?: "Error desconocido")
-            }
+            val result = repository.getBarbershopById(clienteId, localId)
+            _singleBarbershopState.value = result.fold(
+                onSuccess = { SingleBarbershopState.Success(it) },
+                onFailure = { SingleBarbershopState.Error(it.message ?: "Error al cargar la barbería") }
+            )
         }
     }
 
     fun getFavoriteBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.getFavoriteBarbershops(clienteId)
-                if (result.isSuccess) {
-                    _barbershopState.value = BarbershopState.Success(result.getOrThrow())
-                } else {
-                    _barbershopState.value = BarbershopState.Error(result.exceptionOrNull()?.message ?: "No se pudieron obtener las barberías favoritas")
-                }
-            } catch (e: Exception) {
-                _barbershopState.value = BarbershopState.Error(e.message ?: "Error desconocido")
-            }
+            val result = repository.getFavoriteBarbershops(clienteId)
+            _barbershopState.value = result.fold(
+                onSuccess = { BarbershopState.Success(it) },
+                onFailure = { BarbershopState.Error(it.message ?: "Error al cargar favoritos") }
+            )
         }
     }
 
+    fun getServicesById(localId: Int) {
+        _servicesState.value = ServiceState.Loading
+        viewModelScope.launch {
+            val result = repository.getServicesById(localId)
+            _servicesState.value = result.fold(
+                onSuccess = { ServiceState.Success(it) },
+                onFailure = { ServiceState.Error(it.message ?: "Error al cargar servicios") }
+            )
+        }
+    }
 
     fun addFavorite(clienteId: Int, localId: Int, show: String = "All") {
         viewModelScope.launch {
             repository.addFavorite(clienteId, localId)
-            if (show == "Favorites") {
-                getFavoriteBarbershops(clienteId)
-            } else if (show == "All") {
-                getAllBarbershops(clienteId)
-            } else if (show == "One") {
-                getBarbershopById(clienteId, localId)
+            when (show) {
+                "Favorites" -> getFavoriteBarbershops(clienteId)
+                "All" -> getAllBarbershops(clienteId)
+                "One" -> getBarbershopById(clienteId, localId)
             }
         }
     }
@@ -83,12 +79,10 @@ class BarbershopViewModel : ViewModel() {
     fun removeFavorite(clienteId: Int, localId: Int, show: String = "All") {
         viewModelScope.launch {
             repository.removeFavorite(clienteId, localId)
-            if (show == "Favorites") {
-                getFavoriteBarbershops(clienteId)
-            } else if (show == "All") {
-                getAllBarbershops(clienteId)
-            } else if (show == "One") {
-                getBarbershopById(clienteId, localId)
+            when (show) {
+                "Favorites" -> getFavoriteBarbershops(clienteId)
+                "All" -> getAllBarbershops(clienteId)
+                "One" -> getBarbershopById(clienteId, localId)
             }
         }
     }
@@ -112,4 +106,9 @@ sealed class SingleBarbershopState {
     data class Error(val message: String) : SingleBarbershopState()
 }
 
-
+sealed class ServiceState {
+    object Idle : ServiceState()
+    object Loading : ServiceState()
+    data class Success(val services: List<ServiceResponse>) : ServiceState()
+    data class Error(val message: String) : ServiceState()
+}
