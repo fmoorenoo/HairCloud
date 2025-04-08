@@ -57,4 +57,7 @@ interface ApiService {
 
     @GET("/api/barbershops/get_services/{local_id}")
     fun getServicesByLocalId(@Path("local_id") localId: Int): Call<List<ServiceResponse>>
+
+    @GET("/api/barbershops/get_barbershop_reviews/{local_id}")
+    fun getBarbershopReviews(@Path("local_id") localId: Int): Call<List<ReviewResponse>>
 }

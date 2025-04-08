@@ -24,3 +24,14 @@ data class ServiceResponse(
     val precio: Double,
     val localid: Int
 )
+
+data class ReviewResponse(
+    val resenaid: Int,
+    val clienteid: Int,
+    val peluqueroid: Int?,
+    val calificacion: Int,
+    val comentario: String?,
+    val fecharesena: String,
+    val localid: Int,
+    val cliente_nombre: String?
+)
