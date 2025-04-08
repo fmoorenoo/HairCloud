@@ -51,6 +51,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -187,10 +189,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                                .clickable {
-                                    showReviews = !showReviews
-                                },
+                                .padding(bottom = 16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = Color(0xFF1F1F1F)
                             ),
@@ -199,45 +198,94 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                 defaultElevation = 10.dp
                             )
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = String.format(Locale.US, "%.1f", barbershop.rating ?: 0f),
-                                        style = TextStyle(fontFamily = defaultFont),
-                                        fontSize = 42.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                if (!showReviews) {
+                                    Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = "Ver reseñas",
+                                        tint = Color(0xFF3D8EE6),
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(12.dp)
+                                            .size(24.dp)
+                                            .clickable {
+                                                showReviews = true
+                                            }
                                     )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column {
-                                        StarRating(barbershop.rating ?: 0f, "")
-                                        Text(
-                                            text = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
-                                            style = TextStyle(fontFamily = defaultFont),
-                                            fontSize = 16.sp,
-                                            color = Color(0xFFD9D9D9)
-                                        )
-                                    }
                                 }
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    AnimatedVisibility(
+                                        visible = !showReviews,
+                                        enter = fadeIn(),
+                                        exit = fadeOut()
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = String.format(Locale.US, "%.1f", barbershop.rating ?: 0f),
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 42.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                StarRating(barbershop.rating ?: 0f, "")
+                                                Text(
+                                                    text = "(${barbershop.cantidad_resenas} ${if (barbershop.cantidad_resenas == 1) "reseña" else "reseñas"})",
+                                                    style = TextStyle(fontFamily = defaultFont),
+                                                    fontSize = 16.sp,
+                                                    color = Color(0xFFD9D9D9)
+                                                )
+                                            }
+                                        }
+                                    }
 
-                                Text(
-                                    text = if (showReviews) "Ocultar reseñas" else "Ver todas las reseñas",
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 16.sp,
-                                    color = Color(0xFF3D8EE6),
-                                    modifier = Modifier.clickable { showReviews = !showReviews }
-                                )
+                                    AnimatedVisibility(
+                                        visible = showReviews,
+                                        enter = fadeIn(),
+                                        exit = fadeOut()
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "Reseñas",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 30.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White
+                                            )
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Center,
+                                                modifier = Modifier
+                                                    .clickable { showReviews = false }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.VisibilityOff,
+                                                    contentDescription = "Ocultar reseñas",
+                                                    tint = Color(0xFF3D8EE6),
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "Ocultar reseñas",
+                                                    style = TextStyle(fontFamily = defaultFont),
+                                                    fontSize = 16.sp,
+                                                    color = Color(0xFF3D8EE6)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
@@ -408,7 +456,11 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                 }
                             }
                         } else {
-                            ReviewsSection(barbershop.rating ?: 0f, barbershop.cantidad_resenas)
+                            ReviewsSection(
+                                rating = barbershop.rating ?: 0f,
+                                totalReviews = barbershop.cantidad_resenas,
+                                barbershopViewModel = barbershopViewModel
+                            )
                         }
                     }
                 }
