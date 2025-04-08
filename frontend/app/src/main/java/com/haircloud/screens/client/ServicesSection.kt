@@ -44,7 +44,7 @@ import com.haircloud.viewmodel.ServiceState
 @Composable
 fun ServicesSection(
     localId: Int?,
-    onServiceSelected: (ServiceResponse) -> Unit
+    onServiceSelected: (ServiceResponse?) -> Unit
 ) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val barbershopViewModel = remember { BarbershopViewModel() }
@@ -85,7 +85,7 @@ fun ServicesSection(
                 Text(
                     text = "Servicios disponibles",
                     style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 23.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
                 )
@@ -217,6 +217,7 @@ fun ServicesSection(
                                                     onServiceSelected(service)
                                                 } else {
                                                     selectedService = null
+                                                    onServiceSelected(null)
                                                 }
                                             }
                                         )

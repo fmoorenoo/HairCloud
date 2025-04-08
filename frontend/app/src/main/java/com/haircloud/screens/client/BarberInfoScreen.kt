@@ -248,7 +248,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                 Text(
                                     text = "Información de la barbería",
                                     style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 23.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.White
                                 )
@@ -307,7 +307,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                     )
                                     InfoRow(
                                         label = "HairCloud Points",
-                                        value = if (barbershop.puntos_habilitados) "Habilitado" else "No habilitado",
+                                        value = if (barbershop.puntos_habilitados) "Habilitado - Tienes ${barbershop.cantidad_puntos ?: 0} puntos" else "No habilitado",
                                         icon = Icons.Filled.CheckCircle
                                     )
                                 }
@@ -319,7 +319,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                             onServiceSelected = { service ->
                                 infoSectionExpanded = false
                                 selectedService = service
-                                showSelectionCard = true
+                                showSelectionCard = service != null
                             }
                         )
                         AnimatedVisibility(
@@ -372,7 +372,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                     Button(
                                         onClick = {
                                             selectedService?.let { service ->
-                                                navController.navigate("selectDateScreen/${userId}/${localId}/${service.servicioid}")
+                                                navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
                                             }
                                         },
                                         colors = ButtonDefaults.buttonColors(
