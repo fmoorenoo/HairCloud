@@ -180,3 +180,36 @@ def get_services(localid):
         result.append(item)
 
     return jsonify(result), 200
+
+
+@barbershops_bp.route('/get_barbershop_reviews/<int:localid>', methods=['GET'])
+def get_barbershop_reviews(localid):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT r.*, c.nombre AS cliente_nombre
+        FROM resenas r
+        JOIN clientes c ON r.clienteid = c.clienteid
+        WHERE r.localid = %s AND r.peluqueroid IS NULL
+        ORDER BY r.fecharesena DESC
+    """, (localid,))
+
+    reseñas = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+
+    cursor.close()
+    connection.close()
+
+    result = []
+    for r in reseñas:
+        item = {}
+        for i, value in enumerate(r):
+            if isinstance(value, (time, datetime, date)):
+                item[column_names[i]] = value.isoformat()
+            else:
+                item[column_names[i]] = value
+        result.append(item)
+
+    return jsonify(result), 200
+
