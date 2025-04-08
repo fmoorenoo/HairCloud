@@ -72,6 +72,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     var infoSectionExpanded by remember { mutableStateOf(true) }
     var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
     var showSelectionCard by remember { mutableStateOf(false) }
+    var showReviews by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         userId?.let {
@@ -186,7 +187,10 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp),
+                                .padding(bottom = 16.dp)
+                                .clickable {
+                                    showReviews = !showReviews
+                                },
                             colors = CardDefaults.cardColors(
                                 containerColor = Color(0xFF1F1F1F)
                             ),
@@ -224,173 +228,187 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         )
                                     }
                                 }
-                            }
-                        }
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { infoSectionExpanded = !infoSectionExpanded },
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF3D8EE6)
-                            ),
-                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
-                                bottomStart = if (!infoSectionExpanded) 16.dp else 0.dp,
-                                bottomEnd = if (!infoSectionExpanded) 16.dp else 0.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                                Spacer(modifier = Modifier.height(8.dp))
+
                                 Text(
-                                    text = "Información de la barbería",
+                                    text = if (showReviews) "Ocultar reseñas" else "Ver todas las reseñas",
                                     style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
-                                Icon(
-                                    imageVector = if (infoSectionExpanded)
-                                        Icons.Default.KeyboardArrowUp
-                                    else
-                                        Icons.Default.KeyboardArrowDown,
-                                    contentDescription = if (infoSectionExpanded)
-                                        "Ocultar información"
-                                    else
-                                        "Mostrar información",
-                                    tint = Color.White
+                                    fontSize = 16.sp,
+                                    color = Color(0xFF3D8EE6),
+                                    modifier = Modifier.clickable { showReviews = !showReviews }
                                 )
                             }
                         }
 
-                        AnimatedVisibility(
-                            visible = infoSectionExpanded,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF2A2A2A)
-                                ),
-                                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    InfoRow(
-                                        label = "Horario",
-                                        value = "${barbershop.horarioapertura.substring(0, 5)} - ${barbershop.horariocierre.substring(0, 5)}",
-                                        icon = Icons.Default.Schedule
-                                    )
-                                    InfoRow(
-                                        label = "Teléfono",
-                                        value = barbershop.telefono,
-                                        icon = Icons.Default.Phone
-                                    )
-                                    InfoRow(
-                                        label = "Dirección",
-                                        value = "${barbershop.direccion}, ${barbershop.localidad}",
-                                        icon = Icons.Default.LocationOn
-                                    )
-                                    ExpandableInfoRow(
-                                        label = "Descripción",
-                                        value = barbershop.descripcion ?: "Sin descripción",
-                                        icon = Icons.Default.ChatBubble
-                                    )
-                                    InfoRow(
-                                        label = "HairCloud Points",
-                                        value = if (barbershop.puntos_habilitados) "Habilitado - Tienes ${barbershop.cantidad_puntos ?: 0} puntos" else "No habilitado",
-                                        icon = Icons.Filled.CheckCircle
-                                    )
-                                }
-                            }
-                        }
-
-                        ServicesSection(
-                            localId = localId,
-                            onServiceSelected = { service ->
-                                infoSectionExpanded = false
-                                selectedService = service
-                                showSelectionCard = service != null
-                            }
-                        )
-                        AnimatedVisibility(
-                            visible = showSelectionCard && selectedService != null,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut(),
-                            modifier = Modifier.padding(top = 16.dp)
-                        ) {
+                        if (!showReviews) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(bottom = 16.dp),
+                                    .clickable { infoSectionExpanded = !infoSectionExpanded },
                                 colors = CardDefaults.cardColors(
                                     containerColor = Color(0xFF3D8EE6)
                                 ),
-                                shape = RoundedCornerShape(16.dp),
-                                elevation = CardDefaults.cardElevation(
-                                    defaultElevation = 10.dp
-                                )
+                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp,
+                                    bottomStart = if (!infoSectionExpanded) 16.dp else 0.dp,
+                                    bottomEnd = if (!infoSectionExpanded) 16.dp else 0.dp)
                             ) {
-                                Column(
+                                Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp)
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Text(
+                                        text = "Información de la barbería",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White
+                                    )
+                                    Icon(
+                                        imageVector = if (infoSectionExpanded)
+                                            Icons.Default.KeyboardArrowUp
+                                        else
+                                            Icons.Default.KeyboardArrowDown,
+                                        contentDescription = if (infoSectionExpanded)
+                                            "Ocultar información"
+                                        else
+                                            "Mostrar información",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = infoSectionExpanded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF2A2A2A)
+                                    ),
+                                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
                                     ) {
-                                        Text(
-                                            text = selectedService?.nombre ?: "",
-                                            style = TextStyle(fontFamily = defaultFont),
-                                            fontSize = 22.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                        InfoRow(
+                                            label = "Horario",
+                                            value = "${barbershop.horarioapertura.substring(0, 5)} - ${barbershop.horariocierre.substring(0, 5)}",
+                                            icon = Icons.Default.Schedule
                                         )
-
-                                        Text(
-                                            text = "${selectedService?.precio ?: 0.0}€",
-                                            style = TextStyle(fontFamily = defaultFont),
-                                            fontSize = 20.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.White
+                                        InfoRow(
+                                            label = "Teléfono",
+                                            value = barbershop.telefono,
+                                            icon = Icons.Default.Phone
                                         )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                    Button(
-                                        onClick = {
-                                            selectedService?.let { service ->
-                                                navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.White,
-                                            contentColor = Color(0xFF3D8EE6)
-                                        ),
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(
-                                            text = "Continuar",
-                                            style = TextStyle(fontFamily = defaultFont),
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.SemiBold
+                                        InfoRow(
+                                            label = "Dirección",
+                                            value = "${barbershop.direccion}, ${barbershop.localidad}",
+                                            icon = Icons.Default.LocationOn
+                                        )
+                                        ExpandableInfoRow(
+                                            label = "Descripción",
+                                            value = barbershop.descripcion ?: "Sin descripción",
+                                            icon = Icons.Default.ChatBubble
+                                        )
+                                        InfoRow(
+                                            label = "HairCloud Points",
+                                            value = if (barbershop.puntos_habilitados) "Habilitado - Tienes ${barbershop.cantidad_puntos ?: 0} puntos" else "No habilitado",
+                                            icon = Icons.Filled.CheckCircle
                                         )
                                     }
                                 }
                             }
+
+                            ServicesSection(
+                                localId = localId,
+                                onServiceSelected = { service ->
+                                    infoSectionExpanded = false
+                                    selectedService = service
+                                    showSelectionCard = service != null
+                                }
+                            )
+                            AnimatedVisibility(
+                                visible = showSelectionCard && selectedService != null,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut(),
+                                modifier = Modifier.padding(top = 16.dp)
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF3D8EE6)
+                                    ),
+                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = CardDefaults.cardElevation(
+                                        defaultElevation = 10.dp
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = selectedService?.nombre ?: "",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF151515)
+                                            )
+
+                                            Text(
+                                                text = "${selectedService?.precio ?: 0.0}€",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 24.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF151515)
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        Button(
+                                            onClick = {
+                                                selectedService?.let { service ->
+                                                    navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF151515),
+                                                contentColor = Color(0xFF3D8EE6)
+                                            ),
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(
+                                                text = "Continuar",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            ReviewsSection(barbershop.rating ?: 0f, barbershop.cantidad_resenas)
                         }
                     }
                 }
@@ -427,13 +445,13 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                         Icon(
                             imageVector = Icons.Default.Error,
                             contentDescription = "Error",
-                            tint = Color.Red,
+                            tint = Color.White,
                             modifier = Modifier.size(50.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Error al cargar la información",
-                            color = Color.Red,
+                            color = Color.White,
                             style = TextStyle(fontFamily = defaultFont),
                             fontSize = 18.sp,
                             textAlign = TextAlign.Center
