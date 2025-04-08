@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.viewmodel.BarbershopViewModel
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,10 +43,8 @@ import com.haircloud.viewmodel.ServiceState
 
 @Composable
 fun ServicesSection(
-    navController: NavController,
-    userId: Int?,
     localId: Int?,
-    onServiceSelected: () -> Unit
+    onServiceSelected: (ServiceResponse) -> Unit
 ) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val barbershopViewModel = remember { BarbershopViewModel() }
@@ -55,6 +52,7 @@ fun ServicesSection(
     var servicesSectionExpanded by remember { mutableStateOf(true) }
     var selectedServiceId by remember { mutableStateOf<Int?>(null) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
 
     LaunchedEffect(localId) {
         if (localId != null) {
@@ -214,7 +212,12 @@ fun ServicesSection(
                                             isSelected = isSelected,
                                             onServiceClick = {
                                                 selectedServiceId = if (isSelected) null else service.servicioid
-                                                onServiceSelected()
+                                                if (!isSelected) {
+                                                    selectedService = service
+                                                    onServiceSelected(service)
+                                                } else {
+                                                    selectedService = null
+                                                }
                                             }
                                         )
                                     }
@@ -301,12 +304,12 @@ fun ServiceItem(
             if (isSelected) {
                 Box(
                     modifier = Modifier
-                        .width(6.dp)
+                        .width(8.dp)
                         .fillMaxHeight()
                         .background(Color(0xFF3D8EE6))
                 )
             } else {
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
             }
 
             Row(
@@ -355,7 +358,7 @@ fun ServiceItem(
                 }
 
                 Text(
-                    text = "${service.precio.toInt()}€",
+                    text = "${service.precio}€",
                     style = TextStyle(
                         fontFamily = defaultFont,
                         fontWeight = FontWeight.Bold,
