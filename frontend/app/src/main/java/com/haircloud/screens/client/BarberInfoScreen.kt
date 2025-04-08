@@ -245,7 +245,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                 Text(
                                     text = "Información de la barbería",
                                     style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 20.sp,
+                                    fontSize = 23.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color.White
                                 )
@@ -311,7 +311,12 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                             }
                         }
 
-                        ServicesSection(navController, userId, localId)
+                        ServicesSection(
+                            navController = navController,
+                            userId = userId,
+                            localId = localId,
+                            onServiceSelected = { infoSectionExpanded = false }
+                        )
                     }
                 }
                 is SingleBarbershopState.Loading -> {

@@ -5,6 +5,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,18 +34,27 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import com.haircloud.data.model.ServiceResponse
 import com.haircloud.viewmodel.ServiceState
 
 @Composable
-fun ServicesSection(navController: NavController, userId: Int?, localId: Int?) {
+fun ServicesSection(
+    navController: NavController,
+    userId: Int?,
+    localId: Int?,
+    onServiceSelected: () -> Unit
+) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val barbershopViewModel = remember { BarbershopViewModel() }
     val servicesState by barbershopViewModel.servicesState.collectAsState()
     var servicesSectionExpanded by remember { mutableStateOf(true) }
+    var selectedServiceId by remember { mutableStateOf<Int?>(null) }
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
     LaunchedEffect(localId) {
         if (localId != null) {
@@ -77,7 +87,7 @@ fun ServicesSection(navController: NavController, userId: Int?, localId: Int?) {
                 Text(
                     text = "Servicios disponibles",
                     style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 20.sp,
+                    fontSize = 23.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White
                 )
@@ -101,98 +111,160 @@ fun ServicesSection(navController: NavController, userId: Int?, localId: Int?) {
             exit = shrinkVertically() + fadeOut()
         ) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF2A2A2A)
-                ),
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
                 shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
             ) {
-                when (servicesState) {
-                    is ServiceState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = Color.White)
-                        }
-                    }
-                    is ServiceState.Success -> {
-                        val services = (servicesState as ServiceState.Success).services
-                        if (services.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = {
+                            Text(
+                                text = "Buscar servicios",
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 18.sp,
+                                color = Color(0xFFAAAAAA)
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = Color(0xFFAAAAAA)
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF3D8EE6),
+                            unfocusedBorderColor = Color(0xFF666666),
+                            focusedContainerColor = Color(0xFF151515),
+                            unfocusedContainerColor = Color(0xFF151515),
+                            cursorColor = Color(0xFF3D8EE6),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontFamily = defaultFont,
+                            fontSize = 18.sp
+                        ),
+                    )
+
+                    when (servicesState) {
+                        is ServiceState.Loading -> {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .height(100.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "No hay servicios disponibles",
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 16.sp,
-                                    color = Color(0xFFAAAAAA),
-                                    textAlign = TextAlign.Center
-                                )
+                                CircularProgressIndicator(color = Color.White)
                             }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 100.dp, max = 300.dp)
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(services.size) { index ->
-                                    ServiceItem(service = services[index])
+                        }
+                        is ServiceState.Success -> {
+                            val allServices = (servicesState as ServiceState.Success).services
+                            val filteredServices = if (searchQuery.text.isNotEmpty()) {
+                                allServices.filter {
+                                    it.nombre.contains(searchQuery.text, ignoreCase = true)
+                                }
+                            } else {
+                                allServices
+                            }
+
+                            if (filteredServices.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (searchQuery.text.isNotEmpty())
+                                            "No se encontraron servicios con ese nombre"
+                                        else
+                                            "No hay servicios disponibles",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp,
+                                        color = Color(0xFFAAAAAA),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 100.dp, max = 300.dp)
+                                        .padding(vertical = 16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(filteredServices.size) { index ->
+                                        val service = filteredServices[index]
+                                        val isSelected = selectedServiceId == service.servicioid
+
+                                        ServiceItem(
+                                            service = service,
+                                            isSelected = isSelected,
+                                            onServiceClick = {
+                                                selectedServiceId = if (isSelected) null else service.servicioid
+                                                onServiceSelected()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                    is ServiceState.Error -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Error,
-                                contentDescription = "Error",
-                                tint = Color.Red,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = (servicesState as ServiceState.Error).message,
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 16.sp,
-                                color = Color(0xFFFF5252),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = {
-                                    if (localId != null) {
-                                        barbershopViewModel.getServicesById(localId)
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFD9D9D9),
-                                    contentColor = Color.Black
-                                ),
-                                shape = RoundedCornerShape(10.dp)
+                        is ServiceState.Error -> {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "Reintentar",
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 16.sp
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = "Error",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(24.dp)
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = (servicesState as ServiceState.Error).message,
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 16.sp,
+                                    color = Color(0xFFFF5252),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        if (localId != null) {
+                                            barbershopViewModel.getServicesById(localId)
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFD9D9D9),
+                                        contentColor = Color.Black
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text(
+                                        text = "Reintentar",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp
+                                    )
+                                }
                             }
                         }
+                        else -> {}
                     }
-                    else -> {}
                 }
             }
         }
@@ -200,56 +272,100 @@ fun ServicesSection(navController: NavController, userId: Int?, localId: Int?) {
 }
 
 @Composable
-fun ServiceItem(service: ServiceResponse) {
+fun ServiceItem(
+    service: ServiceResponse,
+    isSelected: Boolean,
+    onServiceClick: () -> Unit
+) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { onServiceClick() },
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1F1F1F)
+            containerColor = Color(0xFF151515)
         ),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(6.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = service.nombre,
-                    style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .width(6.dp)
+                        .fillMaxHeight()
+                        .background(Color(0xFF3D8EE6))
                 )
-                if (service.descripcion != null) {
-                    Text(
-                        text = service.descripcion,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 14.sp,
-                        color = Color(0xFFAAAAAA),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Text(
-                    text = "${service.duracion} min",
-                    style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 14.sp,
-                    color = Color(0xFF3D8EE6)
-                )
-
+            } else {
+                Spacer(modifier = Modifier.width(6.dp))
             }
-            Text(
-                text = "${service.precio.toInt()}€",
-                style = TextStyle(fontFamily = defaultFont),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = service.nombre,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isSelected) Color(0xFF3D8EE6) else Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = " • ${service.duracion} min",
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 17.sp,
+                            color = Color(0xFF3D8EE6)
+                        )
+                    }
+
+                    if (service.descripcion != null) {
+                        Text(
+                            text = service.descripcion,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 16.sp,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Text(
+                    text = "${service.precio.toInt()}€",
+                    style = TextStyle(
+                        fontFamily = defaultFont,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF3D8EE6)
+                    ),
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                )
+            }
         }
     }
 }
