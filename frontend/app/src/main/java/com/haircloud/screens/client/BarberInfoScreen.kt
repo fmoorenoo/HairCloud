@@ -55,6 +55,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import com.haircloud.data.model.ServiceResponse
 import com.haircloud.viewmodel.ClientState
 import com.haircloud.viewmodel.ClientViewModel
 import java.util.Locale
@@ -69,6 +70,8 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val clientState by clientViewModel.clientState.collectAsState()
     var clienteId by remember { mutableIntStateOf(-1) }
     var infoSectionExpanded by remember { mutableStateOf(true) }
+    var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
+    var showSelectionCard by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         userId?.let {
@@ -312,11 +315,83 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                         }
 
                         ServicesSection(
-                            navController = navController,
-                            userId = userId,
                             localId = localId,
-                            onServiceSelected = { infoSectionExpanded = false }
+                            onServiceSelected = { service ->
+                                infoSectionExpanded = false
+                                selectedService = service
+                                showSelectionCard = true
+                            }
                         )
+                        AnimatedVisibility(
+                            visible = showSelectionCard && selectedService != null,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF3D8EE6)
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 10.dp
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = selectedService?.nombre ?: "",
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+
+                                        Text(
+                                            text = "${selectedService?.precio ?: 0.0}€",
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Button(
+                                        onClick = {
+                                            selectedService?.let { service ->
+                                                navController.navigate("selectDateScreen/${userId}/${localId}/${service.servicioid}")
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.White,
+                                            contentColor = Color(0xFF3D8EE6)
+                                        ),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "Continuar",
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 is SingleBarbershopState.Loading -> {
