@@ -3,6 +3,7 @@ package com.haircloud.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.BarbershopResponse
+import com.haircloud.data.model.ReviewResponse
 import com.haircloud.data.model.ServiceResponse
 import com.haircloud.data.repository.BarbershopRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,9 @@ class BarbershopViewModel : ViewModel() {
 
     private val _servicesState = MutableStateFlow<ServiceState>(ServiceState.Idle)
     val servicesState: StateFlow<ServiceState> = _servicesState
+
+    private val _reviewsState = MutableStateFlow<ReviewsState>(ReviewsState.Idle)
+    val reviewsState: StateFlow<ReviewsState> = _reviewsState
 
     fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
@@ -54,17 +58,6 @@ class BarbershopViewModel : ViewModel() {
         }
     }
 
-    fun getServicesById(localId: Int) {
-        _servicesState.value = ServiceState.Loading
-        viewModelScope.launch {
-            val result = repository.getServicesById(localId)
-            _servicesState.value = result.fold(
-                onSuccess = { ServiceState.Success(it) },
-                onFailure = { ServiceState.Error(it.message ?: "Error al cargar servicios") }
-            )
-        }
-    }
-
     fun addFavorite(clienteId: Int, localId: Int, show: String = "All") {
         viewModelScope.launch {
             repository.addFavorite(clienteId, localId)
@@ -84,6 +77,28 @@ class BarbershopViewModel : ViewModel() {
                 "All" -> getAllBarbershops(clienteId)
                 "One" -> getBarbershopById(clienteId, localId)
             }
+        }
+    }
+
+    fun getServicesById(localId: Int) {
+        _servicesState.value = ServiceState.Loading
+        viewModelScope.launch {
+            val result = repository.getServicesById(localId)
+            _servicesState.value = result.fold(
+                onSuccess = { ServiceState.Success(it) },
+                onFailure = { ServiceState.Error(it.message ?: "Error al cargar servicios") }
+            )
+        }
+    }
+
+    fun getBarbershopReviews(localId: Int) {
+        _reviewsState.value = ReviewsState.Loading
+        viewModelScope.launch {
+            val result = repository.getBarbershopReviews(localId)
+            _reviewsState.value = result.fold(
+                onSuccess = { ReviewsState.Success(it) },
+                onFailure = { ReviewsState.Error(it.message ?: "Error al cargar reseñas") }
+            )
         }
     }
 
@@ -111,4 +126,11 @@ sealed class ServiceState {
     object Loading : ServiceState()
     data class Success(val services: List<ServiceResponse>) : ServiceState()
     data class Error(val message: String) : ServiceState()
+}
+
+sealed class ReviewsState {
+    object Idle : ReviewsState()
+    object Loading : ReviewsState()
+    data class Success(val reviews: List<ReviewResponse>) : ReviewsState()
+    data class Error(val message: String) : ReviewsState()
 }
