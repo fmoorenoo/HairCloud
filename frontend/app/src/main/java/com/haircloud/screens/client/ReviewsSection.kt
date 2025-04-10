@@ -44,6 +44,7 @@ import com.haircloud.viewmodel.ReviewsState
 import com.haircloud.viewmodel.SingleBarbershopState
 import java.util.Locale
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextOverflow
 import com.haircloud.viewmodel.DeleteReviewState
 
 @Composable
@@ -344,10 +345,12 @@ fun ReviewCard(
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (isUserReview) {
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -358,21 +361,33 @@ fun ReviewCard(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
 
+                    val nombreOriginal = review.cliente_nombre ?: "Cliente anónimo"
+                    val sufijo = " (Tú)"
+                    val maxChars = 25
+                    val nombreConTilde = if (nombreOriginal.length + sufijo.length > maxChars) {
+                        nombreOriginal.take(maxChars - sufijo.length - 3).trimEnd() + "..." + sufijo
+                    } else {
+                        nombreOriginal + sufijo
+                    }
                     Text(
-                        text = if (isUserReview) "${review.cliente_nombre} (Tú)"
-                        else review.cliente_nombre ?: "Cliente anónimo",
+                        text = if (isUserReview) nombreConTilde else nombreOriginal,
                         style = TextStyle(fontFamily = defaultFont),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isUserReview) Color(0xFFE3F2FD) else Color.White
+                        color = if (isUserReview) Color(0xFFE3F2FD) else Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
                     text = formatFecha(review.fecharesena),
                     style = TextStyle(fontFamily = defaultFont),
                     fontSize = 17.sp,
-                    color = Color(0xFFAAAAAA)
+                    color = Color(0xFFAAAAAA),
+                    textAlign = TextAlign.End
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -430,12 +445,34 @@ fun ReviewCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = if (review.comentario.isNullOrBlank()) "Sin comentario" else review.comentario,
-                style = TextStyle(fontFamily = defaultFont),
-                fontSize = 16.sp,
-                color = if (review.comentario.isNullOrBlank()) Color(0xFFAAAAAA) else Color.White
-            )
+            var expanded by remember { mutableStateOf(false) }
+            val desc = review.comentario?.trim().takeIf { it?.isNotBlank() == true } ?: "Sin comentario"
+            val isDescEmpty = review.comentario.isNullOrBlank()
+
+            Column {
+                Text(
+                    text = desc,
+                    style = TextStyle(fontFamily = defaultFont),
+                    fontSize = 16.sp,
+                    color = if (isDescEmpty) Color(0xFFAAAAAA) else Color.White,
+                    maxLines = if (expanded) Int.MAX_VALUE else 1,
+                    overflow = if (expanded) TextOverflow.Clip else TextOverflow.Ellipsis
+                )
+
+                if (!isDescEmpty && desc.length > 80) {
+                    Text(
+                        text = if (expanded) "Ver menos" else "Ver más",
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF3D8EE6),
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .clickable { expanded = !expanded }
+                    )
+                }
+            }
+
         }
     }
 }
