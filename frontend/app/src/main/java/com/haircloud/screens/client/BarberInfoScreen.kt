@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -75,7 +76,6 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val barbershopViewModel: BarbershopViewModel = viewModel()
-    val reviewsState by barbershopViewModel.reviewsState.collectAsState()
     val singleBarbershopState by barbershopViewModel.singleBarbershopState.collectAsState()
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
@@ -92,11 +92,11 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     LaunchedEffect(addReviewState) {
         when (addReviewState) {
             is AddReviewState.Success -> {
+                showAddReviewForm = false
                 snackbarHostState.showTypedSnackbar(
                     message = "Reseña enviada con éxito",
                     type = SnackbarType.SUCCESS
                 )
-                showAddReviewForm = false
                 barbershopViewModel.resetAddReviewState()
             }
             is AddReviewState.Error -> {
@@ -263,8 +263,8 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         tint = Color(0xFF3D8EE6),
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
-                                            .padding(12.dp)
-                                            .size(24.dp)
+                                            .padding(16.dp)
+                                            .size(30.dp)
                                             .clickable {
                                                 showReviews = true
                                             }
@@ -312,30 +312,34 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         exit = fadeOut()
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                modifier = Modifier.fillMaxWidth()
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(bottom = 8.dp)
                                             ) {
-                                                Text(
-                                                    text = "Reseñas",
-                                                    style = TextStyle(fontFamily = defaultFont),
-                                                    fontSize = 30.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White
-                                                )
                                                 IconButton(
-                                                    onClick = {
-                                                        showAddReviewForm = !showAddReviewForm
-                                                    },
-                                                    modifier = Modifier.size(30.dp)
+                                                    onClick = { showAddReviewForm = !showAddReviewForm },
+                                                    modifier = Modifier
+                                                        .align(Alignment.CenterEnd)
+                                                        .size(30.dp)
                                                 ) {
                                                     Icon(
-                                                        imageVector = Icons.Default.Add,
-                                                        contentDescription = "Añadir reseña",
+                                                        imageVector = if (showAddReviewForm) Icons.Default.Remove else Icons.Default.Add,
+                                                        contentDescription = if (showAddReviewForm) "Ocultar formulario" else "Añadir reseña",
                                                         tint = Color(0xFF3D8EE6)
                                                     )
                                                 }
+                                                Text(
+                                                    text = "Reseñas",
+                                                    modifier = Modifier.align(Alignment.Center),
+                                                    style = TextStyle(
+                                                        fontFamily = defaultFont,
+                                                        fontSize = 30.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color.White
+                                                    ),
+                                                    textAlign = TextAlign.Center
+                                                )
                                             }
 
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -359,7 +363,11 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                                     color = Color(0xFF3D8EE6)
                                                 )
                                             }
-                                            if (showAddReviewForm) {
+                                            AnimatedVisibility(
+                                                visible = showAddReviewForm,
+                                                enter = expandVertically() + fadeIn(),
+                                                exit = shrinkVertically() + fadeOut()
+                                            ) {
                                                 AddReviewForm(
                                                     clienteId = clienteId,
                                                     localId = localId ?: 0,
