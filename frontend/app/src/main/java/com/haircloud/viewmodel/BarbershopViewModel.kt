@@ -2,6 +2,7 @@ package com.haircloud.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.haircloud.data.model.BarberResponse
 import com.haircloud.data.model.BarbershopResponse
 import com.haircloud.data.model.ReviewResponse
 import com.haircloud.data.model.ServiceResponse
@@ -30,6 +31,10 @@ class BarbershopViewModel : ViewModel() {
 
     private val _addReviewState = MutableStateFlow<AddReviewState>(AddReviewState.Idle)
     val addReviewState: StateFlow<AddReviewState> = _addReviewState
+
+    private val _barbersState = MutableStateFlow<BarbersState>(BarbersState.Idle)
+    val barbersState: StateFlow<BarbersState> = _barbersState
+
 
     fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
@@ -150,6 +155,17 @@ class BarbershopViewModel : ViewModel() {
     fun resetDeleteReviewState() {
         _deleteReviewState.value = DeleteReviewState.Idle
     }
+
+    fun getBarbersByLocalId(localId: Int) {
+        _barbersState.value = BarbersState.Loading
+        viewModelScope.launch {
+            val result = repository.getBarbersById(localId)
+            _barbersState.value = result.fold(
+                onSuccess = { BarbersState.Success(it) },
+                onFailure = { BarbersState.Error(it.message ?: "Error al cargar peluqueros") }
+            )
+        }
+    }
 }
 
 sealed class BarbershopState {
@@ -192,3 +208,11 @@ sealed class AddReviewState {
     object Success : AddReviewState()
     data class Error(val message: String) : AddReviewState()
 }
+
+sealed class BarbersState {
+    object Idle : BarbersState()
+    object Loading : BarbersState()
+    data class Success(val barbers: List<BarberResponse>) : BarbersState()
+    data class Error(val message: String) : BarbersState()
+}
+

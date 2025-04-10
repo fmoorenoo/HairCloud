@@ -66,4 +66,7 @@ interface ApiService {
 
     @HTTP(method = "DELETE", path = "/api/barbershops/delete_review/{resenaid}", hasBody = false)
     fun deleteReview(@Path("resenaid") resenaId: Int): Call<ApiResponse>
+
+    @GET("/api/barbershops/get_barbers/{local_id}")
+    fun getBarbersByLocalId(@Path("local_id") localId: Int): Call<List<BarberResponse>>
 }

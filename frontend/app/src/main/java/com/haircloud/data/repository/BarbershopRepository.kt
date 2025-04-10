@@ -216,4 +216,20 @@ class BarbershopRepository {
             Result.failure(Exception("Error de conexión"))
         }
     }
+
+    suspend fun getBarbersById(localId: Int): Result<List<BarberResponse>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getBarbersByLocalId(localId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Error al obtener peluqueros"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
 }

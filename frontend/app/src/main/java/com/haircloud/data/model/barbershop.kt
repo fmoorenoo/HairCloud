@@ -42,3 +42,13 @@ data class ReviewRequest(
     val calificacion: Double,
     val comentario: String
 )
+
+data class BarberResponse(
+    val peluqueroid: Int,
+    val usuarioid: Int,
+    val nombre: String,
+    val telefono: String,
+    val especialidad: String?,
+    val fechacontratacion: String,
+    val localid: Int,
+)
