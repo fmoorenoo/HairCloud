@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.automirrored.filled.StarHalf
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -57,16 +58,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.haircloud.data.model.ServiceResponse
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.AddReviewState
 import com.haircloud.viewmodel.ClientState
 import com.haircloud.viewmodel.ClientViewModel
+import com.haircloud.viewmodel.DeleteReviewState
+import com.haircloud.viewmodel.ReviewsState
 import java.util.Locale
 
 @Composable
 fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) {
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
-    val barbershopViewModel = remember { BarbershopViewModel() }
+    val barbershopViewModel: BarbershopViewModel = viewModel()
+    val reviewsState by barbershopViewModel.reviewsState.collectAsState()
     val singleBarbershopState by barbershopViewModel.singleBarbershopState.collectAsState()
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
@@ -75,6 +84,52 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
     var showSelectionCard by remember { mutableStateOf(false) }
     var showReviews by remember { mutableStateOf(false) }
+    var showAddReviewForm by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val deleteReviewState by barbershopViewModel.deleteReviewState.collectAsState()
+    val addReviewState by barbershopViewModel.addReviewState.collectAsState()
+
+    LaunchedEffect(addReviewState) {
+        when (addReviewState) {
+            is AddReviewState.Success -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = "Reseña enviada con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                showAddReviewForm = false
+                barbershopViewModel.resetAddReviewState()
+            }
+            is AddReviewState.Error -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (addReviewState as AddReviewState.Error).message,
+                    type = SnackbarType.ERROR
+                )
+                barbershopViewModel.resetAddReviewState()
+            }
+            else -> {}
+        }
+    }
+
+    LaunchedEffect(deleteReviewState) {
+        when (deleteReviewState) {
+            is DeleteReviewState.Success -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = "Reseña eliminada con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                barbershopViewModel.resetDeleteReviewState()
+            }
+            is DeleteReviewState.Error -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (deleteReviewState as DeleteReviewState.Error).message,
+                    type = SnackbarType.ERROR
+                )
+                barbershopViewModel.resetDeleteReviewState()
+            }
+            else -> {}
+        }
+    }
+
 
     LaunchedEffect(userId) {
         userId?.let {
@@ -101,6 +156,8 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
             isFavorite = barbershop.es_favorito
         }
     }
+
+
 
     Box(
         modifier = Modifier
@@ -255,13 +312,32 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         exit = fadeOut()
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = "Reseñas",
-                                                style = TextStyle(fontFamily = defaultFont),
-                                                fontSize = 30.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White
-                                            )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text(
+                                                    text = "Reseñas",
+                                                    style = TextStyle(fontFamily = defaultFont),
+                                                    fontSize = 30.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White
+                                                )
+                                                IconButton(
+                                                    onClick = {
+                                                        showAddReviewForm = !showAddReviewForm
+                                                    },
+                                                    modifier = Modifier.size(30.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Add,
+                                                        contentDescription = "Añadir reseña",
+                                                        tint = Color(0xFF3D8EE6)
+                                                    )
+                                                }
+                                            }
+
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -281,6 +357,13 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                                     style = TextStyle(fontFamily = defaultFont),
                                                     fontSize = 16.sp,
                                                     color = Color(0xFF3D8EE6)
+                                                )
+                                            }
+                                            if (showAddReviewForm) {
+                                                AddReviewForm(
+                                                    clienteId = clienteId,
+                                                    localId = localId ?: 0,
+                                                    barbershopViewModel = barbershopViewModel
                                                 )
                                             }
                                         }
@@ -534,6 +617,13 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                 else -> {}
             }
         }
+        CustomSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 30.dp),
+            defaultFont = defaultFont
+        )
     }
 }
 
@@ -668,6 +758,122 @@ fun StarRating(rating: Float, value: String) {
                 fontSize = 19.sp,
                 color = Color(0xFFD9D9D9)
             )
+        }
+    }
+}
+
+@Composable
+fun ClickableStarRating(
+    rating: Float,
+    onRatingChanged: (Float) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        repeat(5) { index ->
+            Icon(
+                imageVector = if (index < rating) Icons.Filled.Star else Icons.Filled.StarBorder,
+                contentDescription = "Rate ${index + 1} stars",
+                tint = Color(0xFF3D8EE6),
+                modifier = Modifier
+                    .size(30.dp)
+                    .clickable {
+                        onRatingChanged((index + 1).toFloat())
+                    }
+                    .padding(2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun AddReviewForm(
+    clienteId: Int,
+    localId: Int,
+    barbershopViewModel: BarbershopViewModel
+) {
+    val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    var rating by remember { mutableFloatStateOf(0f) }
+    var comment by remember { mutableStateOf("") }
+    val reviewsState by barbershopViewModel.reviewsState.collectAsState()
+
+    LaunchedEffect(reviewsState) {
+        when (reviewsState) {
+            is ReviewsState.Success -> {
+            }
+            is ReviewsState.Error -> {
+            }
+            else -> {}
+        }
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Tu valoración",
+                style = TextStyle(fontFamily = defaultFont, fontSize = 18.sp, color = Color.White)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ClickableStarRating(
+                rating = rating,
+                onRatingChanged = { newRating ->
+                    rating = newRating
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = comment,
+                onValueChange = { comment = it },
+                label = {
+                    Text("Comentario", color = Color(0xFFAAAAAA), fontFamily = defaultFont)
+                },
+                textStyle = TextStyle(fontFamily = defaultFont, fontSize = 16.sp, color = Color.White),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedContainerColor = Color(0xFF1F1F1F),
+                    unfocusedContainerColor = Color(0xFF1F1F1F),
+                    focusedBorderColor = Color(0xFF3D8EE6),
+                    unfocusedBorderColor = Color(0xFF666666)
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    barbershopViewModel.addReview(clienteId, localId, rating.toDouble(), comment)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3D8EE6),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFF333333),
+                    disabledContentColor = Color(0xFF888888)
+                ),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = rating > 0
+            ) {
+                Text(
+                    text = if (reviewsState is ReviewsState.Loading) "Enviando..." else "Enviar reseña",
+                    style = TextStyle(fontFamily = defaultFont, fontSize = 16.sp)
+                )
+            }
+            if (reviewsState is ReviewsState.Loading) {
+                CircularProgressIndicator(
+                    color = Color(0xFF3D8EE6),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
         }
     }
 }
