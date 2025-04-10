@@ -267,3 +267,33 @@ def delete_review(resenaid):
     connection.close()
 
     return jsonify({"message": "Reseña eliminada"}), 200
+
+
+@barbershops_bp.route('/get_barbers/<int:localid>', methods=['GET'])
+def get_barbers(localid):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT * FROM peluqueros
+        WHERE localid = %s
+        ORDER BY nombre
+    """, (localid,))
+
+    peluqueros = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+
+    cursor.close()
+    connection.close()
+
+    result = []
+    for p in peluqueros:
+        item = {}
+        for i, value in enumerate(p):
+            if isinstance(value, (time, datetime, date)):
+                item[column_names[i]] = value.isoformat()
+            else:
+                item[column_names[i]] = value
+        result.append(item)
+
+    return jsonify(result), 200
