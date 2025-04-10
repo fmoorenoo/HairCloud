@@ -62,7 +62,7 @@ interface ApiService {
     fun getBarbershopReviews(@Path("local_id") localId: Int): Call<List<ReviewResponse>>
 
     @POST("/api/barbershops/add_review")
-    fun addReview(@Body body: Map<String, Any>): Call<ApiResponse>
+    fun addReview(@Body body: ReviewRequest): Call<ApiResponse>
 
     @HTTP(method = "DELETE", path = "/api/barbershops/delete_review/{resenaid}", hasBody = false)
     fun deleteReview(@Path("resenaid") resenaId: Int): Call<ApiResponse>

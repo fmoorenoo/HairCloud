@@ -35,3 +35,10 @@ data class ReviewResponse(
     val localid: Int,
     val cliente_nombre: String?
 )
+
+data class ReviewRequest(
+    val clienteid: Int,
+    val localid: Int,
+    val calificacion: Double,
+    val comentario: String
+)

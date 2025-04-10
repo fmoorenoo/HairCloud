@@ -168,11 +168,11 @@ class BarbershopRepository {
 
     suspend fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String): Result<String> {
         return try {
-            val body = mapOf(
-                "clienteid" to clienteId,
-                "localid" to localId,
-                "calificacion" to calificacion,
-                "comentario" to comentario
+            val body = ReviewRequest(
+                clienteid = clienteId,
+                localid = localId,
+                calificacion = calificacion,
+                comentario = comentario
             )
 
             val response = withContext(Dispatchers.IO) {
