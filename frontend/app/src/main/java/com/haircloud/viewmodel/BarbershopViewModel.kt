@@ -28,6 +28,9 @@ class BarbershopViewModel : ViewModel() {
     private val _deleteReviewState = MutableStateFlow<DeleteReviewState>(DeleteReviewState.Idle)
     val deleteReviewState: StateFlow<DeleteReviewState> = _deleteReviewState
 
+    private val _addReviewState = MutableStateFlow<AddReviewState>(AddReviewState.Idle)
+    val addReviewState: StateFlow<AddReviewState> = _addReviewState
+
     fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
@@ -106,20 +109,26 @@ class BarbershopViewModel : ViewModel() {
     }
 
     fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String) {
-        _reviewsState.value = ReviewsState.Loading
+        _addReviewState.value = AddReviewState.Loading
         viewModelScope.launch {
             val result = repository.addReview(clienteId, localId, calificacion, comentario)
             result.fold(
                 onSuccess = {
+                    _addReviewState.value = AddReviewState.Success
                     getBarbershopReviews(localId)
                     getBarbershopById(clienteId, localId)
                 },
                 onFailure = {
-                    _reviewsState.value = ReviewsState.Error(it.message ?: "Error al añadir reseña")
+                    _addReviewState.value = AddReviewState.Error(it.message ?: "Error al añadir reseña")
                 }
             )
         }
     }
+
+    fun resetAddReviewState() {
+        _addReviewState.value = AddReviewState.Idle
+    }
+
 
     fun deleteReview(resenaId: Int, localId: Int, clienteId: Int) {
         _deleteReviewState.value = DeleteReviewState.Idle
@@ -175,4 +184,11 @@ sealed class DeleteReviewState {
     object Idle : DeleteReviewState()
     object Success : DeleteReviewState()
     data class Error(val message: String) : DeleteReviewState()
+}
+
+sealed class AddReviewState {
+    object Idle : AddReviewState()
+    object Loading : AddReviewState()
+    object Success : AddReviewState()
+    data class Error(val message: String) : AddReviewState()
 }
