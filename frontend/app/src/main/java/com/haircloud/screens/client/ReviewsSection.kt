@@ -18,7 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,9 +44,6 @@ import com.haircloud.viewmodel.ReviewsState
 import com.haircloud.viewmodel.SingleBarbershopState
 import java.util.Locale
 import androidx.compose.runtime.setValue
-import com.haircloud.utils.CustomSnackbarHost
-import com.haircloud.utils.SnackbarType
-import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.DeleteReviewState
 
 @Composable
@@ -58,7 +54,6 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
     val localId = (if (singleBarbershopState is SingleBarbershopState.Success) {
         (singleBarbershopState as SingleBarbershopState.Success).barbershop.localid
     } else null)
-    val snackbarHostState = remember { SnackbarHostState() }
     val deleteReviewState by barbershopViewModel.deleteReviewState.collectAsState()
 
     LaunchedEffect(localId) {
@@ -69,17 +64,9 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
     LaunchedEffect(deleteReviewState) {
         when (deleteReviewState) {
             is DeleteReviewState.Success -> {
-                snackbarHostState.showTypedSnackbar(
-                    message = "Reseña eliminada con éxito",
-                    type = SnackbarType.SUCCESS
-                )
                 barbershopViewModel.resetDeleteReviewState()
             }
             is DeleteReviewState.Error -> {
-                snackbarHostState.showTypedSnackbar(
-                    message = (deleteReviewState as DeleteReviewState.Error).message,
-                    type = SnackbarType.ERROR
-                )
                 barbershopViewModel.resetDeleteReviewState()
             }
             else -> {}
@@ -327,13 +314,6 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
                 else -> {}
             }
         }
-        CustomSnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 30.dp),
-            defaultFont = defaultFont
-        )
     }
 }
 
@@ -356,7 +336,7 @@ fun ReviewCard(
                 shape = RoundedCornerShape(16.dp)
             ),
         colors = CardDefaults.cardColors(
-            containerColor = if (isUserReview) Color(0xFF2D3747) else Color(0xFF2A2A2A)
+            containerColor = if (isUserReview) Color(0xFF262C34) else Color(0xFF2A2A2A)
         ),
         shape = RoundedCornerShape(16.dp),
         border = if (isUserReview) BorderStroke(1.dp, Color(0xFF4D78CC)) else null
@@ -391,7 +371,7 @@ fun ReviewCard(
                 Text(
                     text = formatFecha(review.fecharesena),
                     style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 14.sp,
+                    fontSize = 17.sp,
                     color = Color(0xFFAAAAAA)
                 )
             }
@@ -451,10 +431,10 @@ fun ReviewCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = review.comentario ?: "Sin comentario",
+                text = if (review.comentario.isNullOrBlank()) "Sin comentario" else review.comentario,
                 style = TextStyle(fontFamily = defaultFont),
                 fontSize = 16.sp,
-                color = if (review.comentario == null) Color(0xFFAAAAAA) else Color.White
+                color = if (review.comentario.isNullOrBlank()) Color(0xFFAAAAAA) else Color.White
             )
         }
     }
