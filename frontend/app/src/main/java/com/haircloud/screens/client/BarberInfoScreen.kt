@@ -459,7 +459,8 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                             ReviewsSection(
                                 rating = barbershop.rating ?: 0f,
                                 totalReviews = barbershop.cantidad_resenas,
-                                barbershopViewModel = barbershopViewModel
+                                barbershopViewModel = barbershopViewModel,
+                                currentClienteId = clienteId
                             )
                         }
                     }
