@@ -25,6 +25,9 @@ class BarbershopViewModel : ViewModel() {
     private val _reviewsState = MutableStateFlow<ReviewsState>(ReviewsState.Idle)
     val reviewsState: StateFlow<ReviewsState> = _reviewsState
 
+    private val _deleteReviewState = MutableStateFlow<DeleteReviewState>(DeleteReviewState.Idle)
+    val deleteReviewState: StateFlow<DeleteReviewState> = _deleteReviewState
+
     fun getAllBarbershops(clienteId: Int) {
         _barbershopState.value = BarbershopState.Loading
         viewModelScope.launch {
@@ -119,19 +122,24 @@ class BarbershopViewModel : ViewModel() {
     }
 
     fun deleteReview(resenaId: Int, localId: Int, clienteId: Int) {
-        _reviewsState.value = ReviewsState.Loading
+        _deleteReviewState.value = DeleteReviewState.Idle
         viewModelScope.launch {
             val result = repository.deleteReview(resenaId)
             result.fold(
                 onSuccess = {
+                    _deleteReviewState.value = DeleteReviewState.Success
                     getBarbershopReviews(localId)
                     getBarbershopById(clienteId, localId)
                 },
                 onFailure = {
-                    _reviewsState.value = ReviewsState.Error(it.message ?: "Error al eliminar reseña")
+                    _deleteReviewState.value = DeleteReviewState.Error(it.message ?: "Error al eliminar reseña")
                 }
             )
         }
+    }
+
+    fun resetDeleteReviewState() {
+        _deleteReviewState.value = DeleteReviewState.Idle
     }
 }
 
@@ -161,4 +169,10 @@ sealed class ReviewsState {
     object Loading : ReviewsState()
     data class Success(val reviews: List<ReviewResponse>) : ReviewsState()
     data class Error(val message: String) : ReviewsState()
+}
+
+sealed class DeleteReviewState {
+    object Idle : DeleteReviewState()
+    object Success : DeleteReviewState()
+    data class Error(val message: String) : DeleteReviewState()
 }
