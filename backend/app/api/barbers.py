@@ -235,7 +235,7 @@ def add_review():
     if count >= 3:
         cursor.close()
         connection.close()
-        return jsonify({"error": "Solo se permiten 3 reseñas en una barbería"}), 400
+        return jsonify({"error": "Ya tienes 3 reseñas en esta barbería"}), 400
 
     # Insertar nueva reseña
     cursor.execute("""
