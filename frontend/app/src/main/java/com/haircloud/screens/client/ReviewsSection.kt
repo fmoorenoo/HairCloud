@@ -18,6 +18,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,6 +45,10 @@ import com.haircloud.viewmodel.ReviewsState
 import com.haircloud.viewmodel.SingleBarbershopState
 import java.util.Locale
 import androidx.compose.runtime.setValue
+import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.DeleteReviewState
 
 @Composable
 fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: BarbershopViewModel, currentClienteId: Int) {
@@ -53,10 +58,31 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
     val localId = (if (singleBarbershopState is SingleBarbershopState.Success) {
         (singleBarbershopState as SingleBarbershopState.Success).barbershop.localid
     } else null)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val deleteReviewState by barbershopViewModel.deleteReviewState.collectAsState()
 
     LaunchedEffect(localId) {
         localId?.let {
             barbershopViewModel.getBarbershopReviews(it)
+        }
+    }
+    LaunchedEffect(deleteReviewState) {
+        when (deleteReviewState) {
+            is DeleteReviewState.Success -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = "Reseña eliminada con éxito",
+                    type = SnackbarType.SUCCESS
+                )
+                barbershopViewModel.resetDeleteReviewState()
+            }
+            is DeleteReviewState.Error -> {
+                snackbarHostState.showTypedSnackbar(
+                    message = (deleteReviewState as DeleteReviewState.Error).message,
+                    type = SnackbarType.ERROR
+                )
+                barbershopViewModel.resetDeleteReviewState()
+            }
+            else -> {}
         }
     }
 
@@ -69,139 +95,185 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
     }
 
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF2A2A2A)
-            ),
-            shape = RoundedCornerShape(16.dp)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF2A2A2A)
+                ),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(
-                    text = "Valoraciones",
-                    style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(0.4f)
+                    Text(
+                        text = "Valoraciones",
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = String.format(Locale.US, "%.1f", rating),
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        StarRating(rating, "")
-                        Text(
-                            text = "$totalReviews ${if (totalReviews == 1) "reseña" else "reseñas"}",
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 16.sp,
-                            color = Color(0xFFD9D9D9)
-                        )
-                    }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(0.4f)
+                        ) {
+                            Text(
+                                text = String.format(Locale.US, "%.1f", rating),
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            StarRating(rating, "")
+                            Text(
+                                text = "$totalReviews ${if (totalReviews == 1) "reseña" else "reseñas"}",
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 16.sp,
+                                color = Color(0xFFD9D9D9)
+                            )
+                        }
 
-                    Column(
-                        modifier = Modifier
-                            .weight(0.6f)
+                        Column(
+                            modifier = Modifier
+                                .weight(0.6f)
 
-                    ) {
-                        Text(
-                            text = "Estrellas  |  Votos",
-                            modifier = Modifier.fillMaxWidth(),
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        for (i in 5 downTo 1) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .padding(start = 16.dp)
-                            ) {
-                                Text(
-                                    text = "$i",
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier.width(20.dp)
-                                )
-
-                                Box(
+                        ) {
+                            Text(
+                                text = "Estrellas  |  Votos",
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 16.sp,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            for (i in 5 downTo 1) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(10.dp)
-                                        .width(50.dp)
-                                        .background(Color(0xFF444444), RoundedCornerShape(4.dp))
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .padding(start = 16.dp)
                                 ) {
-                                    val totalVotes = ratingCounts.values.sum().coerceAtLeast(1)
-                                    val votes = ratingCounts[i] ?: 0
-                                    val percentage = votes.toFloat() / totalVotes.toFloat()
+                                    Text(
+                                        text = "$i",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        modifier = Modifier.width(20.dp)
+                                    )
+
                                     Box(
                                         modifier = Modifier
-                                            .fillMaxHeight()
-                                            .fillMaxWidth(percentage)
-                                            .background(Color(0xFF3D8EE6), RoundedCornerShape(4.dp))
+                                            .weight(1f)
+                                            .height(10.dp)
+                                            .width(50.dp)
+                                            .background(Color(0xFF444444), RoundedCornerShape(4.dp))
+                                    ) {
+                                        val totalVotes = ratingCounts.values.sum().coerceAtLeast(1)
+                                        val votes = ratingCounts[i] ?: 0
+                                        val percentage = votes.toFloat() / totalVotes.toFloat()
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxHeight()
+                                                .fillMaxWidth(percentage)
+                                                .background(
+                                                    Color(0xFF3D8EE6),
+                                                    RoundedCornerShape(4.dp)
+                                                )
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "${ratingCounts[i] ?: 0}",
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 14.sp,
+                                        color = Color.White,
+                                        modifier = Modifier
+                                            .width(40.dp)
+                                            .padding(start = 8.dp),
+                                        textAlign = TextAlign.Start
                                     )
                                 }
-
-                                Text(
-                                    text = "${ratingCounts[i] ?: 0}",
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 14.sp,
-                                    color = Color.White,
-                                    modifier = Modifier
-                                        .width(40.dp)
-                                        .padding(start = 8.dp),
-                                    textAlign = TextAlign.Start
-                                )
                             }
                         }
                     }
                 }
             }
-        }
 
-        when (reviewsState) {
-            is ReviewsState.Loading -> {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp)
-                ) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(48.dp)
-                    )
+            when (reviewsState) {
+                is ReviewsState.Loading -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                 }
-            }
-            is ReviewsState.Success -> {
-                val reviews = (reviewsState as ReviewsState.Success).reviews
-                if (reviews.isEmpty()) {
+
+                is ReviewsState.Success -> {
+                    val reviews = (reviewsState as ReviewsState.Success).reviews
+                    if (reviews.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2A2A2A)
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp)
+                            ) {
+                                Text(
+                                    text = "No hay reseñas disponibles para esta barbería",
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 16.sp,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    } else {
+                        reviews.forEach { review ->
+                            ReviewCard(
+                                review = review,
+                                clienteId = currentClienteId,
+                                localId = localId ?: return@forEach,
+                                onDeleteReview = { resenaId ->
+                                    barbershopViewModel.deleteReview(
+                                        resenaId,
+                                        localId,
+                                        currentClienteId
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+
+                is ReviewsState.Error -> {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -209,86 +281,59 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(32.dp)
+                                .padding(24.dp)
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = "Error",
+                                tint = Color.White,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "No hay reseñas disponibles para esta barbería",
+                                text = (reviewsState as ReviewsState.Error).message,
                                 style = TextStyle(fontFamily = defaultFont),
                                 fontSize = 16.sp,
                                 color = Color.White,
                                 textAlign = TextAlign.Center
                             )
-                        }
-                    }
-                } else {
-                    reviews.forEach { review ->
-                        ReviewCard(
-                            review = review,
-                            clienteId = currentClienteId,
-                            localId = localId ?: return@forEach,
-                            onDeleteReview = { resenaId ->
-                                barbershopViewModel.deleteReview(resenaId, localId, currentClienteId)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    localId?.let {
+                                        barbershopViewModel.getBarbershopReviews(it)
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3D8EE6),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "Reintentar",
+                                    style = TextStyle(fontFamily = defaultFont),
+                                    fontSize = 16.sp
+                                )
                             }
-                        )
-                    }
-                }
-            }
-            is ReviewsState.Error -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF2A2A2A)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = "Error",
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = (reviewsState as ReviewsState.Error).message,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 16.sp,
-                            color = Color.White,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = {
-                                localId?.let {
-                                    barbershopViewModel.getBarbershopReviews(it)
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF3D8EE6),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "Reintentar",
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 16.sp
-                            )
                         }
                     }
                 }
+
+                else -> {}
             }
-            else -> {}
         }
+        CustomSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 30.dp),
+            defaultFont = defaultFont
+        )
     }
 }
 
