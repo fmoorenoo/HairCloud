@@ -166,4 +166,54 @@ class BarbershopRepository {
         }
     }
 
+    suspend fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String): Result<String> {
+        return try {
+            val body = mapOf(
+                "clienteid" to clienteId,
+                "localid" to localId,
+                "calificacion" to calificacion,
+                "comentario" to comentario
+            )
+
+            val response = withContext(Dispatchers.IO) {
+                api.addReview(body).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Reseña añadida correctamente")
+            } else {
+                val errorMessage = try {
+                    val errorJson = response.errorBody()?.string() ?: "{}"
+                    JSONObject(errorJson).getString("error")
+                } catch (_: Exception) {
+                    "No se pudo añadir la reseña"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
+    suspend fun deleteReview(resenaId: Int): Result<String> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.deleteReview(resenaId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Reseña eliminada")
+            } else {
+                val errorMessage = try {
+                    val errorJson = response.errorBody()?.string() ?: "{}"
+                    JSONObject(errorJson).getString("error")
+                } catch (_: Exception) {
+                    "No se pudo eliminar la reseña"
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
 }
