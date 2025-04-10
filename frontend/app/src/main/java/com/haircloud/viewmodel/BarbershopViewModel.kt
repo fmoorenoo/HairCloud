@@ -102,8 +102,36 @@ class BarbershopViewModel : ViewModel() {
         }
     }
 
-    fun resetBarbershopState() {
-        _barbershopState.value = BarbershopState.Idle
+    fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String) {
+        _reviewsState.value = ReviewsState.Loading
+        viewModelScope.launch {
+            val result = repository.addReview(clienteId, localId, calificacion, comentario)
+            result.fold(
+                onSuccess = {
+                    getBarbershopReviews(localId)
+                    getBarbershopById(clienteId, localId)
+                },
+                onFailure = {
+                    _reviewsState.value = ReviewsState.Error(it.message ?: "Error al añadir reseña")
+                }
+            )
+        }
+    }
+
+    fun deleteReview(resenaId: Int, localId: Int, clienteId: Int) {
+        _reviewsState.value = ReviewsState.Loading
+        viewModelScope.launch {
+            val result = repository.deleteReview(resenaId)
+            result.fold(
+                onSuccess = {
+                    getBarbershopReviews(localId)
+                    getBarbershopById(clienteId, localId)
+                },
+                onFailure = {
+                    _reviewsState.value = ReviewsState.Error(it.message ?: "Error al eliminar reseña")
+                }
+            )
+        }
     }
 }
 
