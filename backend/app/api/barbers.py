@@ -195,14 +195,14 @@ def get_barbershop_reviews(localid):
         ORDER BY r.fecharesena DESC
     """, (localid,))
 
-    reseñas = cursor.fetchall()
+    resenas = cursor.fetchall()
     column_names = [desc[0] for desc in cursor.description]
 
     cursor.close()
     connection.close()
 
     result = []
-    for r in reseñas:
+    for r in resenas:
         item = {}
         for i, value in enumerate(r):
             if isinstance(value, (time, datetime, date)):
@@ -213,3 +213,57 @@ def get_barbershop_reviews(localid):
 
     return jsonify(result), 200
 
+
+@barbershops_bp.route('/add_review', methods=['POST'])
+def add_review():
+    data = request.get_json()
+    clienteid = data['clienteid']
+    localid = data['localid']
+    calificacion = data['calificacion']
+    comentario = data.get('comentario', '')
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    # Cantidad de reseñas del cliente para esa barbería
+    cursor.execute("""
+        SELECT COUNT(*) FROM resenas
+        WHERE clienteid = %s AND localid = %s AND peluqueroid IS NULL
+    """, (clienteid, localid))
+    count = cursor.fetchone()[0]
+
+    if count >= 3:
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Solo se permiten 3 reseñas en una barbería"}), 400
+
+    # Insertar nueva reseña
+    cursor.execute("""
+        INSERT INTO resenas (clienteid, localid, calificacion, comentario, fecharesena, peluqueroid)
+        VALUES (%s, %s, %s, %s, NOW(), NULL)
+    """, (clienteid, localid, calificacion, comentario))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Reseña añadida correctamente"}), 201
+
+
+@barbershops_bp.route('/delete_review/<int:resenaid>', methods=['DELETE'])
+def delete_review(resenaid):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM resenas WHERE resenaid = %s", (resenaid,))
+
+    if cursor.rowcount == 0:
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Reseña no encontrada"}), 404
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Reseña eliminada"}), 200
