@@ -1,33 +1,33 @@
 package com.haircloud.screens.client
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -43,9 +43,10 @@ import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.ReviewsState
 import com.haircloud.viewmodel.SingleBarbershopState
 import java.util.Locale
+import androidx.compose.runtime.setValue
 
 @Composable
-fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: BarbershopViewModel) {
+fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: BarbershopViewModel, currentClienteId: Int) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val singleBarbershopState by barbershopViewModel.singleBarbershopState.collectAsState()
     val reviewsState by barbershopViewModel.reviewsState.collectAsState()
@@ -225,7 +226,14 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
                     }
                 } else {
                     reviews.forEach { review ->
-                        RealReviewCard(review)
+                        ReviewCard(
+                            review = review,
+                            clienteId = currentClienteId,
+                            localId = localId ?: return@forEach,
+                            onDeleteReview = { resenaId ->
+                                barbershopViewModel.deleteReview(resenaId, localId, currentClienteId)
+                            }
+                        )
                     }
                 }
             }
@@ -285,33 +293,55 @@ fun ReviewsSection(rating: Float, totalReviews: Int, barbershopViewModel: Barber
 }
 
 @Composable
-fun RealReviewCard(review: ReviewResponse) {
+fun ReviewCard(
+    review: ReviewResponse,
+    clienteId: Int,
+    localId: Int,
+    onDeleteReview: (Int) -> Unit
+) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    val isUserReview = review.clienteid == clienteId
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (isUserReview) 6.dp else 2.dp,
+                shape = RoundedCornerShape(16.dp)
+            ),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2A2A2A)
+            containerColor = if (isUserReview) Color(0xFF2D3747) else Color(0xFF2A2A2A)
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = if (isUserReview) BorderStroke(1.dp, Color(0xFF4D78CC)) else null
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = review.cliente_nombre ?: "Cliente anónimo",
-                    style = TextStyle(fontFamily = defaultFont),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (isUserReview) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Tu reseña",
+                            tint = Color(0xFF4D78CC),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    Text(
+                        text = if (isUserReview) "${review.cliente_nombre} (Tú)"
+                        else review.cliente_nombre ?: "Cliente anónimo",
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isUserReview) Color(0xFFE3F2FD) else Color.White
+                    )
+                }
 
                 Text(
                     text = formatFecha(review.fecharesena),
@@ -320,18 +350,66 @@ fun RealReviewCard(review: ReviewResponse) {
                     color = Color(0xFFAAAAAA)
                 )
             }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StarRating(review.calificacion.toFloat(), "")
 
-            StarRating(review.calificacion.toFloat(), "")
+                if (isUserReview) {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones",
+                            tint = Color(0xFFAAAAAA),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { showMenu = !showMenu }
+                        )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(Color(0xFF1E1E1E))
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "Eliminar reseña",
+                                        style = TextStyle(
+                                            fontFamily = defaultFont,
+                                            fontSize = 16.sp,
+                                            color = Color(0xFFFF6B6B)
+                                        )
+                                    )
+                                },
+                                onClick = {
+                                    onDeleteReview(review.resenaid)
+                                    showMenu = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar reseña",
+                                        tint = Color(0xFFFF6B6B),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = review.comentario ?: "Sin comentario",
                 style = TextStyle(fontFamily = defaultFont),
                 fontSize = 16.sp,
-                color = Color.White
+                color = if (review.comentario == null) Color(0xFFAAAAAA) else Color.White
             )
         }
     }
