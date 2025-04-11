@@ -133,32 +133,32 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                     var nombre by remember { mutableStateOf(client.nombre) }
                     var email by remember { mutableStateOf(client.email) }
                     var nombreUsuario by remember { mutableStateOf(client.nombreusuario) }
-                    var telefono by remember { mutableStateOf(client.telefono ?: "Sin especificar") }
+                    var telefono by remember { mutableStateOf(if (client.telefono.isNullOrEmpty() || client.telefono == "Sin especificar") "" else client.telefono) }
 
                     var showDialog by remember { mutableStateOf(false) }
                     var dialogMessage by remember { mutableStateOf("") }
                     var dialogTitle by remember { mutableStateOf("") }
 
                     val isUsernameValid = CredentialsValidator.isUsernameValid(nombreUsuario)
-                    val isPhoneValid = CredentialsValidator.isPhoneValid(telefono)
+                    val isPhoneValid = telefono.isEmpty() || CredentialsValidator.isPhoneValid(telefono)
 
                     val hasChanges = nombre != client.nombre ||
                             email != client.email ||
                             nombreUsuario != client.nombreusuario ||
-                            telefono != (client.telefono ?: "Sin especificar")
+                            telefono != (if (client.telefono.isNullOrEmpty() || client.telefono == "Sin especificar") "" else client.telefono)
 
-                    val allFieldsValid = isUsernameValid && nombre.isNotEmpty() && email.isNotEmpty()
+                    val allFieldsValid = isUsernameValid && isPhoneValid && nombre.isNotEmpty() && email.isNotEmpty()
 
                     fun resetValues() {
                         nombre = client.nombre
                         email = client.email
                         nombreUsuario = client.nombreusuario
-                        telefono = client.telefono ?: ""
+                        telefono = if (client.telefono.isNullOrEmpty() || client.telefono == "Sin especificar") "" else client.telefono
                         isEditMode = false
                     }
 
                     fun saveChanges() {
-                        val phone = if (telefono.trim().isEmpty() || telefono == "Sin especificar") "nulo" else telefono
+                        val phone = if (telefono.trim().isEmpty()) "nulo" else telefono
                         val updateData = mutableMapOf<String, String?>(
                             "nombre" to nombre,
                             "email" to email,
