@@ -2,6 +2,19 @@ from flask import jsonify, request
 from app.api import barbershops_bp
 from app.db.connection import get_connection
 from datetime import time, date, datetime
+import base64
+
+def row_to_dict(row, column_names):
+    item = {}
+    for i, value in enumerate(row):
+        column = column_names[i]
+        if isinstance(value, (time, datetime, date)):
+            item[column] = value.isoformat()
+        elif column == 'imagen' and value is not None:
+            item[column] = base64.b64encode(value).decode('utf-8')
+        else:
+            item[column] = value
+    return item
 
 @barbershops_bp.route('/get_all_barbershops/<int:clienteid>', methods=['GET'])
 def get_all_barbershops(clienteid):
@@ -26,16 +39,7 @@ def get_all_barbershops(clienteid):
     cursor.close()
     connection.close()
 
-    result = []
-    for b in barberias:
-        item = {}
-        for i, value in enumerate(b):
-            if isinstance(value, (time, datetime, date)):
-                item[column_names[i]] = value.isoformat()
-            else:
-                item[column_names[i]] = value
-        result.append(item)
-
+    result = [row_to_dict(b, column_names) for b in barberias]
     return jsonify(result), 200
 
 
@@ -67,14 +71,7 @@ def get_barbershop(clienteid, localid):
     if row is None:
         return jsonify({"error": "Barbería no encontrada"}), 404
 
-    item = {}
-    for i, value in enumerate(row):
-        if isinstance(value, (time, datetime, date)):
-            item[column_names[i]] = value.isoformat()
-        else:
-            item[column_names[i]] = value
-
-    return jsonify(item), 200
+    return jsonify(row_to_dict(row, column_names)), 200
 
 
 @barbershops_bp.route('/get_favorite_barbershops/<int:clienteid>', methods=['GET'])
@@ -101,16 +98,7 @@ def get_favorite_barbershops(clienteid):
     cursor.close()
     connection.close()
 
-    result = []
-    for b in favoritos:
-        item = {}
-        for i, value in enumerate(b):
-            if isinstance(value, (time, datetime, date)):
-                item[column_names[i]] = value.isoformat()
-            else:
-                item[column_names[i]] = value
-        result.append(item)
-
+    result = [row_to_dict(b, column_names) for b in favoritos]
     return jsonify(result), 200
 
 
@@ -225,7 +213,6 @@ def add_review():
     connection = get_connection()
     cursor = connection.cursor()
 
-    # Cantidad de reseñas del cliente para esa barbería
     cursor.execute("""
         SELECT COUNT(*) FROM resenas
         WHERE clienteid = %s AND localid = %s AND peluqueroid IS NULL
@@ -237,7 +224,6 @@ def add_review():
         connection.close()
         return jsonify({"error": "Ya tienes 3 reseñas en esta barbería"}), 400
 
-    # Insertar nueva reseña
     cursor.execute("""
         INSERT INTO resenas (clienteid, localid, calificacion, comentario, fecharesena, peluqueroid)
         VALUES (%s, %s, %s, %s, NOW(), NULL)
