@@ -145,7 +145,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     var isFavorite by remember { mutableStateOf(false) }
 
     LaunchedEffect(clienteId, localId) {
-        if (localId != null) {
+        if (localId != null && clienteId != -1) {
             barbershopViewModel.getBarbershopById(clienteId, localId)
         }
     }
