@@ -30,8 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.haircloud.R
 import com.haircloud.data.model.AvailableSlot
 import java.time.LocalDate
 import java.time.YearMonth
@@ -41,7 +45,9 @@ import java.util.*
 @Composable
 fun CalendarMonth(
     selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit
+    onDateSelected: (LocalDate) -> Unit,
+    workingDays: List<Int> = listOf(1, 2, 3, 4, 5),
+    onMonthChanged: () -> Unit = {}
 ) {
     val today = remember { LocalDate.now() }
     val currentActualMonth = remember { YearMonth.from(today) }
@@ -55,6 +61,8 @@ fun CalendarMonth(
     val canGoToPreviousMonth = displayedYearMonth.isAfter(currentActualMonth) ||
             displayedYearMonth.equals(currentActualMonth)
 
+    val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+
     Column {
         Row(
             Modifier.fillMaxWidth(),
@@ -66,6 +74,7 @@ fun CalendarMonth(
                 onClick = {
                     if (canGoToPreviousMonth && !displayedYearMonth.equals(currentActualMonth)) {
                         displayedYearMonth = displayedYearMonth.minusMonths(1)
+                        onMonthChanged()
                     }
                 },
                 enabled = canGoToPreviousMonth && !displayedYearMonth.equals(currentActualMonth)
@@ -83,12 +92,17 @@ fun CalendarMonth(
                 text = "${displayedYearMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
                     .replaceFirstChar { it.uppercase() }} ${displayedYearMonth.year}",
                 color = Color.White,
-                fontWeight = FontWeight.Bold
+                style = androidx.compose.ui.text.TextStyle(
+                    fontFamily = defaultFont,
+                    fontWeight = FontWeight.Bold
+                ),
+                fontSize = 30.sp
             )
 
             // Mes siguiente
             IconButton(onClick = {
                 displayedYearMonth = displayedYearMonth.plusMonths(1)
+                onMonthChanged()
             }) {
                 Icon(
                     Icons.Default.ArrowBackIosNew,
@@ -132,9 +146,12 @@ fun CalendarMonth(
             // Días del mes
             items(daysInMonth) { day ->
                 val date = firstDayOfMonth.plusDays(day.toLong())
+                val dayOfWeek = date.dayOfWeek.value % 7
+                val isWorkingDay = workingDays.contains(dayOfWeek)
                 val isSelected = selectedDate == date
                 val isPastDate = date.isBefore(today)
-                val isEnabled = !isPastDate || date.equals(today)
+                val isToday = date == today
+                val isEnabled = (!isPastDate || isToday) && isWorkingDay
 
                 Box(
                     modifier = Modifier
@@ -144,8 +161,9 @@ fun CalendarMonth(
                         .background(
                             when {
                                 isSelected -> Color.White
-                                date.equals(today) -> Color(0xFF30D1FF).copy(alpha = 0.4f)
-                                !isEnabled -> Color.Gray.copy(alpha = 0.1f)
+                                isPastDate -> Color.Gray.copy(alpha = 0.1f)
+                                !isWorkingDay -> Color.Red.copy(alpha = 0.2f)
+                                isToday -> Color(0xFF30D1FF).copy(alpha = 0.3f)
                                 else -> Color.Transparent
                             }
                         )
@@ -154,16 +172,35 @@ fun CalendarMonth(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "${day + 1}",
-                        color = when {
-                            isSelected -> Color.Black
-                            !isEnabled -> Color.Gray.copy(alpha = 0.5f)
-                            date.equals(today) -> Color(0xFFB3D2FF)
-                            else -> Color.White
-                        },
-                        fontWeight = if (date.equals(today) || isSelected) FontWeight.Bold else FontWeight.Normal
-                    )
+                    val textColor = when {
+                        isSelected -> Color.Black
+                        isPastDate -> Color.Gray.copy(alpha = 0.5f)
+                        !isWorkingDay -> Color(0xFFE1E1E1)
+                        else -> Color.White
+                    }
+
+                    if (isToday) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${day + 1}",
+                                color = textColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "HOY",
+                                color = textColor,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 1.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "${day + 1}",
+                            color = textColor,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
