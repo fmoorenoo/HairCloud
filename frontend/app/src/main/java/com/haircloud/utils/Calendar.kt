@@ -1,6 +1,7 @@
 package com.haircloud.utils
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,10 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -126,7 +126,7 @@ fun CalendarMonth(
                 ) {
                     Text(
                         text = day,
-                        color = Color.Gray,
+                        color = Color(0xFFE7E7E7),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -157,7 +157,7 @@ fun CalendarMonth(
                     modifier = Modifier
                         .padding(4.dp)
                         .size(40.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(3.dp))
                         .background(
                             when {
                                 isSelected -> Color.White
@@ -208,37 +208,50 @@ fun CalendarMonth(
 }
 
 @Composable
-fun AvailableSlotsList(
+fun AvailableSlotsGrid(
     slots: List<AvailableSlot>,
     onSlotSelected: (AvailableSlot) -> Unit,
-    selectedSlot: AvailableSlot?
+    selectedSlot: AvailableSlot?,
+    modifier: Modifier = Modifier
 ) {
-    LazyRow(
+    val columns = 4
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columns),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.padding(vertical = 12.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .heightIn(max = 300.dp)
     ) {
-        items(slots) { slot ->
+        items(slots.size) { index ->
+            val slot = slots[index]
             val isSelected = slot == selectedSlot
-            val isOccupied = false
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(5.dp))
                     .background(
                         when {
-                            isSelected -> Color.White
-                            isOccupied -> Color.Red.copy(alpha = 0.5f)
-                            else -> Color.Gray.copy(alpha = 0.3f)
+                            isSelected -> Color(0xFFDADADA)
+                            else -> Color.White
                         }
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .clickable { onSlotSelected(slot) }
+                    .border(if (!isSelected) 0.dp else
+                        2.dp, color = Color(0xFF5AB641), shape = RoundedCornerShape(5.dp)
+                    )
+                    .clickable(enabled = true) { onSlotSelected(slot) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = slot.desde,
-                    color = if (isSelected) Color.Black else Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = slot.desde,
+                        color = if (isSelected) Color.Black else Color.DarkGray,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 25.sp
+                    )
+                }
             }
         }
     }
