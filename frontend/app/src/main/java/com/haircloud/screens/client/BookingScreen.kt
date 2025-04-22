@@ -44,6 +44,7 @@ import com.haircloud.viewmodel.BarbersState
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.CalendarViewModel
 import com.haircloud.viewmodel.SingleServiceState
+import com.haircloud.viewmodel.WeeklyScheduleState
 import java.time.LocalDate
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -54,6 +55,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     val calendarViewModel = remember { CalendarViewModel() }
     val barbersState by barbershopViewModel.barbersState.collectAsState()
     val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
+    val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
 
     var selectedBarber by remember { mutableStateOf<BarberResponse?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -234,6 +236,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                                         isSelected = selectedBarber?.peluqueroid == barber.peluqueroid,
                                         onClick = {
                                             selectedBarber = barber
+                                            calendarViewModel.getWeeklySchedule(barber.peluqueroid)
                                             snackbarMessage = "Seleccionaste a ${barber.nombre}"
                                             snackbarType = SnackbarType.INFO
                                         },
@@ -287,13 +290,33 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                             modifier = Modifier.size(25.dp)
                         )
                     }
+                    val dayNameToCalendarIndex = mapOf(
+                        "Domingo" to 0,
+                        "Lunes" to 1,
+                        "Martes" to 2,
+                        "Miércoles" to 3,
+                        "Jueves" to 4,
+                        "Viernes" to 5,
+                        "Sábado" to 6
+                    )
+
+                    val workingDays = when (weeklyScheduleState) {
+                        is WeeklyScheduleState.Success -> {
+                            (weeklyScheduleState as WeeklyScheduleState.Success).schedule.mapNotNull {
+                                dayNameToCalendarIndex[it.diasemana]
+                            }
+                        }
+                        else -> listOf()
+                    }
 
                     CalendarMonth(
                         selectedDate = selectedDate,
                         onDateSelected = { date ->
                             selectedDate = date
                             selectedSlot = null
-                        }
+                        },
+                        workingDays = workingDays,
+                        onMonthChanged = { selectedDate = null }
                     )
                 }
                 when (slotState) {
