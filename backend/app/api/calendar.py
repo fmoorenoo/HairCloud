@@ -151,23 +151,37 @@ def get_available_slots(peluqueroid):
         bloque_dt_fin = datetime.combine(fecha, bloque_fin)
         rangos_ocupados.append((bloque_dt_inicio, bloque_dt_fin))
 
+    rangos_ocupados.sort(key=lambda x: x[0])
+
     bloques_disponibles = []
     actual = datetime.now()
+
+    if fecha == actual.date():
+        minuto = actual.minute
+        siguiente_multiplo = ((minuto // 5) + 1) * 5
+        if siguiente_multiplo >= 60:
+            actual = actual.replace(hour=actual.hour + 1, minute=0, second=0, microsecond=0)
+        else:
+            actual = actual.replace(minute=siguiente_multiplo, second=0, microsecond=0)
     inicio = max(dt_inicio, actual) if fecha == actual.date() else dt_inicio
     duracion_td = timedelta(minutes=duracion)
 
+    paso = timedelta(minutes=5)
     while inicio + duracion_td <= dt_fin:
-        solapado = any(
-            not (inicio + duracion_td <= ocupado_inicio or inicio >= ocupado_fin)
-            for ocupado_inicio, ocupado_fin in rangos_ocupados
-        )
+        hay_solape = False
+        for ocupado_inicio, ocupado_fin in rangos_ocupados:
+            if not (inicio + duracion_td <= ocupado_inicio or inicio >= ocupado_fin):
+                hay_solape = True
+                break
 
-        if not solapado:
+        if not hay_solape:
             bloques_disponibles.append({
                 "desde": inicio.strftime("%H:%M"),
                 "hasta": (inicio + duracion_td).strftime("%H:%M")
             })
 
-        inicio += timedelta(minutes=duracion)
+            inicio += duracion_td
+        else:
+            inicio += paso
 
     return jsonify(bloques_disponibles), 200
