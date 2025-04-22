@@ -170,7 +170,7 @@ fun CalendarMonth(
                         .background(
                             when {
                                 isSelected -> Color.White
-                                isPastDate -> Color.Gray.copy(alpha = 0.1f)
+                                isPastDate -> Color.Gray.copy(alpha = 0.3f)
                                 !isWorkingDay -> Color.Red.copy(alpha = 0.2f)
                                 isToday -> Color(0xFF30D1FF).copy(alpha = 0.3f)
                                 else -> Color.Transparent
@@ -183,7 +183,7 @@ fun CalendarMonth(
                 ) {
                     val textColor = when {
                         isSelected -> Color.Black
-                        isPastDate -> Color.Gray.copy(alpha = 0.5f)
+                        isPastDate -> Color(0xFFFFFFFF).copy(alpha = 0.6f)
                         !isWorkingDay -> Color(0xFFE1E1E1)
                         else -> Color.White
                     }
@@ -247,8 +247,9 @@ fun AvailableSlotsGrid(
                             else -> Color.White
                         }
                     )
-                    .border(if (!isSelected) 0.dp else
-                        2.dp, color = Color(0xFF5AB641), shape = RoundedCornerShape(5.dp)
+                    .border(
+                        if (!isSelected) 0.dp else
+                            2.dp, color = Color(0xFF5AB641), shape = RoundedCornerShape(5.dp)
                     )
                     .clickable(enabled = true) { onSlotSelected(slot) }
                     .padding(vertical = 8.dp),
