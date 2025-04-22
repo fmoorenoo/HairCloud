@@ -80,7 +80,7 @@ fun BarbershopCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(60.dp)
                         .background(Color(0xFFCCCCCC), RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
