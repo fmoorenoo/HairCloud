@@ -58,6 +58,9 @@ interface ApiService {
     @GET("/api/barbershops/get_services/{local_id}")
     fun getServicesByLocalId(@Path("local_id") localId: Int): Call<List<ServiceResponse>>
 
+    @GET("/api/barbershops/get_service/{servicioid}")
+    fun getService(@Path("servicioid") servicioId: Int): Call<ServiceResponse>
+
     @GET("/api/barbershops/get_barbershop_reviews/{local_id}")
     fun getBarbershopReviews(@Path("local_id") localId: Int): Call<List<ReviewResponse>>
 
@@ -69,4 +72,20 @@ interface ApiService {
 
     @GET("/api/barbershops/get_barbers/{local_id}")
     fun getBarbersByLocalId(@Path("local_id") localId: Int): Call<List<BarberResponse>>
+
+    @GET("/api/calendar/get_weekly_schedule/{peluqueroid}")
+    fun getWeeklySchedule(@Path("peluqueroid") peluqueroId: Int): Call<List<WeeklyScheduleResponse>>
+
+    @GET("/api/calendar/get_blocked_hours/{peluqueroid}")
+    fun getBlockedHours(@Path("peluqueroid") peluqueroId: Int): Call<List<BlockedHoursResponse>>
+
+    @GET("/api/calendar/get_barber_dates/{peluqueroid}")
+    fun getBarberDates(@Path("peluqueroid") peluqueroId: Int): Call<List<DateResponse>>
+
+    @GET("/api/calendar/get_available_slots/{peluqueroid}")
+    fun getAvailableSlots(
+        @Path("peluqueroid") peluqueroId: Int,
+        @retrofit2.http.Query("fecha") fecha: String,
+        @retrofit2.http.Query("duracion") duracion: Int
+    ): Call<List<AvailableSlot>>
 }
