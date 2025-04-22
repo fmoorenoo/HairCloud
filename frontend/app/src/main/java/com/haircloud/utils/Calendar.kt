@@ -52,6 +52,8 @@ fun CalendarMonth(
     val today = remember { LocalDate.now() }
     val currentActualMonth = remember { YearMonth.from(today) }
 
+    val maxAllowedMonth = remember { currentActualMonth.plusMonths(4) }
+
     var displayedYearMonth by remember { mutableStateOf(currentActualMonth) }
 
     val firstDayOfMonth = displayedYearMonth.atDay(1)
@@ -60,6 +62,8 @@ fun CalendarMonth(
 
     val canGoToPreviousMonth = displayedYearMonth.isAfter(currentActualMonth) ||
             displayedYearMonth.equals(currentActualMonth)
+
+    val canGoToNextMonth = displayedYearMonth.isBefore(maxAllowedMonth)
 
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
@@ -100,15 +104,20 @@ fun CalendarMonth(
             )
 
             // Mes siguiente
-            IconButton(onClick = {
-                displayedYearMonth = displayedYearMonth.plusMonths(1)
-                onMonthChanged()
-            }) {
+            IconButton(
+                onClick = {
+                    if (canGoToNextMonth) {
+                        displayedYearMonth = displayedYearMonth.plusMonths(1)
+                        onMonthChanged()
+                    }
+                },
+                enabled = canGoToNextMonth
+            ) {
                 Icon(
                     Icons.Default.ArrowBackIosNew,
                     contentDescription = "Mes siguiente",
                     modifier = Modifier.rotate(180f),
-                    tint = Color.White
+                    tint = if (canGoToNextMonth) Color.White else Color.Gray.copy(alpha = 0.5f)
                 )
             }
         }
@@ -126,7 +135,7 @@ fun CalendarMonth(
                 ) {
                     Text(
                         text = day,
-                        color = Color(0xFFE7E7E7),
+                        color = Color(0xFF9D9D9D),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -190,6 +199,7 @@ fun CalendarMonth(
                                 text = "HOY",
                                 color = textColor,
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
                                 modifier = Modifier.padding(top = 1.dp)
                             )
                         }
