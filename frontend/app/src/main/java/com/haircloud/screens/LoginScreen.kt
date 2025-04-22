@@ -45,6 +45,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     val loginState by authViewModel.loginState.collectAsState()
+    var isNavigating by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -199,8 +200,11 @@ fun LoginScreen(
                             val role = (loginState as LoginState.Success).response.rol
                             val userId = (loginState as LoginState.Success).response.usuarioid
                             authViewModel.resetLoginState()
-                            navController.navigate(if (role == "cliente") "client_home/$userId" else "barber_home/$userId") {
-                                popUpTo("login") { inclusive = true }
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate(if (role == "cliente") "client_home/$userId" else "barber_home/$userId") {
+                                    popUpTo("login") { inclusive = true }
+                                }
                             }
                         }
                         is LoginState.Error -> {
@@ -238,7 +242,10 @@ fun LoginScreen(
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
                             authViewModel.resetLoginState()
-                            navController.navigate("forgot_password")
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("forgot_password")
+                            }
                         }
                     )
                     Spacer(modifier = Modifier.height(30.dp))
@@ -251,7 +258,10 @@ fun LoginScreen(
                         style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                         modifier = Modifier.clickable {
                             authViewModel.resetLoginState()
-                            navController.navigate("register")
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("register")
+                            }
                         }
                     )
                 }

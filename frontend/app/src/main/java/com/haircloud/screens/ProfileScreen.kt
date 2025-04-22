@@ -45,6 +45,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
     val updateState by clientViewModel.updateState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var isNavigating by remember { mutableStateOf(false) }
 
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
@@ -96,7 +97,12 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                     .padding(top = 16.dp)
             ) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        if (!isNavigating) {
+                            isNavigating = true
+                            navController.popBackStack()
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(48.dp)
@@ -484,7 +490,10 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                     .fillMaxWidth()
                                     .clickable(
                                         onClick = {
-                                            navController.navigate("login")
+                                            if (!isNavigating) {
+                                                isNavigating = true
+                                                navController.navigate("login")
+                                            }
                                         }
                                     ),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xA6FF5959)),

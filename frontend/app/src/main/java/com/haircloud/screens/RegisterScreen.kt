@@ -56,6 +56,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val snackbarHostState = remember { SnackbarHostState() }
     var codeSentSuccessfully by remember { mutableStateOf(false) }
     var buttonsEnabled by remember { mutableStateOf(true) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     val forgotPasswordState by forgotPasswordViewModel.forgotPasswordState.collectAsState()
 
@@ -73,8 +74,11 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                     message = "Cuenta creada con éxito",
                     type = SnackbarType.SUCCESS
                 )
-                navController.navigate("login") {
-                    popUpTo("register") { inclusive = true }
+                if (!isNavigating) {
+                    isNavigating = true
+                    navController.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
                 }
                 authViewModel.resetRegisterState()
             }
@@ -416,8 +420,11 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                             style = defaultStyle.copy(color = Color(0XFF2879E3), fontWeight = FontWeight.Bold),
                             modifier = Modifier.clickable {
                                 if (buttonsEnabled) {
-                                    navController.navigate("login") {
-                                        popUpTo("register") { inclusive = true }
+                                    if (!isNavigating) {
+                                        isNavigating = true
+                                        navController.navigate("login") {
+                                            popUpTo("register") { inclusive = true }
+                                        }
                                     }
                                 }
                             }

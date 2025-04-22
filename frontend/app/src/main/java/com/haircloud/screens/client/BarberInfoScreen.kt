@@ -88,6 +88,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val snackbarHostState = remember { SnackbarHostState() }
     val deleteReviewState by barbershopViewModel.deleteReviewState.collectAsState()
     val addReviewState by barbershopViewModel.addReviewState.collectAsState()
+    var isNavigating by remember { mutableStateOf(false) }
 
     LaunchedEffect(addReviewState) {
         when (addReviewState) {
@@ -175,7 +176,12 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                     .padding(top = 16.dp, bottom = 8.dp)
             ) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        if (!isNavigating) {
+                            isNavigating = true
+                            navController.popBackStack()
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(35.dp)
@@ -526,7 +532,10 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         Button(
                                             onClick = {
                                                 selectedService?.let { service ->
-                                                    navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
+                                                    if (!isNavigating) {
+                                                        isNavigating = true
+                                                        navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
+                                                    }
                                                 }
                                             },
                                             colors = ButtonDefaults.buttonColors(

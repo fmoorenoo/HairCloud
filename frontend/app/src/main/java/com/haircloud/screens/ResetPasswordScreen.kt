@@ -52,6 +52,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var buttonsEnabled by remember { mutableStateOf(true) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -300,8 +301,11 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                                     message = "Contraseña cambiada",
                                     type = SnackbarType.SUCCESS
                                 )
-                                navController.navigate("login") {
-                                    popUpTo("login") { inclusive = true }
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("login") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             }
                         }
@@ -326,7 +330,10 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                         modifier = Modifier.clickable {
                             if (buttonsEnabled) {
                                 forgotPasswordViewModel.resetForgotPasswordState()
-                                navController.navigate("forgot_password")
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("forgot_password")
+                                }
                             }
                         }
                     )

@@ -58,6 +58,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     val barbersState by barbershopViewModel.barbersState.collectAsState()
     val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
     val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
+    var isNavigating by remember { mutableStateOf(false) }
 
     var selectedBarber by remember { mutableStateOf<BarberResponse?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -140,7 +141,12 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                     .padding(top = 32.dp, bottom = 8.dp, start = 16.dp, end = 16.dp)
             ) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        if (!isNavigating) {
+                            isNavigating = true
+                            navController.popBackStack()
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .size(35.dp)

@@ -66,6 +66,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
     var searchQuery by remember { mutableStateOf("") }
     var sortType by remember { mutableStateOf(SortType.NONE) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
@@ -138,7 +139,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                             .size(55.dp)
                             .clip(CircleShape)
                             .clickable(onClick = {
-                                navController.navigate("profile/$userId")
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("profile/$userId")
+                                }
                             }),
                         contentScale = ContentScale.Crop
                     )
@@ -435,7 +439,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                 },
                                                 favoriteButtonEnabled = favoriteButtonsEnabled,
                                                 onClick = {
-                                                    navController.navigate("client_barber_info/${userId}/${barbershop.localid}")
+                                                    if (!isNavigating) {
+                                                        isNavigating = true
+                                                        navController.navigate("client_barber_info/${userId}/${barbershop.localid}")
+                                                    }
                                                 }
                                             )
                                         }
@@ -482,7 +489,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         .size(75.dp)
                         .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
                         .clickable {
-                            navController.navigate("client_favs/$userId")
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("client_favs/$userId")
+                            }
                         }
                 ) {
                     Icon(

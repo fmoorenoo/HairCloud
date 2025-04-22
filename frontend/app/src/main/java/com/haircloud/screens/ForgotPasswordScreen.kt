@@ -46,6 +46,7 @@ fun ForgotPasswordScreen(
     var verifiedUsername by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     var buttonsEnabled by remember { mutableStateOf(true) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     val blueWhiteGradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
@@ -80,7 +81,10 @@ fun ForgotPasswordScreen(
                     type = SnackbarType.SUCCESS
                 )
                 forgotPasswordViewModel.resetForgotPasswordState()
-                navController.navigate("reset_password/$email/$verifiedCode/$verifiedUsername")
+                if (!isNavigating) {
+                    isNavigating = true
+                    navController.navigate("reset_password/$email/$verifiedCode/$verifiedUsername")
+                }
             }
             is ForgotPasswordState.CodeSentError -> {
                 snackbarHostState.showTypedSnackbar(
@@ -292,7 +296,10 @@ fun ForgotPasswordScreen(
                         modifier = Modifier.clickable {
                             if (buttonsEnabled) {
                                 forgotPasswordViewModel.resetForgotPasswordState()
-                                navController.navigate("login")
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("login")
+                                }
                             }
                         }
                     )

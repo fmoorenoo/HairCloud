@@ -56,6 +56,7 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
     var favoriteButtonsEnabled by remember { mutableStateOf(true) }
+    var isNavigating by remember { mutableStateOf(false) }
 
     var searchQuery by remember { mutableStateOf("") }
     var sortType by remember { mutableStateOf(SortType.NONE) }
@@ -132,7 +133,10 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                             .size(55.dp)
                             .clip(CircleShape)
                             .clickable(onClick = {
-                                navController.navigate("profile/$userId")
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("profile/$userId")
+                                }
                             }),
                         contentScale = ContentScale.Crop
                     )
@@ -488,7 +492,10 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                         .size(75.dp)
                         .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
                         .clickable {
-                            navController.navigate("client_home/$userId")
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("client_home/$userId")
+                            }
                         }
                 ) {
                     Icon(
