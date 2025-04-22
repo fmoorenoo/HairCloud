@@ -91,6 +91,16 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
         }
     }
 
+    LaunchedEffect(barbersState) {
+        if (barbersState is BarbersState.Success) {
+            val barbers = (barbersState as BarbersState.Success).barbers
+            if (barbers.isNotEmpty() && selectedBarber == null) {
+                selectedBarber = barbers[0]
+                calendarViewModel.getWeeklySchedule(barbers[0].peluqueroid)
+            }
+        }
+    }
+
     val slotState by calendarViewModel.availableSlotsState.collectAsState()
 
     LaunchedEffect(localId) {
