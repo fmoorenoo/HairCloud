@@ -11,16 +11,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Swipe
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -33,28 +32,64 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.data.model.AvailableSlot
 import com.haircloud.data.model.BarberResponse
+import com.haircloud.utils.AvailableSlotsList
+import com.haircloud.utils.CalendarMonth
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.AvailableSlotsState
 import com.haircloud.viewmodel.BarbersState
 import com.haircloud.viewmodel.BarbershopViewModel
+import com.haircloud.viewmodel.CalendarViewModel
+import com.haircloud.viewmodel.SingleServiceState
+import java.time.LocalDate
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, serviceId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     val barbershopViewModel = remember { BarbershopViewModel() }
+    val calendarViewModel = remember { CalendarViewModel() }
     val barbersState by barbershopViewModel.barbersState.collectAsState()
+    val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
 
     var selectedBarber by remember { mutableStateOf<BarberResponse?>(null) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var availableSlots by remember { mutableStateOf<List<AvailableSlot>>(emptyList()) }
+    var selectedSlot by remember { mutableStateOf<AvailableSlot?>(null) }
+    var duracionServicio by remember { mutableIntStateOf(30) }
+
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.INFO) }
-
-    val blackWhiteGradient =
-        Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
+    val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+
+
+    LaunchedEffect(serviceId) {
+        serviceId?.let {
+            barbershopViewModel.getService(it)
+        }
+    }
+
+    LaunchedEffect(singleServiceState) {
+        if (singleServiceState is SingleServiceState.Success) {
+            val servicio = (singleServiceState as SingleServiceState.Success).service
+            duracionServicio = servicio.duracion
+        }
+    }
+
+    LaunchedEffect(selectedBarber, selectedDate) {
+        if (selectedBarber != null && selectedDate != null) {
+            val fecha = selectedDate.toString()
+            val duracion = duracionServicio
+            calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, duracion)
+        }
+    }
+
+    val slotState by calendarViewModel.availableSlotsState.collectAsState()
 
     LaunchedEffect(localId) {
         localId?.let {
@@ -206,65 +241,6 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                                     )
                                 }
                             }
-
-                            selectedBarber?.let { barber ->
-                                Spacer(modifier = Modifier.height(24.dp))
-
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0x33FFFFFF)
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(64.dp)
-                                                .clip(CircleShape)
-                                                .background(Color.White)
-                                                .padding(4.dp)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.user_profile_1),
-                                                contentDescription = "Barber Avatar",
-                                                tint = Color.Black,
-                                                modifier = Modifier
-                                                    .size(48.dp)
-                                                    .align(Alignment.Center)
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.width(16.dp))
-
-                                        Column {
-                                            Text(
-                                                text = barber.nombre,
-                                                color = Color.White,
-                                                style = TextStyle(fontFamily = defaultFont),
-                                                fontSize = 20.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-
-                                            Spacer(modifier = Modifier.height(4.dp))
-
-                                            Text(
-                                                text = barber.especialidad ?: "Sin especialidad",
-                                                color = Color(0xCCFFFFFF),
-                                                style = TextStyle(fontFamily = defaultFont),
-                                                fontSize = 16.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -285,6 +261,56 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                         }
                     }
 
+                    else -> {}
+                }
+                if (selectedBarber != null) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Selecciona un día",
+                            color = Color.White,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Icon(
+                            imageVector = Icons.Filled.CalendarMonth,
+                            contentDescription = "Swipe",
+                            tint = Color.White,
+                            modifier = Modifier.size(25.dp)
+                        )
+                    }
+
+                    CalendarMonth(
+                        selectedDate = selectedDate,
+                        onDateSelected = { date ->
+                            selectedDate = date
+                            selectedSlot = null
+                        }
+                    )
+                }
+                when (slotState) {
+                    is AvailableSlotsState.Success -> {
+                        availableSlots = (slotState as AvailableSlotsState.Success).slots
+                        AvailableSlotsList(
+                            slots = availableSlots,
+                            onSlotSelected = { selectedSlot = it },
+                            selectedSlot = selectedSlot
+                        )
+                    }
+                    is AvailableSlotsState.Loading -> {
+                        CircularProgressIndicator(color = Color.White)
+                    }
+                    is AvailableSlotsState.Error -> {
+                        Text("Error al cargar horas")
+                    }
                     else -> {}
                 }
             }
