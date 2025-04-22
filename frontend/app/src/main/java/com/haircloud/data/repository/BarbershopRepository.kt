@@ -150,6 +150,24 @@ class BarbershopRepository {
         }
     }
 
+    suspend fun getService(servicioId: Int): Result<ServiceResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getService(servicioId).execute()
+            }
+
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Servicio no encontrado"))
+            } else {
+                Result.failure(Exception("Error al obtener el servicio"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
     suspend fun getBarbershopReviews(localId: Int): Result<List<ReviewResponse>> {
         return try {
             val response = withContext(Dispatchers.IO) {

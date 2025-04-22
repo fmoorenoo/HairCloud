@@ -23,6 +23,9 @@ class BarbershopViewModel : ViewModel() {
     private val _servicesState = MutableStateFlow<ServiceState>(ServiceState.Idle)
     val servicesState: StateFlow<ServiceState> = _servicesState
 
+    private val _singleServiceState = MutableStateFlow<SingleServiceState>(SingleServiceState.Idle)
+    val singleServiceState: StateFlow<SingleServiceState> = _singleServiceState
+
     private val _reviewsState = MutableStateFlow<ReviewsState>(ReviewsState.Idle)
     val reviewsState: StateFlow<ReviewsState> = _reviewsState
 
@@ -98,6 +101,17 @@ class BarbershopViewModel : ViewModel() {
             _servicesState.value = result.fold(
                 onSuccess = { ServiceState.Success(it) },
                 onFailure = { ServiceState.Error(it.message ?: "Error al cargar servicios") }
+            )
+        }
+    }
+
+    fun getService(servicioId: Int) {
+        _singleServiceState.value = SingleServiceState.Loading
+        viewModelScope.launch {
+            val result = repository.getService(servicioId)
+            _singleServiceState.value = result.fold(
+                onSuccess = { SingleServiceState.Success(it) },
+                onFailure = { SingleServiceState.Error(it.message ?: "Error al cargar el servicio") }
             )
         }
     }
@@ -187,6 +201,13 @@ sealed class ServiceState {
     object Loading : ServiceState()
     data class Success(val services: List<ServiceResponse>) : ServiceState()
     data class Error(val message: String) : ServiceState()
+}
+
+sealed class SingleServiceState {
+    object Idle : SingleServiceState()
+    object Loading : SingleServiceState()
+    data class Success(val service: ServiceResponse) : SingleServiceState()
+    data class Error(val message: String) : SingleServiceState()
 }
 
 sealed class ReviewsState {
