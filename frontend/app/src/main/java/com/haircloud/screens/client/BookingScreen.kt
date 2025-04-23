@@ -66,6 +66,10 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     var selectedSlot by remember { mutableStateOf<AvailableSlot?>(null) }
     var duracionServicio by remember { mutableIntStateOf(30) }
 
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var serviceName by remember { mutableStateOf("") }
+    var servicePrice by remember { mutableDoubleStateOf(0.0) }
+
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.INFO) }
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
@@ -81,6 +85,8 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
         if (singleServiceState is SingleServiceState.Success) {
             val servicio = (singleServiceState as SingleServiceState.Success).service
             duracionServicio = servicio.duracion
+            serviceName = servicio.nombre
+            servicePrice = servicio.precio
         }
     }
 
@@ -383,7 +389,10 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                                 availableSlots = (slotState as AvailableSlotsState.Success).slots
                                 AvailableSlotsGrid(
                                     slots = availableSlots,
-                                    onSlotSelected = { selectedSlot = it },
+                                    onSlotSelected = {
+                                        selectedSlot = it
+                                        showConfirmationDialog = true
+                                    },
                                     selectedSlot = selectedSlot
                                 )
                             }
@@ -416,6 +425,25 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                 }
             }
         }
+        ConfirmationDialog(
+            show = showConfirmationDialog,
+            onDismiss = {
+                showConfirmationDialog = false
+                selectedSlot = null
+            },
+            onConfirm = {
+                showConfirmationDialog = false
+                snackbarMessage = "¡Cita confirmada con éxito!"
+                snackbarType = SnackbarType.SUCCESS
+            },
+            barber = selectedBarber,
+            serviceName = serviceName,
+            servicePrice = servicePrice,
+            selectedDate = selectedDate,
+            selectedSlot = selectedSlot,
+            serviceDuration = duracionServicio,
+            defaultFont = defaultFont
+        )
     }
 }
 
