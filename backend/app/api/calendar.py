@@ -158,7 +158,7 @@ def get_available_slots(peluqueroid):
 
     if fecha == actual.date():
         minuto = actual.minute
-        siguiente_multiplo = ((minuto // 5) + 1) * 5
+        siguiente_multiplo = ((minuto // 10) + 1) * 10
         if siguiente_multiplo >= 60:
             actual = actual.replace(hour=actual.hour + 1, minute=0, second=0, microsecond=0)
         else:
