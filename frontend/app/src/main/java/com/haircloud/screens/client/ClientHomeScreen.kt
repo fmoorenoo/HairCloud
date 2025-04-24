@@ -524,6 +524,10 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         .size(75.dp)
                         .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
                         .clickable {
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("client_dates/$userId")
+                            }
                         }
                 ) {
                     Icon(
