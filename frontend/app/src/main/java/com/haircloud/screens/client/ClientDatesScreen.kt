@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ import com.haircloud.viewmodel.GetDatesState
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -267,7 +269,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
                                         contentAlignment = Alignment.Center
                                     ) {
                                         EmptyAppointmentsMessage(
-                                            message = "No tienes citas próximas",
+                                            message = "No tienes citas próximas. Ve a la pestaña de barberías para hacer una reserva",
                                             defaultFont = defaultFont
                                         )
                                     }
@@ -455,11 +457,11 @@ fun DateCard(
         Color(0xFF3A3A3A)
     }
     val accentColor = Color(0xFF4A90E2)
-    val subtleTextColor = Color(0xFFCCCCCC)
     val secondaryTextColor = if (isActive) Color(0xFF999999) else Color(0xFF666666)
+    val statusCircleColor = if (isActive) accentColor else Color(0xFF666666)
 
     val dateFormatter = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm") }
-    val outputDateFormatter = remember { DateTimeFormatter.ofPattern("dd MMM") }
+    val outputDateFormatter = remember { DateTimeFormatter.ofPattern("EEEE, dd 'de' MMMM", Locale("es", "ES")) }
     val outputTimeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
     val startDateTime = try {
@@ -474,179 +476,170 @@ fun DateCard(
         LocalDateTime.now().plusMinutes(30)
     }
 
-    val formattedDate = startDateTime.format(outputDateFormatter)
+    val formattedDate = startDateTime.format(outputDateFormatter).replaceFirstChar {
+        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+    }
     val formattedStartTime = startDateTime.format(outputTimeFormatter)
     val formattedEndTime = endDateTime.format(outputTimeFormatter)
 
     val precio = appointment.servicio_precio
     val duracionServicio = "${appointment.servicio_duracion} min"
+    val isToday = startDateTime.toLocalDate() == LocalDate.now()
 
     Box {
         Card(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
             colors = CardDefaults.cardColors(containerColor = cardBackground),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val isToday = startDateTime.toLocalDate() == LocalDate.now()
-
-                Column(
-                    modifier = Modifier
-                        .width(100.dp)
-                        .padding(end = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = formattedDate,
-                        color = accentColor,
+                        text = appointment.local_nombre ?: "Barbería no especificada",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
                         style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "$formattedStartTime - $formattedEndTime",
-                        color = subtleTextColor,
+                        text = formattedDate,
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium,
                         style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                        textAlign = TextAlign.End
                     )
+                }
 
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.user_profile_1),
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = appointment.barber_nombre ?: "Peluquero no especificado",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            style = TextStyle(fontFamily = defaultFont),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
-                                .background(
-                                    color = if (isActive) accentColor else secondaryTextColor,
-                                    shape = CircleShape
-                                )
+                                .size(15.dp)
+                                .background(statusCircleColor, CircleShape)
                         )
 
-                        if (isToday) {
+                        if (isToday && isActive) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "HOY",
                                 color = accentColor,
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                style = TextStyle(fontFamily = defaultFont)
                             )
                         }
                     }
                 }
 
-                VerticalDivider(
-                    modifier = Modifier.height(70.dp),
-                    color = Color(0xFF444444),
-                    thickness = 1.dp
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = appointment.servicio_nombre ?: "Servicio no especificado",
-                            color = Color.White.copy(alpha = if (isActive) 1f else 0.6f),
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.AccessTime,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "$formattedStartTime - $formattedEndTime",
+                        color = accentColor,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(fontFamily = defaultFont)
+                    )
+                }
 
-                        Text(
-                            text = "$precio€",
-                            color = accentColor,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                    }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                HorizontalDivider(color = Color(0xFF444444))
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column {
+                    Text(
+                        text = appointment.servicio_nombre ?: "Servicio no especificado",
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Medium,
+                        style = TextStyle(fontFamily = defaultFont),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Filled.AccessTime,
                             contentDescription = null,
                             tint = secondaryTextColor,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-
                         Spacer(modifier = Modifier.width(4.dp))
-
                         Text(
                             text = duracionServicio,
                             color = secondaryTextColor,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 14.sp
+                            fontSize = 17.sp,
+                            style = TextStyle(fontFamily = defaultFont)
                         )
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
 
                         Icon(
-                            painter = painterResource(id = R.drawable.scissors_icon),
+                            imageVector = Icons.Default.Wallet,
                             contentDescription = null,
                             tint = secondaryTextColor,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-
                         Spacer(modifier = Modifier.width(4.dp))
-
                         Text(
-                            text = appointment.local_nombre ?: "Local no especificado",
+                            text = "$precio€",
                             color = secondaryTextColor,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.user_profile_1),
-                            contentDescription = null,
-                            tint = secondaryTextColor,
-                            modifier = Modifier.size(14.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        Text(
-                            text = appointment.barber_nombre ?: "No especificado",
-                            color = secondaryTextColor,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            fontSize = 17.sp,
+                            style = TextStyle(fontFamily = defaultFont)
                         )
                     }
                 }
@@ -658,14 +651,16 @@ fun DateCard(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(10.dp)
+                    .padding(bottom = 3.dp)
+                    .size(48.dp)
+                    .clickable { showMenu = !showMenu },
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Opciones",
+                    contentDescription = "Cancelar cita",
                     tint = Color(0xFFAAAAAA),
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { showMenu = !showMenu }
+                    modifier = Modifier.size(45.dp)
                 )
 
                 DropdownMenu(
@@ -712,9 +707,10 @@ fun EmptyAppointmentsMessage(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .padding(20.dp)
+            .height(160.dp)
             .background(
-                color = Color(0xFF5B5B5B),
+                color = Color(0xFF1E1E1E),
                 shape = RoundedCornerShape(12.dp)
             ),
         contentAlignment = Alignment.Center
@@ -727,24 +723,24 @@ fun EmptyAppointmentsMessage(
                     imageVector = Icons.Filled.EventAvailable,
                     contentDescription = null,
                     tint = Color(0xFF4A90E2),
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             } else {
                 Icon(
                     imageVector = Icons.Filled.EventBusy,
                     contentDescription = null,
                     tint = Color(0xFF4A90E2),
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = message,
                 color = Color(0xFFB8B8B8),
                 style = TextStyle(fontFamily = defaultFont),
-                fontSize = 16.sp,
+                fontSize = 17.sp,
                 textAlign = TextAlign.Center
             )
         }
