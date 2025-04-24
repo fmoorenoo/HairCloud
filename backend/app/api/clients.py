@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from app.api import clients_bp
 from app.db.connection import get_connection
+from datetime import datetime
 
 
 @clients_bp.route('/get_client/<int:client_id>', methods=['GET'])
@@ -108,3 +109,47 @@ def update_client(user_id):
     connection.close()
 
     return jsonify({"message": "Info actualizada correctamente"}), 200
+
+
+@clients_bp.route('/get_client_dates/<int:client_id>', methods=['GET'])
+def get_client_dates(client_id):
+    now = datetime.now()
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT 
+            c.*, 
+            s.nombre AS servicio_nombre, 
+            s.precio AS servicio_precio, 
+            s.duracion AS servicio_duracion, 
+            b.nombre AS barber_nombre,
+            l.nombre AS local_nombre,
+            l.direccion AS local_direccion
+        FROM citas c
+        JOIN servicios s ON c.servicioid = s.servicioid
+        JOIN peluqueros b ON c.peluqueroid = b.peluqueroid
+        JOIN local l ON c.localid = l.localid
+        WHERE c.clienteid = %s
+        ORDER BY c.fechainicio ASC
+    """, (client_id,))
+
+    citas = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    citas_list = []
+    for cita in citas:
+        cita_dict = dict(cita)
+
+        for key in ["fechainicio", "fechafin"]:
+            if cita_dict.get(key):
+                cita_dict[key] = cita_dict[key].strftime("%Y-%m-%d %H:%M")
+
+        fechafin_obj = cita["fechafin"]
+        cita_dict["finalizada"] = fechafin_obj < now if fechafin_obj else False
+
+        citas_list.append(cita_dict)
+
+    return jsonify({"appointments": citas_list}), 200
