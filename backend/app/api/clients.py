@@ -153,3 +153,79 @@ def get_client_dates(client_id):
         citas_list.append(cita_dict)
 
     return jsonify({"appointments": citas_list}), 200
+
+
+@clients_bp.route('/get_client_stats/<int:client_id>', methods=['GET'])
+def get_client_stats(client_id):
+    now = datetime.now()
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    # Total de citas finalizadas
+    cursor.execute("""
+        SELECT COUNT(*) 
+        FROM citas 
+        WHERE clienteid = %s AND fechafin < %s
+    """, (client_id, now))
+    total_citas_finalizadas = cursor.fetchone()[0]
+
+    # Local con más citas
+    cursor.execute("""
+        SELECT l.nombre, COUNT(*) as total
+        FROM citas c
+        JOIN local l ON c.localid = l.localid
+        WHERE c.clienteid = %s AND c.fechafin < %s
+        GROUP BY l.nombre
+        ORDER BY total DESC
+        LIMIT 1
+    """, (client_id, now))
+    local_mas_frecuentado = cursor.fetchone()
+    local_nombre = local_mas_frecuentado[0] if local_mas_frecuentado else None
+    local_visitas = local_mas_frecuentado[1] if local_mas_frecuentado else 0
+
+    # Próxima cita
+    cursor.execute("""
+        SELECT c.*, s.nombre AS servicio_nombre, b.nombre AS peluquero_nombre, l.nombre AS local_nombre
+        FROM citas c
+        JOIN servicios s ON c.servicioid = s.servicioid
+        JOIN peluqueros b ON c.peluqueroid = b.peluqueroid
+        JOIN local l ON c.localid = l.localid
+        WHERE c.clienteid = %s AND c.fechainicio > %s
+        ORDER BY c.fechainicio ASC
+        LIMIT 1
+    """, (client_id, now))
+    proxima_cita = cursor.fetchone()
+    proxima_cita_dict = None
+    if proxima_cita:
+        proxima_cita_dict = dict(proxima_cita)
+        for key in ["fechainicio", "fechafin"]:
+            if proxima_cita_dict.get(key):
+                proxima_cita_dict[key] = proxima_cita_dict[key].strftime("%Y-%m-%d %H:%M")
+
+    # Servicio más solicitado + nombre del local
+    cursor.execute("""
+        SELECT s.nombre AS servicio_nombre, l.nombre AS local_nombre, COUNT(*) as total
+        FROM citas c
+        JOIN servicios s ON c.servicioid = s.servicioid
+        JOIN local l ON c.localid = l.localid
+        WHERE c.clienteid = %s AND c.fechafin < %s
+        GROUP BY s.nombre, l.nombre
+        ORDER BY total DESC
+        LIMIT 1
+    """, (client_id, now))
+    servicio_favorito = cursor.fetchone()
+    servicio_nombre = servicio_favorito[0] if servicio_favorito else None
+    servicio_local = servicio_favorito[1] if servicio_favorito else None
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "total_citas_finalizadas": total_citas_finalizadas,
+        "local_mas_frecuentado": local_nombre,
+        "local_mas_frecuentado_visitas": local_visitas,
+        "proxima_cita": proxima_cita_dict,
+        "servicio_favorito": servicio_nombre,
+        "servicio_favorito_local": servicio_local
+    }), 200
