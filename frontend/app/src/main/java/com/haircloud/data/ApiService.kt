@@ -88,4 +88,13 @@ interface ApiService {
         @retrofit2.http.Query("fecha") fecha: String,
         @retrofit2.http.Query("duracion") duracion: Int
     ): Call<List<AvailableSlot>>
+
+    @POST("/api/dates/add_date")
+    fun addDate(@Body cita: AddDateRequest): Call<ApiResponse>
+
+    @HTTP(method = "DELETE", path = "/api/dates/delete_date/{citaid}", hasBody = false)
+    fun deleteDate(@Path("citaid") citaId: Int): Call<ApiResponse>
+
+    @GET("/api/clients/get_client_dates/{client_id}")
+    fun getClientDates(@Path("client_id") clientId: Int): Call<DatesResponse>
 }
