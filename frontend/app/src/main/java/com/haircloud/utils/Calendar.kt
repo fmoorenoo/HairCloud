@@ -199,7 +199,7 @@ fun CalendarMonth(
                                 text = "HOY",
                                 color = textColor,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 modifier = Modifier.padding(top = 1.dp)
                             )
                         }
