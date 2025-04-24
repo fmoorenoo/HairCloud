@@ -50,6 +50,12 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             ClientFavsScreen(navController, userId)
         }
 
+        // Clientes dates
+        composable("client_dates/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            ClientDatesScreen(navController, userId)
+        }
+
         // Barbería cliente
         composable("client_barber_info/{userId}/{localId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
@@ -58,11 +64,12 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         }
 
         // Barbería cliente
-        composable("client_booking/{userId}/{localId}/{serviceId}") { backStackEntry ->
+        composable("client_booking/{userId}/{localId}/{serviceId}/{clientId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val serviceId = backStackEntry.arguments?.getString("serviceId")?.toIntOrNull()
-            BookingScreen(navController, userId, localId, serviceId)
+            val clientId = backStackEntry.arguments?.getString("clientId")?.toIntOrNull()
+            BookingScreen(navController, userId, localId, serviceId, clientId)
         }
 
 
