@@ -16,11 +16,12 @@ def create_app(config_name=None):
     bcrypt.init_app(app)
 
     # Registrar blueprints
-    from app.api import auth_bp, clients_bp, barbershops_bp, calendar_bp
+    from app.api import auth_bp, clients_bp, barbershops_bp, calendar_bp, dates_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(clients_bp, url_prefix='/api/clients')
     app.register_blueprint(barbershops_bp, url_prefix='/api/barbershops')
     app.register_blueprint(calendar_bp, url_prefix='/api/calendar')
+    app.register_blueprint(dates_bp, url_prefix='/api/dates')
 
     # Manejar errores
     @app.errorhandler(404)
