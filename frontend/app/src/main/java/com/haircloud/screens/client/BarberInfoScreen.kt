@@ -534,7 +534,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                                 selectedService?.let { service ->
                                                     if (!isNavigating) {
                                                         isNavigating = true
-                                                        navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}")
+                                                        navController.navigate("client_booking/${userId}/${localId}/${service.servicioid}/${clienteId}")
                                                     }
                                                 }
                                             },
