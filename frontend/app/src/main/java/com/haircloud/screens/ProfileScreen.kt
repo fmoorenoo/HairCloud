@@ -35,6 +35,7 @@ import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.ClientViewModel
 import com.haircloud.viewmodel.ClientState
+import com.haircloud.viewmodel.ClientStatsState
 import com.haircloud.viewmodel.UpdateState
 import kotlinx.coroutines.launch
 
@@ -43,6 +44,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
     val clientViewModel: ClientViewModel = viewModel()
     val clientState by clientViewModel.clientState.collectAsState()
     val updateState by clientViewModel.updateState.collectAsState()
+    val clientStatsState by clientViewModel.clientStatsState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var isNavigating by remember { mutableStateOf(false) }
@@ -133,7 +135,9 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                 }
                 is ClientState.Success -> {
                     val client = (clientState as ClientState.Success).client
-
+                    LaunchedEffect(client.clienteid) {
+                        clientViewModel.getClientStats(client.clienteid)
+                    }
                     var isEditMode by remember { mutableStateOf(false) }
 
                     var nombre by remember { mutableStateOf(client.nombre) }
@@ -461,24 +465,72 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                             }
                         }
 
-                        // Tarjeta de historial
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = Color(0x4DB6B6B6)),
-                                shape = RoundedCornerShape(22.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        "Historial",
-                                        fontSize = 28.sp,
-                                        fontFamily = defaultFont,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(bottom = 16.dp)
-                                    )
-                                    InfoRow(Icons.Default.DateRange, "Fecha de registro", client.fecharegistro, Color.White, defaultFont)
-                                    InfoRow(Icons.Default.Event, "Última cita", client.ultimacita ?: "No hay citas", Color.White, defaultFont)
+                        if (clientStatsState is ClientStatsState.Success) {
+                            item {
+                                val stats = (clientStatsState as ClientStatsState.Success).stats
+
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0x4DB6B6B6)),
+                                    shape = RoundedCornerShape(22.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "Estadísticas",
+                                            fontSize = 28.sp,
+                                            fontFamily = defaultFont,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(bottom = 16.dp)
+                                        )
+
+                                        InfoRow(
+                                            icon = Icons.Default.DateRange,
+                                            label = "Citas finalizadas",
+                                            value = "Has completado ${stats.total_citas_finalizadas} citas.",
+                                            textColor = Color.White,
+                                            fontFamily = defaultFont
+                                        )
+
+                                        val localMasVisitado = stats.local_mas_frecuentado ?: "Sin datos"
+                                        val visitas = stats.local_mas_frecuentado_visitas
+                                        InfoRow(
+                                            icon = Icons.Default.LocationOn,
+                                            label = "Local más visitado",
+                                            value = if (!stats.local_mas_frecuentado.isNullOrEmpty()) "$localMasVisitado (${visitas} visitas)" else "Sin datos",
+                                            textColor = Color.White,
+                                            fontFamily = defaultFont
+                                        )
+
+                                        val servicioFavorito = stats.servicio_favorito ?: "Sin datos"
+                                        val localServicio = stats.servicio_favorito_local ?: "Desconocido"
+                                        InfoRow(
+                                            icon = Icons.Default.Favorite,
+                                            label = "Servicio favorito",
+                                            value = if (!stats.servicio_favorito.isNullOrEmpty()) "$servicioFavorito en $localServicio" else "Sin datos",
+                                            textColor = Color.White,
+                                            fontFamily = defaultFont
+                                        )
+
+                                        stats.proxima_cita?.let {
+                                            val resumen = "${it.fechainicio} - ${it.servicio_nombre} con ${it.peluquero_nombre} en ${it.local_nombre}"
+                                            InfoRow(
+                                                icon = Icons.Default.AccessTime,
+                                                label = "Próxima cita",
+                                                value = resumen,
+                                                textColor = Color.White,
+                                                fontFamily = defaultFont
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (clientStatsState is ClientStatsState.Loading) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = Color.White)
                                 }
                             }
                         }
