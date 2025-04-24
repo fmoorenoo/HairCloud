@@ -92,7 +92,11 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
         }
     }
 
-
+    LaunchedEffect(selectedTab) {
+        clientId?.let {
+            clientViewModel.getDates(it)
+        }
+    }
 
     LaunchedEffect(deleteState) {
         when (val state = deleteState) {
@@ -107,6 +111,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
                 snackbarMessage = state.message
                 snackbarType = SnackbarType.ERROR
                 datesViewModel.resetDeleteDateState()
+                clientId?.let { clientViewModel.getDates(it) }
             }
 
             else -> {}
@@ -394,7 +399,7 @@ fun TabButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) Color(0xFF2D2D2F) else Color.Transparent
+    val backgroundColor = if (isSelected) Color(0xFF1E1E1E) else Color.Transparent
     val textColor = if (isSelected) Color.White else Color(0xFFAAAAAA)
 
     Box(
@@ -441,7 +446,7 @@ fun DateCard(
 
     val shadeColors = listOf(
         Color(0xFF1E1E1E),
-        Color(0xFF2A2A2A),
+        Color(0xFF333333),
     )
 
     val cardBackground = if (isActive) {
