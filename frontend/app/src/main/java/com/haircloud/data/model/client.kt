@@ -11,26 +11,20 @@ data class ClientResponse(
     val nombreusuario: String
 )
 
-data class Date(
-    val citaid: Int,
-    val clienteid: Int,
-    val peluqueroid: Int,
-    val servicioid: Int,
-    val fechainicio: String,
-    val fechafin: String,
-    val estado: String?,
-    val descuento: Boolean,
-    val localid: Int,
-    val servicio_nombre: String?,
-    val servicio_precio: Double,
-    val servicio_duracion: Int,
-    val barber_nombre: String?,
-    val local_nombre: String?,
-    val local_direccion: String?,
-    val finalizada: Boolean
+data class ClientStatsResponse(
+    val total_citas_finalizadas: Int,
+    val local_mas_frecuentado: String?,
+    val local_mas_frecuentado_visitas: Int,
+    val proxima_cita: DateDetails?,
+    val servicio_favorito: String?,
+    val servicio_favorito_local: String?
 )
 
-
-data class DatesResponse(
-    val appointments: List<Date>
+data class DateDetails(
+    val citaid: Int,
+    val fechainicio: String,
+    val fechafin: String?,
+    val servicio_nombre: String,
+    val peluquero_nombre: String,
+    val local_nombre: String
 )

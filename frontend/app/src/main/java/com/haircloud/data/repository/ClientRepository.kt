@@ -3,6 +3,7 @@ package com.haircloud.data.repository
 import com.haircloud.data.ApiClient
 import com.haircloud.data.ApiResponse
 import com.haircloud.data.model.ClientResponse
+import com.haircloud.data.model.ClientStatsResponse
 import com.haircloud.data.model.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -82,6 +83,22 @@ class ClientRepository {
                 Result.success(response.body()?.appointments ?: emptyList())
             } else {
                 Result.failure(Exception("Error al obtener las citas"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getClientStats(clienteId: Int): Result<ClientStatsResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.instance.getClientStats(clienteId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Error al obtener estadísticas del cliente"))
             }
         } catch (e: Exception) {
             Result.failure(e)

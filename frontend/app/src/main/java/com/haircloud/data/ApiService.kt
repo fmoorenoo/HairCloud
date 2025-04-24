@@ -97,4 +97,7 @@ interface ApiService {
 
     @GET("/api/clients/get_client_dates/{client_id}")
     fun getClientDates(@Path("client_id") clientId: Int): Call<DatesResponse>
+
+    @GET("/api/clients/get_client_stats/{client_id}")
+    fun getClientStats(@Path("client_id") clientId: Int): Call<ClientStatsResponse>
 }
