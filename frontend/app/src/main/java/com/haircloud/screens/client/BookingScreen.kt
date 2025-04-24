@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.data.model.AddDateRequest
 import com.haircloud.data.model.AvailableSlot
 import com.haircloud.data.model.BarberResponse
 import com.haircloud.utils.AvailableSlotsGrid
@@ -43,22 +44,31 @@ import com.haircloud.viewmodel.AvailableSlotsState
 import com.haircloud.viewmodel.BarbersState
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.CalendarViewModel
+import com.haircloud.viewmodel.DateOperationState
+import com.haircloud.viewmodel.DatesViewModel
 import com.haircloud.viewmodel.SingleServiceState
 import com.haircloud.viewmodel.WeeklyScheduleState
+import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.time.format.TextStyle as JavaTextStyle
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, serviceId: Int?) {
+fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, serviceId: Int?, clientId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     val barbershopViewModel = remember { BarbershopViewModel() }
     val calendarViewModel = remember { CalendarViewModel() }
+    val datesViewModel = remember { DatesViewModel() }
+    val addDateState by datesViewModel.addDateState.collectAsState()
     val barbersState by barbershopViewModel.barbersState.collectAsState()
     val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
     val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
     var isNavigating by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     var selectedBarber by remember { mutableStateOf<BarberResponse?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -433,8 +443,25 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
             },
             onConfirm = {
                 showConfirmationDialog = false
-                snackbarMessage = "¡Cita confirmada con éxito!"
-                snackbarType = SnackbarType.SUCCESS
+
+                val fechainicio = LocalDateTime.of(
+                    selectedDate,
+                    LocalTime.parse(selectedSlot?.desde)
+                )
+                val fechafin = fechainicio.plusMinutes(duracionServicio.toLong())
+
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+                val request = AddDateRequest(
+                    clienteid = clientId ?: 0,
+                    peluqueroid = selectedBarber?.peluqueroid ?: 0,
+                    servicioid = serviceId ?: 0,
+                    localid = localId ?: 0,
+                    fechainicio = fechainicio.format(formatter),
+                    fechafin = fechafin.format(formatter)
+                )
+
+                datesViewModel.addDate(request)
             },
             barber = selectedBarber,
             serviceName = serviceName,
@@ -444,6 +471,53 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
             serviceDuration = duracionServicio,
             defaultFont = defaultFont
         )
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x70000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+
+    }
+    LaunchedEffect(addDateState) {
+        when (addDateState) {
+            is DateOperationState.Success -> {
+                val message = (addDateState as DateOperationState.Success).message
+
+                if (selectedBarber != null && selectedDate != null) {
+                    val fecha = selectedDate.toString()
+                    val duracion = duracionServicio
+                    calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, duracion)
+                }
+
+                snackbarMessage = message
+                snackbarType = SnackbarType.SUCCESS
+                isLoading = true
+
+                delay(2000)
+
+                navController.navigate("client_dates/$userId") {
+                    popUpTo("client_booking/$userId/$localId/$serviceId/$clientId") {
+                        inclusive = true
+                    }
+                }
+
+                isLoading = false
+                datesViewModel.resetAddDateState()
+            }
+
+            is DateOperationState.Error -> {
+                val message = (addDateState as DateOperationState.Error).message
+                snackbarHostState.showSnackbar(message)
+                datesViewModel.resetAddDateState()
+            }
+
+            else -> {}
+        }
     }
 }
 
