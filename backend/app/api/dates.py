@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from app.api import dates_bp
 from app.db.connection import get_connection
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 @dates_bp.route('/add_date', methods=['POST'])
@@ -63,6 +63,11 @@ def delete_date(citaid):
         cursor.close()
         connection.close()
         return jsonify({'error': 'No puedes cancelar una cita que está en curso'}), 403
+
+    if fechainicio - timedelta(minutes=30) <= now < fechainicio:
+        cursor.close()
+        connection.close()
+        return jsonify({'error': 'No es posible cancelar una cita a falta de 30 minutos de su inicio'}), 403
 
     cursor.execute("DELETE FROM citas WHERE citaid = %s", (citaid,))
     connection.commit()
