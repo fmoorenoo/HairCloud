@@ -496,12 +496,12 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                             }
                                         }
                                     ),
-                                colors = CardDefaults.cardColors(containerColor = Color(0xA6FF5959)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xA6D03939)),
                                 shape = RoundedCornerShape(22.dp)
                             ) {
                                 Column(
                                     modifier = Modifier
-                                        .padding(12.dp)
+                                        .padding(10.dp)
                                         .fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
@@ -514,6 +514,7 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                     )
                                 }
                             }
+                            Spacer(modifier = Modifier.height(20.dp))
                         }
                     }
 
