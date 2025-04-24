@@ -3,6 +3,7 @@ package com.haircloud.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.ClientResponse
+import com.haircloud.data.model.Date
 import com.haircloud.data.repository.ClientRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,9 @@ class ClientViewModel : ViewModel() {
 
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState
+
+    private val _appointmentsState = MutableStateFlow<GetDatesState>(GetDatesState.Idle)
+    val appointmentsState: StateFlow<GetDatesState> = _appointmentsState
 
     fun getClient(usuarioId: Int) {
         _clientState.value = ClientState.Loading
@@ -49,12 +53,20 @@ class ClientViewModel : ViewModel() {
         }
     }
 
-    fun resetUpdateState() {
-        _updateState.value = UpdateState.Idle
+    fun getDates(clientId: Int) {
+        _appointmentsState.value = GetDatesState.Loading
+        viewModelScope.launch {
+            val result = repository.getClientDates(clientId)
+            _appointmentsState.value = if (result.isSuccess) {
+                GetDatesState.Success(result.getOrThrow())
+            } else {
+                GetDatesState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
+        }
     }
 
-    fun resetClientState() {
-        _clientState.value = ClientState.Idle
+    fun resetUpdateState() {
+        _updateState.value = UpdateState.Idle
     }
 }
 
@@ -71,3 +83,11 @@ sealed class UpdateState {
     data class UpdateSuccess(val message: String) : UpdateState()
     data class UpdateError(val message: String) : UpdateState()
 }
+
+sealed class GetDatesState {
+    object Idle : GetDatesState()
+    object Loading : GetDatesState()
+    data class Success(val citas: List<Date>) : GetDatesState()
+    data class Error(val message: String) : GetDatesState()
+}
+
