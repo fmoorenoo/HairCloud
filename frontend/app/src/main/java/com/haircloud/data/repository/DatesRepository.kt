@@ -5,6 +5,7 @@ import com.haircloud.data.ApiResponse
 import com.haircloud.data.model.AddDateRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import retrofit2.Response
 
 class DatesRepository {
@@ -38,7 +39,13 @@ class DatesRepository {
         return if (response.isSuccessful) {
             Result.success(response.body()!!)
         } else {
-            Result.failure(Exception(errorMessage))
+            val errorBody = response.errorBody()?.string()
+            val detailedMessage = try {
+                JSONObject(errorBody ?: "").optString("error", errorMessage)
+            } catch (_: Exception) {
+                errorMessage
+            }
+            Result.failure(Exception(detailedMessage))
         }
     }
 }
