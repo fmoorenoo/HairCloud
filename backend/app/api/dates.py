@@ -44,15 +44,29 @@ def delete_date(citaid):
     connection = get_connection()
     cursor = connection.cursor()
 
-    cursor.execute("SELECT 1 FROM citas WHERE citaid = %s", (citaid,))
-    if cursor.fetchone() is None:
+    cursor.execute("SELECT fechainicio, fechafin FROM citas WHERE citaid = %s", (citaid,))
+    result = cursor.fetchone()
+    if result is None:
         cursor.close()
         connection.close()
         return jsonify({'error': 'La cita no existe'}), 404
+
+    fechainicio, fechafin = result
+    now = datetime.now()
+
+    if now >= fechafin:
+        cursor.close()
+        connection.close()
+        return jsonify({'error': 'No puedes cancelar una cita que ya ha finalizado'}), 403
+
+    if fechainicio <= now < fechafin:
+        cursor.close()
+        connection.close()
+        return jsonify({'error': 'No puedes cancelar una cita que está en curso'}), 403
 
     cursor.execute("DELETE FROM citas WHERE citaid = %s", (citaid,))
     connection.commit()
     cursor.close()
     connection.close()
 
-    return jsonify({'message': f'Cita cancelada con éxito'}), 200
+    return jsonify({'message': 'Cita cancelada con éxito'}), 200
