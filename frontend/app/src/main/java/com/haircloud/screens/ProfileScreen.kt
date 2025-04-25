@@ -33,6 +33,7 @@ import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.utils.CredentialsValidator
+import com.haircloud.viewmodel.AuthViewModel
 import com.haircloud.viewmodel.ClientViewModel
 import com.haircloud.viewmodel.ClientState
 import com.haircloud.viewmodel.ClientStatsState
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(navController: NavController, userId: Int?) {
     val clientViewModel: ClientViewModel = viewModel()
+    val authViewModel: AuthViewModel = viewModel()
     val clientState by clientViewModel.clientState.collectAsState()
     val updateState by clientViewModel.updateState.collectAsState()
     val clientStatsState by clientViewModel.clientStatsState.collectAsState()
@@ -544,9 +546,17 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                                         onClick = {
                                             if (!isNavigating) {
                                                 isNavigating = true
-                                                navController.navigate("login")
+                                                scope.launch {
+                                                    snackbarHostState.showTypedSnackbar("Sesión cerrada con éxito", type = SnackbarType.SUCCESS)
+                                                    authViewModel.logout()
+                                                    isNavigating = false
+                                                    navController.navigate("login") {
+                                                        popUpTo(0) { inclusive = true }
+                                                    }
+                                                }
                                             }
                                         }
+
                                     ),
                                 colors = CardDefaults.cardColors(containerColor = Color(0xA6D03939)),
                                 shape = RoundedCornerShape(22.dp)
@@ -621,6 +631,16 @@ fun ProfileScreen(navController: NavController, userId: Int?) {
                 }
                 ClientState.Idle -> {
                 }
+            }
+        }
+        if (isNavigating) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x70000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
             }
         }
 
