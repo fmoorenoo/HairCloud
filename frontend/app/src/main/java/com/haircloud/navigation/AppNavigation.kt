@@ -10,8 +10,13 @@ import com.haircloud.screens.client.*
 import com.haircloud.viewmodel.AuthViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel) {
-    val startDestination = "login"
+fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel, token: String?, userId: Int?) {
+    val startDestination = if (token.isNullOrEmpty() || userId == null) {
+        "login"
+    } else {
+        "client_home/$userId"
+    }
+
     NavHost(navController = navController, startDestination = startDestination) {
 
         // Login
@@ -40,7 +45,7 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         }
 
         // Manual de usuario
-        composable("user_manual") { backStackEntry ->
+        composable("user_manual") {
             UserManualScreen(navController)
         }
 
@@ -69,7 +74,7 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             BarberInfoScreen(navController, userId, localId)
         }
 
-        // Barbería cliente
+        // Booking cliente
         composable("client_booking/{userId}/{localId}/{serviceId}/{clientId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
@@ -78,15 +83,10 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             BookingScreen(navController, userId, localId, serviceId, clientId)
         }
 
-
-
-
         // Peluqueros Home
         composable("barber_home/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             BarberHomeScreen(navController)
         }
-
     }
 }
-
