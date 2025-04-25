@@ -33,9 +33,16 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             ResetPasswordScreen(navController, email, code, username)
         }
 
+        // Profile cliente
         composable("profile/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             ProfileScreen(navController, userId)
+        }
+
+        // Manual de usuario
+        composable("user_manual/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            UserManualScreen(navController, userId)
         }
 
         // Clientes Home

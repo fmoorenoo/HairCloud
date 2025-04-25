@@ -129,7 +129,15 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         contentDescription = "Logo",
                         modifier = Modifier
                             .height(50.dp)
-                            .wrapContentHeight(),
+                            .wrapContentHeight()
+                            .clickable(
+                                onClick = {
+                                    if (!isNavigating) {
+                                        isNavigating = true
+                                        navController.navigate("user_manual/$userId")
+                                    }
+                                }
+                            ),
                         contentScale = ContentScale.Inside
                     )
                     Image(
