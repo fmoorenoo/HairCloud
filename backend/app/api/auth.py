@@ -1,10 +1,13 @@
 from flask import request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 from app.api import auth_bp
 from app.db.connection import get_connection
 from app.extensions import bcrypt
 from app.utils.email import send_verification_email
+import jwt as pyjwt
+import os
+from dotenv import load_dotenv
 
 
 @auth_bp.route('/test_connection', methods=['GET'])
@@ -48,11 +51,25 @@ def login():
 
     # Verificar contraseña
     if bcrypt.check_password_hash(hashed_password, password):
+        load_dotenv()
+        SECRET_KEY = os.getenv("SECRET_KEY")
+        exp_time = datetime.now(timezone.utc) + timedelta(days=7)
+
+        token = pyjwt.encode(
+            {
+                "usuarioid": user_id,
+                "rol": rol,
+                "exp": exp_time
+            },
+            SECRET_KEY,
+            algorithm="HS256"
+        )
         return jsonify({
             "message": "Login realizado correctamente",
             "usuarioid": user_id,
             "nombreusuario": username,
-            "rol": rol
+            "rol": rol,
+            "token": token
         }), 200
     else:
         return jsonify({"error": "Contraseña incorrecta"}), 401
