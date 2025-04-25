@@ -2,7 +2,6 @@ package com.haircloud.screens.client
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -13,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -30,7 +28,7 @@ import com.haircloud.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserManualScreen(navController: NavController, userId: Int?) {
+fun UserManualScreen(navController: NavController) {
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
@@ -70,7 +68,7 @@ fun UserManualScreen(navController: NavController, userId: Int?) {
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFF3B3B3B),
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                     Image(
@@ -80,17 +78,6 @@ fun UserManualScreen(navController: NavController, userId: Int?) {
                             .height(50.dp)
                             .wrapContentHeight(),
                         contentScale = ContentScale.Inside
-                    )
-                    Image(
-                        painter = painterResource(id = R.drawable.user_profile_1),
-                        contentDescription = "Profile",
-                        modifier = Modifier
-                            .size(55.dp)
-                            .clip(CircleShape)
-                            .clickable(onClick = {
-                                navController.navigate("profile/$userId")
-                            }),
-                        contentScale = ContentScale.Crop
                     )
                 }
 

@@ -134,7 +134,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                 onClick = {
                                     if (!isNavigating) {
                                         isNavigating = true
-                                        navController.navigate("user_manual/$userId")
+                                        navController.navigate("user_manual")
                                     }
                                 }
                             ),

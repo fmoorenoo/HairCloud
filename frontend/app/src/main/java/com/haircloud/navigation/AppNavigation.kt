@@ -40,9 +40,8 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         }
 
         // Manual de usuario
-        composable("user_manual/{userId}") { backStackEntry ->
-            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-            UserManualScreen(navController, userId)
+        composable("user_manual") { backStackEntry ->
+            UserManualScreen(navController)
         }
 
         // Clientes Home
