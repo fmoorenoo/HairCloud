@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.navigation.compose.rememberNavController
 import com.haircloud.navigation.AppNavigation
 import com.haircloud.viewmodel.AuthViewModel
@@ -23,17 +22,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HairCloudApp(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
-    var userRole by rememberSaveable { mutableStateOf<String?>(null) }
 
-    AppNavigation(navController, authViewModel)
+    val token by authViewModel.getTokenFlow().collectAsState(initial = null)
+    val userId by authViewModel.getUserIdFlow().collectAsState(initial = null)
 
-    LaunchedEffect(userRole) {
-        userRole?.let {
-            val destination = if (it == "cliente") "home_cliente" else "home_peluquero"
-            navController.navigate(destination) {
-                popUpTo("login") { inclusive = true }
-            }
-        }
-    }
+    AppNavigation(navController, authViewModel, token, userId)
 }
 
