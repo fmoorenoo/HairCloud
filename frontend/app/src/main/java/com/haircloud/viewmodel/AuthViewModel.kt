@@ -1,16 +1,19 @@
 package com.haircloud.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import com.haircloud.data.model.LoginResponse
 import com.haircloud.data.model.RegisterResponse
 import com.haircloud.data.repository.AuthRepository
+import com.haircloud.data.storage.TokenManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AuthRepository()
+    private val tokenManager = TokenManager(application.applicationContext)
 
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
@@ -24,7 +27,9 @@ class AuthViewModel : ViewModel() {
             try {
                 val result = repository.login(username, password)
                 if (result.isSuccess) {
-                    _loginState.value = LoginState.Success(result.getOrThrow())
+                    val response = result.getOrThrow()
+                    tokenManager.saveSession(response.token, response.usuarioid)
+                    _loginState.value = LoginState.Success(response)
                 } else {
                     _loginState.value = LoginState.Error("Credenciales incorrectas")
                 }
@@ -56,6 +61,15 @@ class AuthViewModel : ViewModel() {
 
     fun resetRegisterState() {
         _registerState.value = RegisterState.Idle
+    }
+
+    fun getTokenFlow() = tokenManager.token
+    fun getUserIdFlow() = tokenManager.userId
+
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearSession()
+        }
     }
 }
 
