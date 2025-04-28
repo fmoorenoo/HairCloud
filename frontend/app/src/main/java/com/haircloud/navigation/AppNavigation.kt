@@ -10,11 +10,17 @@ import com.haircloud.screens.client.*
 import com.haircloud.viewmodel.AuthViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel, token: String?, userId: Int?) {
-    val startDestination = if (token.isNullOrEmpty() || userId == null) {
-        "login"
-    } else {
-        "client_home/$userId"
+fun AppNavigation(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    token: String?,
+    userId: Int?,
+    role: String?
+) {
+    val startDestination = when {
+        token.isNullOrEmpty() || userId == null -> "login"
+        role == "cliente" -> "client_home/$userId"
+        else -> "barber_home/$userId"
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
@@ -38,7 +44,7 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             ResetPasswordScreen(navController, email, code, username)
         }
 
-        // Profile cliente
+        // Perfil cliente
         composable("profile/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             ProfileScreen(navController, userId)
@@ -61,7 +67,7 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
             ClientFavsScreen(navController, userId)
         }
 
-        // Clientes dates
+        // Citas cliente
         composable("client_dates/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             ClientDatesScreen(navController, userId)
@@ -86,7 +92,7 @@ fun AppNavigation(navController: NavHostController, authViewModel: AuthViewModel
         // Peluqueros Home
         composable("barber_home/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-            BarberHomeScreen(navController)
+            BarberHomeScreen(navController, userId)
         }
     }
 }
