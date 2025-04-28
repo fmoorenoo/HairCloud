@@ -28,7 +28,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 val result = repository.login(username, password)
                 if (result.isSuccess) {
                     val response = result.getOrThrow()
-                    tokenManager.saveSession(response.token, response.usuarioid)
+                    tokenManager.saveSession(response.token, response.usuarioid, response.rol)
                     _loginState.value = LoginState.Success(response)
                 } else {
                     _loginState.value = LoginState.Error("Credenciales incorrectas")
@@ -65,6 +65,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getTokenFlow() = tokenManager.token
     fun getUserIdFlow() = tokenManager.userId
+    fun getRoleFlow() = tokenManager.role
 
     fun logout() {
         viewModelScope.launch {

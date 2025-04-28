@@ -25,7 +25,8 @@ fun HairCloudApp(authViewModel: AuthViewModel) {
 
     val token by authViewModel.getTokenFlow().collectAsState(initial = null)
     val userId by authViewModel.getUserIdFlow().collectAsState(initial = null)
+    val role by authViewModel.getRoleFlow().collectAsState(initial = null)
 
-    AppNavigation(navController, authViewModel, token, userId)
+    AppNavigation(navController, authViewModel, token, userId, role)
 }
 

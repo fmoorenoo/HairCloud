@@ -11,6 +11,7 @@ val Context.dataStore by preferencesDataStore(name = "auth_preferences")
 object TokenKeys {
     val AUTH_TOKEN = stringPreferencesKey("auth_token")
     val USER_ID = intPreferencesKey("user_id")
+    val USER_ROLE = stringPreferencesKey("user_role")
 }
 
 class TokenManager(private val context: Context) {
@@ -23,10 +24,15 @@ class TokenManager(private val context: Context) {
         preferences[TokenKeys.USER_ID]
     }
 
-    suspend fun saveSession(token: String, userId: Int) {
+    val role: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[TokenKeys.USER_ROLE]
+    }
+
+    suspend fun saveSession(token: String, userId: Int, role: String) {
         context.dataStore.edit { preferences ->
             preferences[TokenKeys.AUTH_TOKEN] = token
             preferences[TokenKeys.USER_ID] = userId
+            preferences[TokenKeys.USER_ROLE] = role
         }
     }
 
