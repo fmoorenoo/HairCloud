@@ -17,7 +17,6 @@ data class Date(
     val fechainicio: String,
     val fechafin: String,
     val estado: String?,
-    val descuento: Boolean,
     val localid: Int,
     val servicio_nombre: String?,
     val servicio_precio: Double,

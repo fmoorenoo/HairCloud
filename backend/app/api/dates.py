@@ -28,8 +28,8 @@ def add_date():
     cursor = connection.cursor()
 
     cursor.execute("""
-        INSERT INTO citas (clienteid, peluqueroid, servicioid, fechainicio, fechafin, estado, descuento, localid)
-        VALUES (%s, %s, %s, %s, %s, 'Pendiente', FALSE, %s)
+        INSERT INTO citas (clienteid, peluqueroid, servicioid, fechainicio, fechafin, estado, localid)
+        VALUES (%s, %s, %s, %s, %s, 'Pendiente', %s)
     """, (clienteid, peluqueroid, servicioid, fechainicio, fechafin, localid))
 
     connection.commit()
