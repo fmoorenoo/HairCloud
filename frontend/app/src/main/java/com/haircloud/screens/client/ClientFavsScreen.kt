@@ -308,28 +308,6 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                                     shape = RoundedCornerShape(5.dp)
                                 )
                         )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = "Puntos habilitados",
-                                    color = Color.Black,
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 20.sp
-                                )
-                            },
-                            onClick = {
-                                sortType = SortType.POINTS_ENABLED
-                                showSortMenu = false
-                                snackbarMessage = "Barberías con puntos habilitados primero"
-                                snackbarType = SnackbarType.INFO
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (sortType == SortType.POINTS_ENABLED) Color(0xFFB0BEC5) else Color.Transparent,
-                                    shape = RoundedCornerShape(5.dp)
-                                )
-                        )
                     }
                 }
 
@@ -364,7 +342,6 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                                 SortType.NONE -> filteredBarberias
                                 SortType.ALPHABETICAL -> filteredBarberias.sortedBy { it.nombre }
                                 SortType.RATING -> filteredBarberias.sortedByDescending { it.rating ?: 0f }
-                                SortType.POINTS_ENABLED -> filteredBarberias.sortedByDescending { it.puntos_habilitados }
                             }
 
                             Box {
@@ -416,7 +393,6 @@ fun ClientFavsScreen(navController: NavController, userId: Int?) {
                                                 address = barbershop.direccion,
                                                 rating = barbershop.rating ?: 0f,
                                                 totalRating = barbershop.cantidad_resenas,
-                                                pointsEnabled = barbershop.puntos_habilitados,
                                                 isFavorite = isFavorite,
                                                 onFavoriteClick = {
                                                     client?.let {

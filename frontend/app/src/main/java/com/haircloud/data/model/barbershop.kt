@@ -8,12 +8,10 @@ data class BarbershopResponse(
     val horarioapertura: String,
     val horariocierre: String,
     val descripcion: String?,
-    val puntos_habilitados: Boolean,
     val localidad: String,
     val rating: Float?,
     val cantidad_resenas: Int,
     val es_favorito: Boolean,
-    val cantidad_puntos: Int?,
 )
 
 data class ServiceResponse(

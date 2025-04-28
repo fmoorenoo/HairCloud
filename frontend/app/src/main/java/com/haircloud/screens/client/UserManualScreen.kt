@@ -161,7 +161,7 @@ fun UserManualScreen(navController: NavController) {
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "• Buscador: Encuentra barberías por nombre\n• Filtro: Ordena por A-Z, calificación o puntos\n• Barberías: Pulsa para ver detalles del local y pedir citas",
+                                    text = "• Buscador: Encuentra barberías por nombre\n• Filtro: Ordena por A-Z o por calificación\n• Barberías: Pulsa para ver detalles del local y pedir citas",
                                     color = Color(0xFFE0E0E0),
                                     style = TextStyle(fontFamily = defaultFont),
                                     fontSize = 22.sp,

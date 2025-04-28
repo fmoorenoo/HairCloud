@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Card
@@ -51,7 +50,6 @@ fun BarbershopCard(
     address: String,
     rating: Float,
     totalRating: Int,
-    pointsEnabled: Boolean,
     onFavoriteClick: () -> Unit = {},
     isFavorite: Boolean = false,
     favoriteButtonEnabled: Boolean = true,
@@ -63,7 +61,7 @@ fun BarbershopCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 9.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEAEAEA)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFBEBEBE)),
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp)
@@ -158,30 +156,6 @@ fun BarbershopCard(
                     tint = Color(0xFF282828),
                     modifier = Modifier.size(34.dp)
                 )
-            }
-
-            if (pointsEnabled) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 12.dp, bottom = 8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = "Puntos",
-                        tint = Color(0xFF3D8EE6),
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Puntos",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4D4D4D)
-                    )
-                }
             }
         }
     }

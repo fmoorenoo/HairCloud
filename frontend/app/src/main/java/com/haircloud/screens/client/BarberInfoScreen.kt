@@ -38,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -464,11 +463,6 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                             label = "Descripción",
                                             value = barbershop.descripcion ?: "Sin descripción",
                                             icon = Icons.Default.ChatBubble
-                                        )
-                                        InfoRow(
-                                            label = "HairCloud Points",
-                                            value = if (barbershop.puntos_habilitados) "Habilitado - Tienes ${barbershop.cantidad_puntos ?: 0} puntos" else "No habilitado",
-                                            icon = Icons.Filled.CheckCircle
                                         )
                                     }
                                 }

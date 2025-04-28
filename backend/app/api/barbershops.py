@@ -49,14 +49,12 @@ def get_barbershop(clienteid, localid):
             l.*,
             ROUND(AVG(r.calificacion)::numeric, 1) AS rating,
             COUNT(r.resenaid) AS cantidad_resenas,
-            CASE WHEN fc.localid IS NOT NULL THEN true ELSE false END AS es_favorito,
-            pc.puntos_disponibles
+            CASE WHEN fc.localid IS NOT NULL THEN true ELSE false END AS es_favorito
         FROM local l
-        LEFT JOIN resenas r ON l.localid = r.localid AND r.peluqueroid IS NULL
-        LEFT JOIN favoritos_clientes fc ON fc.localid = l.localid AND fc.clienteid = %s
-        LEFT JOIN puntos_clientes pc ON pc.localid = l.localid AND pc.clienteid = %s
-        WHERE l.localid = %s
-        GROUP BY l.localid, fc.localid, pc.puntos_disponibles
+            LEFT JOIN resenas r ON l.localid = r.localid AND r.peluqueroid IS NULL
+            LEFT JOIN favoritos_clientes fc ON fc.localid = l.localid AND fc.clienteid = %s
+            WHERE l.localid = %s
+        GROUP BY l.localid, fc.localid;
     """, (clienteid, clienteid, localid))
 
     row = cursor.fetchone()
