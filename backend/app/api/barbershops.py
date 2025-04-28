@@ -55,7 +55,7 @@ def get_barbershop(clienteid, localid):
             LEFT JOIN favoritos_clientes fc ON fc.localid = l.localid AND fc.clienteid = %s
             WHERE l.localid = %s
         GROUP BY l.localid, fc.localid;
-    """, (clienteid, clienteid, localid))
+    """, (clienteid, localid))
 
     row = cursor.fetchone()
     column_names = [desc[0] for desc in cursor.description]
