@@ -1,4 +1,4 @@
-package com.haircloud.screens
+package com.haircloud.screens.client
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,7 +41,7 @@ import com.haircloud.viewmodel.UpdateState
 import kotlinx.coroutines.launch
 
 @Composable
-fun ProfileScreen(navController: NavController, userId: Int?) {
+fun ClientProfileScreen(navController: NavController, userId: Int?) {
     val clientViewModel: ClientViewModel = viewModel()
     val authViewModel: AuthViewModel = viewModel()
     val clientState by clientViewModel.clientState.collectAsState()
