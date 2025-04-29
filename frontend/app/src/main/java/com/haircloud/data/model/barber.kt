@@ -1,0 +1,33 @@
+package com.haircloud.data.model
+
+data class GetBarberResponse(
+    val peluqueroid: Int,
+    val usuarioid: Int,
+    val nombre: String,
+    val telefono: String?,
+    val especialidad: String?,
+    val fechacontratacion: String?,
+    val localid: Int,
+    val email: String,
+    val nombreusuario: String,
+    val rol: String
+)
+
+data class BarberDate(
+    val citaid: Int,
+    val clienteid: Int,
+    val peluqueroid: Int,
+    val servicioid: Int,
+    val fechainicio: String,
+    val fechafin: String,
+    val estado: String?,
+    val localid: Int,
+    val servicio_nombre: String,
+    val duracion: Int,
+    val precio: Double
+)
+
+data class BarberDatesResponse(
+    val dates: List<BarberDate>
+)
+

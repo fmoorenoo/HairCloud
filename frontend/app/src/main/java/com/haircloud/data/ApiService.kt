@@ -100,4 +100,19 @@ interface ApiService {
 
     @GET("/api/clients/get_client_stats/{client_id}")
     fun getClientStats(@Path("client_id") clientId: Int): Call<ClientStatsResponse>
+
+    @GET("/api/barbers/get_barber/{user_id}")
+    fun getBarber(@Path("user_id") userId: Int): Call<GetBarberResponse>
+
+    @GET("/api/barbers/get_barber_dates/{barber_id}")
+    fun getBarberDates(
+        @Path("barber_id") barberId: Int,
+        @retrofit2.http.Query("date") date: String
+    ): Call<BarberDatesResponse>
+
+    @PUT("/api/barbers/update_barber/{user_id}")
+    fun updateBarber(
+        @Path("user_id") userId: Int,
+        @Body updateData: Map<String, String?>
+    ): Call<ApiResponse>
 }
