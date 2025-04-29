@@ -47,7 +47,13 @@ fun AppNavigation(
         // Perfil cliente
         composable("profile/{userId}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-            ProfileScreen(navController, userId)
+            ClientProfileScreen(navController, userId)
+        }
+
+        // Perfil barbería
+        composable("barber_profile/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            BarberProfileScreen(navController, userId)
         }
 
         // Manual de usuario
