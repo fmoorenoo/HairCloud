@@ -49,9 +49,12 @@ def get_barber_dates(barber_id):
     cursor = connection.cursor()
 
     cursor.execute("""
-        SELECT c.*, s.nombre AS servicio_nombre, s.duracion, s.precio
+        SELECT c.*, 
+               s.nombre AS servicio_nombre, s.duracion, s.precio,
+               cl.nombre AS cliente_nombre, cl.telefono AS cliente_telefono
         FROM citas c
         JOIN servicios s ON c.servicioid = s.servicioid
+        JOIN clientes cl ON c.clienteid = cl.clienteid
         WHERE c.peluqueroid = %s 
         AND c.fechainicio >= %s 
         AND c.fechainicio < %s
