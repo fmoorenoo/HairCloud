@@ -24,7 +24,9 @@ data class BarberDate(
     val localid: Int,
     val servicio_nombre: String,
     val duracion: Int,
-    val precio: Double
+    val precio: Double,
+    val cliente_nombre: String,
+    val cliente_telefono: String?
 )
 
 data class BarberDatesResponse(
