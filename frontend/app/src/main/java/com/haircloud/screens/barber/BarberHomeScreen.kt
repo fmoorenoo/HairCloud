@@ -1,6 +1,10 @@
 package com.haircloud.screens.barber
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -25,15 +30,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.utils.CalendarMonth
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
-import com.haircloud.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
+import com.haircloud.viewmodel.BarberViewModel
+import com.haircloud.viewmodel.CalendarViewModel
+import com.haircloud.viewmodel.GetBarberState
+import com.haircloud.viewmodel.WeeklyScheduleState
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -42,8 +50,14 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    val scope = rememberCoroutineScope()
-    val authViewModel: AuthViewModel = viewModel()
+    var isCalendarVisible by remember { mutableStateOf(false) }
+    val barberViewModel = remember { BarberViewModel() }
+    val calendarViewModel = remember { CalendarViewModel() }
+    val barberState by barberViewModel.barberState.collectAsState()
+    val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
+    val barberDatesState by barberViewModel.barberDatesState.collectAsState()
+
+    var peluqueroId by remember { mutableIntStateOf(0) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
@@ -51,12 +65,33 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
+    // Animación para el ícono de flecha
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (isCalendarVisible) 180f else 0f,
+        label = "arrowRotation"
+    )
+
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
             snackbarHostState.showTypedSnackbar(it, type = snackbarType)
             snackbarMessage = null
         }
     }
+
+    LaunchedEffect(userId) {
+        userId?.let {
+            barberViewModel.getBarber(it)
+        }
+    }
+
+    LaunchedEffect(barberState) {
+        if (barberState is GetBarberState.Success) {
+            peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
+            calendarViewModel.getWeeklySchedule(peluqueroId)
+            barberViewModel.getBarberDates(peluqueroId, selectedDate.toString())
+        }
+    }
+
 
     Scaffold(
         modifier = Modifier
@@ -152,9 +187,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                 ) {
                     OutlinedButton(
                         onClick = {
-                            selectedDate = LocalDate.now()
-                            snackbarMessage = "Mostrando citas de hoy"
-                            snackbarType = SnackbarType.INFO
+                            isCalendarVisible = !isCalendarVisible
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(22.dp),
@@ -175,46 +208,75 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                             style = TextStyle(fontFamily = defaultFont),
                             fontSize = 22.sp
                         )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            onClick = {
-                                if (!isNavigating) {
-                                    isNavigating = true
-                                    scope.launch {
-                                        snackbarHostState.showTypedSnackbar("Sesión cerrada con éxito", type = SnackbarType.SUCCESS)
-                                        authViewModel.logout()
-                                        isNavigating = false
-                                        navController.navigate("login") {
-                                            popUpTo(0) { inclusive = true }
-                                        }
-                                    }
-                                }
-                            }
-                        ),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xA6D03939)),
-                    shape = RoundedCornerShape(22.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Cerrar Sesión",
-                            fontSize = 28.sp,
-                            fontFamily = defaultFont,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Calendar",
+                            tint = Color(0xFF3B3B3B),
+                            modifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer { rotationZ = arrowRotation }
                         )
                     }
                 }
+
+                AnimatedVisibility(
+                    visible = isCalendarVisible,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF3B3B3B)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            val dayNameToCalendarIndex = mapOf(
+                                "Domingo" to 0,
+                                "Lunes" to 1,
+                                "Martes" to 2,
+                                "Miércoles" to 3,
+                                "Jueves" to 4,
+                                "Viernes" to 5,
+                                "Sábado" to 6
+                            )
+
+                            val workingDays = when (weeklyScheduleState) {
+                                is WeeklyScheduleState.Success -> {
+                                    (weeklyScheduleState as WeeklyScheduleState.Success).schedule.mapNotNull {
+                                        dayNameToCalendarIndex[it.diasemana]
+                                    }
+                                }
+                                else -> listOf()
+                            }
+
+                            CalendarMonth(
+                                selectedDate = selectedDate,
+                                onDateSelected = { date ->
+                                    selectedDate = date
+                                    isCalendarVisible = false
+                                    snackbarMessage = "Mostrando citas para: ${date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
+                                    snackbarType = SnackbarType.INFO
+                                    if (peluqueroId != 0) {
+                                        barberViewModel.getBarberDates(peluqueroId, date.toString())
+                                    }
+                                },
+                                workingDays = workingDays,
+                                initialMonth = YearMonth.from(selectedDate)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                BarberAppointmentsList(barberDatesState = barberDatesState, defaultFont = defaultFont)
             }
 
             Row(
@@ -233,7 +295,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                         .clickable {
                             if (!isNavigating) {
                                 isNavigating = true
-                                navController.navigate("barber_settings/$userId")
+                                // navController.navigate("barber_settings/$userId")
                             }
                         }
                 ) {
@@ -270,7 +332,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                         .clickable {
                             if (!isNavigating) {
                                 isNavigating = true
-                                navController.navigate("barber_reports/$userId")
+                                // navController.navigate("barber_reports/$userId")
                             }
                         }
                 ) {
