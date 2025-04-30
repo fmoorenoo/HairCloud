@@ -47,18 +47,20 @@ fun CalendarMonth(
     selectedDate: LocalDate?,
     onDateSelected: (LocalDate) -> Unit,
     workingDays: List<Int> = listOf(1, 2, 3, 4, 5),
-    onMonthChanged: () -> Unit = {}
+    onMonthChanged: () -> Unit = {},
+    initialMonth: YearMonth? = null
 ) {
     val today = remember { LocalDate.now() }
     val currentActualMonth = remember { YearMonth.from(today) }
+    val startMonth = initialMonth ?: currentActualMonth
 
     val maxAllowedMonth = remember { currentActualMonth.plusMonths(4) }
 
-    var displayedYearMonth by remember { mutableStateOf(currentActualMonth) }
+    var displayedYearMonth by remember { mutableStateOf(startMonth) }
 
     val firstDayOfMonth = displayedYearMonth.atDay(1)
     val daysInMonth = displayedYearMonth.lengthOfMonth()
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7
+    val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value + 6) % 7
 
     val canGoToPreviousMonth = displayedYearMonth.isAfter(currentActualMonth) ||
             displayedYearMonth.equals(currentActualMonth)
@@ -127,7 +129,7 @@ fun CalendarMonth(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            val daysOfWeek = listOf("D", "L", "M", "X", "J", "V", "S")
+            val daysOfWeek = listOf("L", "M", "X", "J", "V", "S", "D")
             daysOfWeek.forEach { day ->
                 Box(
                     modifier = Modifier.size(40.dp),
