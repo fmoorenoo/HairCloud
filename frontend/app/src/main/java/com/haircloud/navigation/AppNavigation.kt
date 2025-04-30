@@ -14,13 +14,13 @@ fun AppNavigation(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     token: String?,
-    userId: Int?,
+    userID: Int?,
     role: String?
 ) {
     val startDestination = when {
-        token.isNullOrEmpty() || userId == null -> "login"
-        role == "cliente" -> "client_home/$userId"
-        else -> "barber_home/$userId"
+        token.isNullOrEmpty() || userID == null -> "login"
+        role == "cliente" -> "client_home/$userID"
+        else -> "barber_home/$userID"
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
