@@ -199,7 +199,7 @@ def send_verification_code():
     except Exception as e:
         cursor.close()
         connection.close()
-        return jsonify({"error": f"No se pudo enviar el email: {str(e)}"}), 500
+        return jsonify({"error": f"No se pudo enviar el email"}), 500
 
 
 @auth_bp.route('/verify_code', methods=['POST'])
