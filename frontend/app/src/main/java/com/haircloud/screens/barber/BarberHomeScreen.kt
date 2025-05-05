@@ -30,14 +30,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.utils.CalendarMonth
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.formatDateToLong
 import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.BarberDatesState
 import com.haircloud.viewmodel.BarberViewModel
 import com.haircloud.viewmodel.CalendarViewModel
+import com.haircloud.viewmodel.DateOperationState
+import com.haircloud.viewmodel.DatesViewModel
 import com.haircloud.viewmodel.GetBarberState
 import com.haircloud.viewmodel.WeeklyScheduleState
 import java.time.LocalDate
@@ -56,16 +61,23 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     val barberState by barberViewModel.barberState.collectAsState()
     val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
     val barberDatesState by barberViewModel.barberDatesState.collectAsState()
+    val datesViewModel: DatesViewModel = viewModel()
+    val updateEstadoState by datesViewModel.updateEstadoState.collectAsState()
 
     var peluqueroId by remember { mutableIntStateOf(0) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
 
-    val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
+    val blackWhiteGradient =
+        Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
-    // Animación para el ícono de flecha
+    fun reloadDates() {
+        val start = LocalDate.now().minusMonths(2).withDayOfMonth(1)
+        val end = LocalDate.now().plusMonths(5).withDayOfMonth(1).plusMonths(1).minusDays(1)
+        barberViewModel.getBarberDatesInRange(peluqueroId, start.toString(), end.toString())
+    }
     val arrowRotation by animateFloatAsState(
         targetValue = if (isCalendarVisible) 180f else 0f,
         label = "arrowRotation"
@@ -88,10 +100,19 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
         if (barberState is GetBarberState.Success) {
             peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
             calendarViewModel.getWeeklySchedule(peluqueroId)
-            barberViewModel.getBarberDates(peluqueroId, selectedDate.toString())
+            reloadDates()
         }
     }
 
+    LaunchedEffect(updateEstadoState) {
+        if (updateEstadoState is DateOperationState.Success) {
+            reloadDates()
+            val message = (updateEstadoState as DateOperationState.Success).message
+            snackbarMessage = message
+            snackbarType = SnackbarType.SUCCESS
+            datesViewModel.resetUpdateEstadoState()
+        }
+    }
 
     Scaffold(
         modifier = Modifier
@@ -140,7 +161,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                     )
 
                     Image(
-                        imageVector = Icons.Default.Person,
+                        painter = painterResource(id = R.drawable.user_profile_1),
                         contentDescription = "Profile",
                         modifier = Modifier
                             .size(55.dp)
@@ -231,7 +252,10 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                             .padding(vertical = 8.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF3B3B3B)
+                            containerColor = Color(0xFF2A2A2A)
+                        ),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 15.dp
                         )
                     ) {
                         Box(
@@ -257,26 +281,65 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                 }
                                 else -> listOf()
                             }
+                            val diasConCitas by remember(barberDatesState) {
+                                derivedStateOf {
+                                    when (barberDatesState) {
+                                        is BarberDatesState.Success -> {
+                                            (barberDatesState as BarberDatesState.Success).citas.mapNotNull {
+                                                try {
+                                                    LocalDate.parse(it.fechainicio.substring(0, 10))
+                                                } catch (_: Exception) {
+                                                    null
+                                                }
+                                            }.distinct()
+                                        }
+
+                                        else -> emptyList()
+                                    }
+                                }
+                            }
 
                             CalendarMonth(
                                 selectedDate = selectedDate,
                                 onDateSelected = { date ->
                                     selectedDate = date
                                     isCalendarVisible = false
-                                    snackbarMessage = "Mostrando citas para: ${date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}"
+                                    snackbarMessage = "Mostrando citas para: ${
+                                        date.format(
+                                            DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                                        )
+                                    }"
                                     snackbarType = SnackbarType.INFO
-                                    if (peluqueroId != 0) {
-                                        barberViewModel.getBarberDates(peluqueroId, date.toString())
-                                    }
                                 },
                                 workingDays = workingDays,
-                                initialMonth = YearMonth.from(selectedDate)
+                                initialMonth = YearMonth.from(selectedDate),
+                                diasConCitas = diasConCitas,
+                                onMonthChanged = {},
+                                allowPreviousMonth = true
                             )
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                BarberAppointmentsList(barberDatesState = barberDatesState, defaultFont = defaultFont)
+                AnimatedVisibility(visible = !isCalendarVisible) {
+                    Column {
+                        Text(
+                            text = formatDateToLong(selectedDate),
+                            color = Color.White,
+                            style = TextStyle(
+                                fontFamily = defaultFont,
+                                fontSize = 25.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                        )
+                        BarberAppointmentsList(
+                            barberDatesState = barberDatesState,
+                            defaultFont = defaultFont,
+                            selectedDate = selectedDate
+                        )
+                    }
+                }
             }
 
             Row(
