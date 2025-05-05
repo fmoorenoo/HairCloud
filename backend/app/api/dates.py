@@ -75,3 +75,38 @@ def delete_date(citaid):
     connection.close()
 
     return jsonify({'message': 'Cita cancelada con éxito'}), 200
+
+
+@dates_bp.route('/update_date/<int:citaid>', methods=['PUT'])
+def update_date(citaid):
+    data = request.get_json()
+    nuevo_estado = data.get("estado")
+
+    if not nuevo_estado:
+        return jsonify({'error': 'Se requiere el nuevo estado'}), 400
+
+    if nuevo_estado not in ["Pendiente", "Completada", "Cancelada"]:
+        return jsonify({'error': 'Estado no válido'}), 400
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT estado FROM citas WHERE citaid = %s", (citaid,))
+    result = cursor.fetchone()
+
+    if result is None:
+        cursor.close()
+        connection.close()
+        return jsonify({'error': 'La cita no existe'}), 404
+
+    cursor.execute("""
+        UPDATE citas
+        SET estado = %s
+        WHERE citaid = %s
+    """, (nuevo_estado, citaid))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({'message': f'Estado actualizado a "{nuevo_estado}" correctamente'}), 200
