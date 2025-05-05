@@ -34,16 +34,26 @@ def get_barber(user_id):
 @barbers_bp.route('/get_barber_dates/<int:barber_id>', methods=['GET'])
 def get_barber_dates(barber_id):
     date_str = request.args.get("date")
+    start_date_str = request.args.get("start")
+    end_date_str = request.args.get("end")
 
-    if not date_str:
-        return jsonify({"error": "Falta el parámetro 'date'"}), 400
-
-    try:
-        selected_date = datetime.strptime(date_str, "%Y-%m-%d")
-    except ValueError:
-        return jsonify({"error": "Formato de fecha inválido. Usa YYYY-MM-DD"}), 400
-
-    next_day = selected_date.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    # Interpretar rango o fecha individual
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, "%Y-%m-%d")
+            next_day = selected_date + timedelta(days=1)
+            fecha_inicio = selected_date
+            fecha_fin = next_day
+        except ValueError:
+            return jsonify({"error": "Formato de fecha inválido. Usa YYYY-MM-DD"}), 400
+    elif start_date_str and end_date_str:
+        try:
+            fecha_inicio = datetime.strptime(start_date_str, "%Y-%m-%d")
+            fecha_fin = datetime.strptime(end_date_str, "%Y-%m-%d") + timedelta(days=1)
+        except ValueError:
+            return jsonify({"error": "Fechas inválidas. Usa YYYY-MM-DD"}), 400
+    else:
+        return jsonify({"error": "Se requiere 'date' o 'start' y 'end'"}), 400
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -59,18 +69,26 @@ def get_barber_dates(barber_id):
         AND c.fechainicio >= %s 
         AND c.fechainicio < %s
         ORDER BY c.fechainicio ASC
-    """, (barber_id, selected_date, next_day))
+    """, (barber_id, fecha_inicio, fecha_fin))
 
     citas = cursor.fetchall()
     cursor.close()
     connection.close()
 
     citas_list = []
+    now = datetime.now()
     for cita in citas:
         cita_dict = dict(cita)
-        for campo in ["fechainicio", "fechafin"]:
-            if cita_dict.get(campo):
-                cita_dict[campo] = cita_dict[campo].strftime("%Y-%m-%d %H:%M")
+        fechainicio = cita_dict.get("fechainicio")
+        fechafin = cita_dict.get("fechafin")
+
+        if fechainicio:
+            cita_dict["fechainicio"] = fechainicio.strftime("%Y-%m-%d %H:%M")
+        if fechafin:
+            cita_dict["fechafin"] = fechafin.strftime("%Y-%m-%d %H:%M")
+            cita_dict["finalizada"] = fechafin < now
+        else:
+            cita_dict["finalizada"] = False
         citas_list.append(cita_dict)
 
     return jsonify({"dates": citas_list}), 200
