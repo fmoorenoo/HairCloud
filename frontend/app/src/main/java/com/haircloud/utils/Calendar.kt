@@ -7,13 +7,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -47,14 +50,17 @@ fun CalendarMonth(
     selectedDate: LocalDate?,
     onDateSelected: (LocalDate) -> Unit,
     workingDays: List<Int> = listOf(1, 2, 3, 4, 5),
-    onMonthChanged: () -> Unit = {},
-    initialMonth: YearMonth? = null
+    onMonthChanged: (YearMonth) -> Unit = {},
+    initialMonth: YearMonth? = null,
+    diasConCitas: List<LocalDate> = emptyList(),
+    allowPreviousMonth: Boolean = false
 ) {
     val today = remember { LocalDate.now() }
     val currentActualMonth = remember { YearMonth.from(today) }
     val startMonth = initialMonth ?: currentActualMonth
 
     val maxAllowedMonth = remember { currentActualMonth.plusMonths(4) }
+    val minAllowedMonth = if (allowPreviousMonth) currentActualMonth.minusMonths(1) else currentActualMonth
 
     var displayedYearMonth by remember { mutableStateOf(startMonth) }
 
@@ -62,8 +68,7 @@ fun CalendarMonth(
     val daysInMonth = displayedYearMonth.lengthOfMonth()
     val firstDayOfWeek = (firstDayOfMonth.dayOfWeek.value + 6) % 7
 
-    val canGoToPreviousMonth = displayedYearMonth.isAfter(currentActualMonth) ||
-            displayedYearMonth.equals(currentActualMonth)
+    val canGoToPreviousMonth = displayedYearMonth.isAfter(minAllowedMonth) || displayedYearMonth == minAllowedMonth
 
     val canGoToNextMonth = displayedYearMonth.isBefore(maxAllowedMonth)
 
@@ -78,18 +83,17 @@ fun CalendarMonth(
             // Mes anterior
             IconButton(
                 onClick = {
-                    if (canGoToPreviousMonth && !displayedYearMonth.equals(currentActualMonth)) {
+                    if (canGoToPreviousMonth) {
                         displayedYearMonth = displayedYearMonth.minusMonths(1)
-                        onMonthChanged()
+                        onMonthChanged(displayedYearMonth)
                     }
                 },
-                enabled = canGoToPreviousMonth && !displayedYearMonth.equals(currentActualMonth)
+                enabled = canGoToPreviousMonth
             ) {
                 Icon(
                     Icons.Default.ArrowBackIosNew,
                     contentDescription = "Mes anterior",
-                    tint = if (canGoToPreviousMonth && !displayedYearMonth.equals(currentActualMonth))
-                        Color.White else Color.Gray.copy(alpha = 0.5f)
+                    tint = if (canGoToPreviousMonth) Color.White else Color.Gray.copy(alpha = 0.5f)
                 )
             }
 
@@ -110,7 +114,7 @@ fun CalendarMonth(
                 onClick = {
                     if (canGoToNextMonth) {
                         displayedYearMonth = displayedYearMonth.plusMonths(1)
-                        onMonthChanged()
+                        onMonthChanged(displayedYearMonth)
                     }
                 },
                 enabled = canGoToNextMonth
@@ -162,7 +166,8 @@ fun CalendarMonth(
                 val isSelected = selectedDate == date
                 val isPastDate = date.isBefore(today)
                 val isToday = date == today
-                val isEnabled = (!isPastDate || isToday) && isWorkingDay
+                val isEnabled = (allowPreviousMonth || !isPastDate || isToday) && isWorkingDay
+                val hasCita = diasConCitas.contains(date)
 
                 Box(
                     modifier = Modifier
@@ -172,6 +177,7 @@ fun CalendarMonth(
                         .background(
                             when {
                                 isSelected -> Color.White
+                                hasCita -> Color(0xFF4A7FAD).copy(alpha = 0.2f)
                                 isPastDate -> Color.Gray.copy(alpha = 0.3f)
                                 !isWorkingDay -> Color.Red.copy(alpha = 0.2f)
                                 isToday -> Color(0xFF30D1FF).copy(alpha = 0.3f)
@@ -195,23 +201,49 @@ fun CalendarMonth(
                             Text(
                                 text = "${day + 1}",
                                 color = textColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "HOY",
-                                color = textColor,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 1.dp)
+                                fontSize = 16.sp
                             )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "HOY",
+                                    color = textColor,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = if (hasCita) 10.sp else 12.sp,
+                                    modifier = Modifier.padding(top = 1.dp)
+                                )
+                                if (hasCita) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(5.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF30D1FF))
+                                    )
+                                }
+                            }
                         }
                     } else {
-                        Text(
-                            text = "${day + 1}",
-                            color = textColor,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 16.sp
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${day + 1}",
+                                color = textColor,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 16.sp
+                            )
+                            if (hasCita) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 2.dp)
+                                        .size(5.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF30D1FF))
+                                )
+                            }
+                        }
                     }
                 }
             }
