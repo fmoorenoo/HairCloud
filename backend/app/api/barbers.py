@@ -59,6 +59,15 @@ def get_barber_dates(barber_id):
     cursor = connection.cursor()
 
     cursor.execute("""
+        UPDATE citas
+        SET estado = 'Completada'
+        WHERE peluqueroid = %s
+        AND fechafin < NOW()
+        AND estado = 'Pendiente'
+    """, (barber_id,))
+    connection.commit()
+
+    cursor.execute("""
         SELECT c.*, 
                s.nombre AS servicio_nombre, s.duracion, s.precio,
                cl.nombre AS cliente_nombre, cl.telefono AS cliente_telefono
