@@ -17,6 +17,9 @@ class DatesViewModel : ViewModel() {
     private val _deleteDateState = MutableStateFlow<DateOperationState>(DateOperationState.Idle)
     val deleteDateState: StateFlow<DateOperationState> = _deleteDateState
 
+    private val _updateEstadoState = MutableStateFlow<DateOperationState>(DateOperationState.Idle)
+    val updateEstadoState: StateFlow<DateOperationState> = _updateEstadoState
+
     fun addDate(request: AddDateRequest) {
         _addDateState.value = DateOperationState.Loading
         viewModelScope.launch {
@@ -38,6 +41,22 @@ class DatesViewModel : ViewModel() {
             )
         }
     }
+
+    fun updateDateEstado(citaId: Int, estado: String) {
+        _updateEstadoState.value = DateOperationState.Loading
+        viewModelScope.launch {
+            val result = repository.updateDateEstado(citaId, estado)
+            _updateEstadoState.value = result.fold(
+                onSuccess = { DateOperationState.Success(it.message) },
+                onFailure = { DateOperationState.Error(it.message ?: "Error al actualizar estado") }
+            )
+        }
+    }
+
+    fun resetUpdateEstadoState() {
+        _updateEstadoState.value = DateOperationState.Idle
+    }
+
 
     fun resetAddDateState() {
         _addDateState.value = DateOperationState.Idle

@@ -58,6 +58,21 @@ class BarberRepository {
         }
     }
 
+    suspend fun getBarberDatesInRange(barberId: Int, startDate: String, endDate: String): Result<List<BarberDate>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getBarberDatesInRange(barberId, startDate, endDate).execute()
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body()?.dates ?: emptyList())
+            } else {
+                Result.failure(Exception("Error al obtener las citas por rango"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateBarber(usuarioId: Int, updateData: Map<String, String?>): Result<ApiResponse> {
         return try {
             val response = withContext(Dispatchers.IO) {

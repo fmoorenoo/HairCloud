@@ -50,6 +50,18 @@ class BarberViewModel : ViewModel() {
         }
     }
 
+    fun getBarberDatesInRange(barberId: Int, startDate: String, endDate: String) {
+        _barberDatesState.value = BarberDatesState.Loading
+        viewModelScope.launch {
+            val result = repository.getBarberDatesInRange(barberId, startDate, endDate)
+            _barberDatesState.value = if (result.isSuccess) {
+                BarberDatesState.Success(result.getOrThrow())
+            } else {
+                BarberDatesState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
+        }
+    }
+
     fun updateBarber(usuarioId: Int, updateData: Map<String, String?>) {
         _barberUpdateState.value = BarberUpdateState.Updating
         viewModelScope.launch {

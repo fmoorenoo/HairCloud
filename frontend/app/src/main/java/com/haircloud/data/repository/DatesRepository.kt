@@ -35,6 +35,17 @@ class DatesRepository {
         }
     }
 
+    suspend fun updateDateEstado(citaId: Int, estado: String): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.updateDateEstado(citaId, mapOf("estado" to estado)).execute()
+            }
+            handleApiResponse(response, "Error al actualizar el estado de la cita")
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
     private fun handleApiResponse(response: Response<ApiResponse>, errorMessage: String): Result<ApiResponse> {
         return if (response.isSuccessful) {
             Result.success(response.body()!!)

@@ -95,6 +95,12 @@ interface ApiService {
     @HTTP(method = "DELETE", path = "/api/dates/delete_date/{citaid}", hasBody = false)
     fun deleteDate(@Path("citaid") citaId: Int): Call<ApiResponse>
 
+    @PUT("/api/dates/update_date/{citaid}")
+    fun updateDateEstado(
+        @Path("citaid") citaId: Int,
+        @Body estado: Map<String, String>
+    ): Call<ApiResponse>
+
     @GET("/api/clients/get_client_dates/{client_id}")
     fun getClientDates(@Path("client_id") clientId: Int): Call<DatesResponse>
 
@@ -108,6 +114,13 @@ interface ApiService {
     fun getBarberDates(
         @Path("barber_id") barberId: Int,
         @retrofit2.http.Query("date") date: String
+    ): Call<BarberDatesResponse>
+
+    @GET("/api/barbers/get_barber_dates/{barber_id}")
+    fun getBarberDatesInRange(
+        @Path("barber_id") barberId: Int,
+        @retrofit2.http.Query("start") startDate: String,
+        @retrofit2.http.Query("end") endDate: String
     ): Call<BarberDatesResponse>
 
     @PUT("/api/barbers/update_barber/{user_id}")

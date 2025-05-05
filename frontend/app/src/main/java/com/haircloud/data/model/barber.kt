@@ -26,7 +26,8 @@ data class BarberDate(
     val duracion: Int,
     val precio: Double,
     val cliente_nombre: String,
-    val cliente_telefono: String?
+    val cliente_telefono: String?,
+    val finalizada: Boolean
 )
 
 data class BarberDatesResponse(
