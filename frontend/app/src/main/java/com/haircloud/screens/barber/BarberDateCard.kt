@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Smartphone
@@ -47,7 +48,8 @@ import java.util.*
 fun BarberAppointmentsList(
     barberDatesState: BarberDatesState,
     defaultFont: FontFamily,
-    selectedDate: LocalDate
+    selectedDate: LocalDate,
+    filterState: FilterState
 ) {
     when (barberDatesState) {
         is BarberDatesState.Loading -> {
@@ -60,21 +62,48 @@ fun BarberAppointmentsList(
         }
         is BarberDatesState.Success -> {
             val citas = barberDatesState.citas.filter {
-                it.fechainicio.startsWith(selectedDate.toString())
+                val matchesDate = it.fechainicio.startsWith(selectedDate.toString())
+                val matchesFilter = when (filterState) {
+                    FilterState.ALL -> true
+                    FilterState.PENDING -> it.estado.equals("Pendiente", ignoreCase = true)
+                    FilterState.COMPLETED -> it.estado.equals("Completada", ignoreCase = true)
+                    FilterState.CANCELLED -> it.estado.equals("Cancelada", ignoreCase = true)
+                }
+                matchesDate && matchesFilter
             }
             if (citas.isEmpty()) {
+                var word = ""
+                when (filterState) {
+                    FilterState.ALL -> word = ""
+                    FilterState.PENDING -> word = "pendientes"
+                    FilterState.COMPLETED -> word = "completadas"
+                    FilterState.CANCELLED -> word = "canceladas"
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No hay citas para este día",
-                        color = Color.White,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 18.sp
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Icon(
+                            imageVector = Icons.Filled.EventBusy,
+                            contentDescription = "Calendario vacío",
+                            tint = Color(0xFFCCCCCC),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(13.dp))
+                        Text(
+                            text = "No hay citas $word para este día",
+                            color = Color(0xFFCCCCCC),
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 19.sp
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
