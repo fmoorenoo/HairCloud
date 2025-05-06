@@ -12,6 +12,7 @@ data class BarbershopResponse(
     val rating: Float?,
     val cantidad_resenas: Int,
     val es_favorito: Boolean,
+    val imagen_url: String?
 )
 
 data class ServiceResponse(
