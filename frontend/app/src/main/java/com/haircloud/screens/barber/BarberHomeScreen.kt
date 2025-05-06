@@ -576,7 +576,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                         .clickable {
                             if (!isNavigating) {
                                 isNavigating = true
-                                // navController.navigate("barber_settings/$userId")
+                                navController.navigate("barber_settings/$userId")
                             }
                         }
                 ) {
