@@ -399,6 +399,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                                 address = barbershop.direccion,
                                                 rating = barbershop.rating ?: 0f,
                                                 totalRating = barbershop.cantidad_resenas,
+                                                imageUrl = barbershop.imagen_url,
                                                 isFavorite = isFavorite,
                                                 onFavoriteClick = {
                                                     client?.let {
