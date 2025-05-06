@@ -49,6 +49,13 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
+enum class FilterState(string: String) {
+    ALL("Todas"),
+    PENDING("Pendientes"),
+    COMPLETED("Completadas"),
+    CANCELLED("Canceladas")
+}
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun BarberHomeScreen(navController: NavController, userId: Int?) {
@@ -56,6 +63,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     var isNavigating by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var isCalendarVisible by remember { mutableStateOf(false) }
+    var selectedFilterState by remember { mutableStateOf(FilterState.ALL) }
     val barberViewModel = remember { BarberViewModel() }
     val calendarViewModel = remember { CalendarViewModel() }
     val barberState by barberViewModel.barberState.collectAsState()
@@ -65,6 +73,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     val updateEstadoState by datesViewModel.updateEstadoState.collectAsState()
 
     var peluqueroId by remember { mutableIntStateOf(0) }
+    var isFilterDropdownExpanded by remember { mutableStateOf(false) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
@@ -82,6 +91,56 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
         targetValue = if (isCalendarVisible) 180f else 0f,
         label = "arrowRotation"
     )
+
+    val citasPendientes = remember(barberDatesState, selectedDate) {
+        when (barberDatesState) {
+            is BarberDatesState.Success -> {
+                (barberDatesState as BarberDatesState.Success).citas.count { cita ->
+                    val citaDate = try {
+                        LocalDate.parse(cita.fechainicio.substring(0, 10))
+                    } catch (_: Exception) {
+                        null
+                    }
+                    citaDate == selectedDate && cita.estado.equals("Pendiente", ignoreCase = true)
+                }
+            }
+            else -> 0
+        }
+    }
+
+    val citasCompletadas = remember(barberDatesState, selectedDate) {
+        when (barberDatesState) {
+            is BarberDatesState.Success -> {
+                (barberDatesState as BarberDatesState.Success).citas.count { cita ->
+                    val citaDate = try {
+                        LocalDate.parse(cita.fechainicio.substring(0, 10))
+                    } catch (_: Exception) {
+                        null
+                    }
+                    citaDate == selectedDate && cita.estado.equals("Completada", ignoreCase = true)
+                }
+            }
+            else -> 0
+        }
+    }
+
+    val citasCanceladas = remember(barberDatesState, selectedDate) {
+        when (barberDatesState) {
+            is BarberDatesState.Success -> {
+                (barberDatesState as BarberDatesState.Success).citas.count { cita ->
+                    val citaDate = try {
+                        LocalDate.parse(cita.fechainicio.substring(0, 10))
+                    } catch (_: Exception) {
+                        null
+                    }
+                    citaDate == selectedDate && cita.estado.equals("Cancelada", ignoreCase = true)
+                }
+            }
+            else -> 0
+        }
+    }
+
+    val totalCitas = citasPendientes + citasCompletadas + citasCanceladas
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
@@ -310,6 +369,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                         )
                                     }"
                                     snackbarType = SnackbarType.INFO
+                                    selectedFilterState = FilterState.ALL
                                 },
                                 workingDays = workingDays,
                                 initialMonth = YearMonth.from(selectedDate),
@@ -323,20 +383,178 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                 Spacer(modifier = Modifier.height(24.dp))
                 AnimatedVisibility(visible = !isCalendarVisible) {
                     Column {
-                        Text(
-                            text = formatDateToLong(selectedDate),
-                            color = Color.White,
-                            style = TextStyle(
-                                fontFamily = defaultFont,
-                                fontSize = 25.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = formatDateToLong(selectedDate),
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontFamily = defaultFont,
+                                    fontSize = 25.sp,
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Box {
+                                OutlinedButton(
+                                    onClick = { isFilterDropdownExpanded = true },
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = when(selectedFilterState) {
+                                            FilterState.ALL -> Color(0xFF444444)
+                                            FilterState.PENDING -> Color(0xFF946B11)
+                                            FilterState.COMPLETED -> Color(0xFF3A863D)
+                                            FilterState.CANCELLED -> Color(0xFFAD2F26)
+                                        },
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    val filterLabel = when(selectedFilterState) {
+                                        FilterState.ALL -> "Todas ($totalCitas)"
+                                        FilterState.PENDING -> "Pendi... ($citasPendientes)"
+                                        FilterState.COMPLETED -> "Comple... ($citasCompletadas)"
+                                        FilterState.CANCELLED -> "Cancel... ($citasCanceladas)"
+                                    }
+                                    Text(
+                                        text = filterLabel,
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Filtrar"
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = isFilterDropdownExpanded,
+                                    onDismissRequest = { isFilterDropdownExpanded = false },
+                                    modifier = Modifier.background(Color(0xFF2A2A2A))
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Todas ($totalCitas)",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 16.sp,
+                                                color = if (selectedFilterState == FilterState.ALL) Color.White else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedFilterState = FilterState.ALL
+                                            isFilterDropdownExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            if (selectedFilterState == FilterState.ALL) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        },
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Pendientes ($citasPendientes)",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 16.sp,
+                                                color = if (selectedFilterState == FilterState.PENDING) Color.White else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedFilterState = FilterState.PENDING
+                                            isFilterDropdownExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            if (selectedFilterState == FilterState.PENDING) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        },
+
+                                        modifier = Modifier.background(
+                                            if (selectedFilterState == FilterState.PENDING) Color(0xFFCB9217) else Color(0xFF2A2A2A)
+                                        )
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Completadas ($citasCompletadas)",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 16.sp,
+                                                color = if (selectedFilterState == FilterState.COMPLETED) Color.White else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedFilterState = FilterState.COMPLETED
+                                            isFilterDropdownExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            if (selectedFilterState == FilterState.COMPLETED) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        },
+
+                                        modifier = Modifier.background(
+                                            if (selectedFilterState == FilterState.COMPLETED) Color(0xFF4CAF50) else Color(0xFF2A2A2A)
+                                        )
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Canceladas ($citasCanceladas)",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 16.sp,
+                                                color = if (selectedFilterState == FilterState.CANCELLED) Color.White else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedFilterState = FilterState.CANCELLED
+                                            isFilterDropdownExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            if (selectedFilterState == FilterState.CANCELLED) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.background(
+                                            if (selectedFilterState == FilterState.CANCELLED) Color(0xFFF44336) else Color(0xFF2A2A2A)
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         BarberAppointmentsList(
                             barberDatesState = barberDatesState,
                             defaultFont = defaultFont,
-                            selectedDate = selectedDate
+                            selectedDate = selectedDate,
+                            filterState = selectedFilterState
                         )
                     }
                 }
