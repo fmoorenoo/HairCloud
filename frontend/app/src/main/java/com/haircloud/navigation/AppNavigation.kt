@@ -100,5 +100,38 @@ fun AppNavigation(
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             BarberHomeScreen(navController, userId)
         }
+
+        // Peluqueros Settings
+        composable("barber_settings/{userId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            BarberSettingsScreen(navController, userId)
+        }
+
+        // Peluqueros Reportes
+//        composable("barber_reports/{userId}") { backStackEntry ->
+//            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+//            BarberReportsScreen(navController, userId)
+//        }
+
+        // Peluqueros Info Barbería
+        composable("barbershop_info/{userId}/{localId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
+            BarbershopInfoScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1)
+        }
+
+        // Peluqueros Servicios
+        composable("barbershop_services/{userId}/{localId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
+            BarbershopServicesScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1)
+        }
+
+        // Peluqueros Personal
+        composable("barbershop_barbers/{userId}/{localId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
+            BarbershopBarbersScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1)
+        }
     }
 }
