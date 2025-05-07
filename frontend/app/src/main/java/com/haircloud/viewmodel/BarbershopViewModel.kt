@@ -17,6 +17,9 @@ class BarbershopViewModel : ViewModel() {
     private val _barbershopState = MutableStateFlow<BarbershopState>(BarbershopState.Idle)
     val barbershopState: StateFlow<BarbershopState> = _barbershopState
 
+    private val _barbershopUpdateState = MutableStateFlow<BarbershopUpdateState>(BarbershopUpdateState.Idle)
+    val barbershopUpdateState: StateFlow<BarbershopUpdateState> = _barbershopUpdateState
+
     private val _singleBarbershopState = MutableStateFlow<SingleBarbershopState>(SingleBarbershopState.Idle)
     val singleBarbershopState: StateFlow<SingleBarbershopState> = _singleBarbershopState
 
@@ -46,6 +49,17 @@ class BarbershopViewModel : ViewModel() {
             _barbershopState.value = result.fold(
                 onSuccess = { BarbershopState.Success(it) },
                 onFailure = { BarbershopState.Error(it.message ?: "Error al cargar barberías") }
+            )
+        }
+    }
+
+    fun updateBarbershop(localId: Int, updateData: Map<String, String?>) {
+        _barbershopUpdateState.value = BarbershopUpdateState.Updating
+        viewModelScope.launch {
+            val result = repository.updateBarbershop(localId, updateData)
+            _barbershopUpdateState.value = result.fold(
+                onSuccess = { BarbershopUpdateState.UpdateSuccess(it) },
+                onFailure = { BarbershopUpdateState.UpdateError(it.message ?: "Error al actualizar") }
             )
         }
     }
@@ -148,6 +162,9 @@ class BarbershopViewModel : ViewModel() {
         _addReviewState.value = AddReviewState.Idle
     }
 
+    fun resetUpdateState() {
+        _barbershopUpdateState.value = BarbershopUpdateState.Idle
+    }
 
     fun deleteReview(resenaId: Int, localId: Int, clienteId: Int) {
         _deleteReviewState.value = DeleteReviewState.Idle
@@ -235,5 +252,12 @@ sealed class BarbersState {
     object Loading : BarbersState()
     data class Success(val barbers: List<BarberResponse>) : BarbersState()
     data class Error(val message: String) : BarbersState()
+}
+
+sealed class BarbershopUpdateState {
+    object Idle : BarbershopUpdateState()
+    object Updating : BarbershopUpdateState()
+    data class UpdateSuccess(val message: String) : BarbershopUpdateState()
+    data class UpdateError(val message: String) : BarbershopUpdateState()
 }
 

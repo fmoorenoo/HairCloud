@@ -72,6 +72,21 @@ class BarbershopRepository {
         }
     }
 
+    suspend fun updateBarbershop(localId: Int, updateData: Map<String, String?>): Result<String> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.instance.updateBarbershop(localId, updateData).execute()
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Actualización exitosa")
+            } else {
+                Result.failure(Exception("Error al actualizar la barbería"))
+            }
+        } catch (_: Exception) {
+            Result.failure(Exception("Error de conexión"))
+        }
+    }
+
     suspend fun getFavoriteBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
         return try {
             val response = withContext(Dispatchers.IO) {
