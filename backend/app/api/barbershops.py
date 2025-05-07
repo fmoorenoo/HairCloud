@@ -75,6 +75,41 @@ def get_barbershop(clienteid, localid):
     return jsonify(item), 200
 
 
+@barbershops_bp.route('/update_barbershop/<int:localid>', methods=['PUT'])
+def update_barbershop(localid):
+    data = request.get_json()
+    campos = ['nombre', 'direccion', 'telefono', 'horarioapertura', 'horariocierre', 'descripcion']
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    updates = []
+    values = []
+
+    for campo in campos:
+        if campo in data:
+            updates.append(f"{campo} = %s")
+            values.append(data[campo])
+
+    if not updates:
+        return jsonify({"error": "No hay datos para actualizar"}), 400
+
+    values.append(localid)
+
+    query = f"""
+        UPDATE local
+        SET {", ".join(updates)}
+        WHERE localid = %s
+    """
+
+    cursor.execute(query, tuple(values))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Barbería actualizada correctamente"}), 200
+
+
 @barbershops_bp.route('/get_favorite_barbershops/<int:clienteid>', methods=['GET'])
 def get_favorite_barbershops(clienteid):
     connection = get_connection()
