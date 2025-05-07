@@ -176,11 +176,12 @@ fun CalendarMonth(
                         .clip(RoundedCornerShape(3.dp))
                         .background(
                             when {
-                                isSelected -> Color.White
-                                hasCita -> Color(0xFF4A7FAD).copy(alpha = 0.2f)
-                                isPastDate -> Color.Gray.copy(alpha = 0.3f)
+                                isSelected -> Color(0xFFE1E1E1)
+                                hasCita && isPastDate -> Color(0xFF5C6E7D).copy(alpha = 0.25f)
+                                hasCita -> Color(0xFF4A89BE).copy(alpha = 0.2f)
                                 !isWorkingDay -> Color.Red.copy(alpha = 0.2f)
-                                isToday -> Color(0xFF30D1FF).copy(alpha = 0.3f)
+                                isPastDate -> Color.Gray.copy(alpha = 0.3f)
+                                isToday -> Color(0xFF2C93E7).copy(alpha = 0.3f)
                                 else -> Color.Transparent
                             }
                         )
