@@ -107,7 +107,7 @@ def update_barbershop(localid):
     cursor.close()
     connection.close()
 
-    return jsonify({"message": "Barbería actualizada correctamente"}), 200
+    return jsonify({"message": "Info actualizada correctamente"}), 200
 
 
 @barbershops_bp.route('/get_favorite_barbershops/<int:clienteid>', methods=['GET'])
