@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
@@ -39,7 +40,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarbershopReviewsScreen(navController: NavController, localId: Int, userId: Int, isAdmin: Boolean = false) {
+fun BarbershopReviewsScreen(navController: NavController, localId: Int, isAdmin: Boolean) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val barbershopViewModel: BarbershopViewModel = viewModel()
@@ -107,7 +108,7 @@ fun BarbershopReviewsScreen(navController: NavController, localId: Int, userId: 
                         text = "Administrar reseñas",
                         style = TextStyle(
                             fontFamily = defaultFont,
-                            fontSize = 24.sp,
+                            fontSize = 27.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
@@ -203,7 +204,8 @@ fun BarbershopReviewsScreen(navController: NavController, localId: Int, userId: 
                                             -1
                                         )
                                     },
-                                    defaultFont = defaultFont
+                                    defaultFont = defaultFont,
+                                    isAdmin = isAdmin
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
@@ -322,7 +324,7 @@ fun ReviewsRatingHeader(rating: Float, totalReviews: Int, defaultFont: FontFamil
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    StarRating(rating = rating, defaultFont = defaultFont)
+                    StarRating(rating = rating)
                     Text(
                         text = "$totalReviews ${if (totalReviews == 1) "reseña" else "reseñas"}",
                         style = TextStyle(fontFamily = defaultFont),
@@ -401,7 +403,8 @@ fun ReviewsRatingHeader(rating: Float, totalReviews: Int, defaultFont: FontFamil
 fun BarberReviewCard(
     review: ReviewResponse,
     onDeleteReview: (Int) -> Unit,
-    defaultFont: FontFamily
+    defaultFont: FontFamily,
+    isAdmin: Boolean
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -460,18 +463,20 @@ fun BarberReviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                StarRating(review.calificacion.toFloat(), defaultFont)
+                StarRating(review.calificacion.toFloat())
 
-                IconButton(
-                    onClick = { showDeleteDialog = true },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Eliminar reseña",
-                        tint = Color(0xFFFF6B6B),
-                        modifier = Modifier.size(24.dp)
-                    )
+                if (isAdmin) {
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar reseña",
+                            tint = Color(0xFFFF6B6B),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
 
@@ -567,13 +572,13 @@ fun BarberReviewCard(
 }
 
 @Composable
-fun StarRating(rating: Float, defaultFont: FontFamily) {
+fun StarRating(rating: Float) {
     val roundedRating = (rating * 2).toInt() / 2f
     Row(verticalAlignment = Alignment.CenterVertically) {
         repeat(5) { index ->
             val star = when {
                 index < roundedRating.toInt() -> Icons.Default.Star
-                index == roundedRating.toInt() && roundedRating % 1 == 0.5f -> Icons.Default.StarHalf
+                index == roundedRating.toInt() && roundedRating % 1 == 0.5f -> Icons.AutoMirrored.Filled.StarHalf
                 else -> Icons.Default.StarBorder
             }
             Icon(
