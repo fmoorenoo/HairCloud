@@ -102,9 +102,10 @@ fun AppNavigation(
         }
 
         // Peluqueros Settings
-        composable("barber_settings/{userId}") { backStackEntry ->
+        composable("barber_settings/{userId}/{isAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-            BarberSettingsScreen(navController, userId)
+            val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
+            BarberSettingsScreen(navController, userId, isAdmin)
         }
 
         // Peluqueros Reportes
@@ -114,10 +115,18 @@ fun AppNavigation(
 //        }
 
         // Peluqueros Info Barbería
-        composable("barbershop_info/{userId}/{localId}") { backStackEntry ->
+        composable("barbershop_info/{userId}/{localId}/{isAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
-            BarbershopInfoScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1)
+            val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
+            BarbershopInfoScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1, isAdmin)
+        }
+
+        // Peluqueros Reviews
+        composable("barbershop_reviews/{userId}/{localId}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
+            BarbershopReviewsScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1)
         }
 
         // Peluqueros Servicios
