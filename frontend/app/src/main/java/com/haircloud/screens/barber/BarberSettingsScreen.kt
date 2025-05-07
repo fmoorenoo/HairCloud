@@ -39,7 +39,7 @@ import com.haircloud.viewmodel.GetBarberState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BarberSettingsScreen(navController: NavController, userId: Int?) {
+fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Boolean?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     val barberViewModel = remember { BarberViewModel() }
@@ -170,7 +170,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?) {
                     onClick = {
                         if (!isNavigating) {
                             isNavigating = true
-                            navController.navigate("barbershop_info/$localId/$userId")
+                            navController.navigate("barbershop_info/$localId/$userId/$isAdmin")
                         }
                     },
                     defaultFont = defaultFont
