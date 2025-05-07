@@ -41,4 +41,13 @@ object CredentialsValidator {
         val correctLength = phone.length in 9..15
         return onlyDigits && correctLength
     }
+
+    /* Requisitos del horario:
+     - Formato HH:mm o HH:mm:ss
+     - Entre 00:00 y 23:59 (y opcionalmente segundos entre 00-59)
+    */
+    fun isHourValid(time: String): Boolean {
+        return Regex("""^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$""").matches(time)
+    }
+
 }
