@@ -184,7 +184,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     onClick = {
                         if (!isNavigating) {
                             isNavigating = true
-                            navController.navigate("barbershop_services/$localId/$userId")
+                            navController.navigate("barbershop_services/$localId/$isAdmin")
                         }
                     },
                     defaultFont = defaultFont
