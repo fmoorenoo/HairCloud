@@ -110,7 +110,7 @@ def register():
     usuarioid = cursor.fetchone()[0]
 
     cursor.execute(
-        "INSERT INTO clientes (usuarioid, nombre, telefono, fecharegistro, ultimacita) VALUES (%s, %s, NULL, NOW(), NULL)",
+        "INSERT INTO clientes (usuarioid, nombre, telefono, fecharegistro) VALUES (%s, %s, NULL, NOW())",
         (usuarioid, nombre_completo)
     )
 
