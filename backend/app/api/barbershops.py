@@ -188,59 +188,6 @@ def remove_favorite():
     return jsonify({"message": "Favorito eliminado"}), 200
 
 
-@barbershops_bp.route('/get_services/<int:localid>', methods=['GET'])
-def get_services(localid):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT * FROM servicios
-        WHERE localid = %s
-        ORDER BY servicioid
-    """, (localid,))
-
-    servicios = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    result = []
-    for s in servicios:
-        item = {}
-        for i, value in enumerate(s):
-            item[column_names[i]] = value
-        result.append(item)
-
-    return jsonify(result), 200
-
-
-@barbershops_bp.route('/get_service/<int:servicioid>', methods=['GET'])
-def get_service_by_id(servicioid):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT * FROM servicios
-        WHERE servicioid = %s
-    """, (servicioid,))
-
-    servicio = cursor.fetchone()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    if servicio is None:
-        return jsonify({"error": "Servicio no encontrado"}), 404
-
-    result = {}
-    for i, value in enumerate(servicio):
-        result[column_names[i]] = value
-
-    return jsonify(result), 200
-
-
 @barbershops_bp.route('/get_barbershop_reviews/<int:localid>', methods=['GET'])
 def get_barbershop_reviews(localid):
     connection = get_connection()
