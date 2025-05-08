@@ -50,4 +50,33 @@ object CredentialsValidator {
         return Regex("""^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$""").matches(time)
     }
 
+    /*
+     - Validar si el precio es válida mientras el usuario escribe
+     - Permite números y un único punto decimal con hasta 2 decimales
+    */
+    fun isPriceInputValid(input: String): Boolean {
+        if (input.isEmpty()) return true
+        val regex = """^\d+(\.\d{0,2})?$""".toRegex()
+        return regex.matches(input)
+    }
+
+    /*
+     - Validar si el precio final es válido para guardar
+    */
+    fun isPriceValid(input: String): Boolean {
+        if (input.isEmpty()) return false
+        return isPriceInputValid(input) && input != "."
+    }
+
+    /*
+     - Convertir el texto de precio a Double, con a 2 decimales
+    */
+    fun convertPriceToDouble(input: String): Double {
+        return if (input.isEmpty()) {
+            0.0
+        } else {
+            val parsed = input.toDoubleOrNull() ?: 0.0
+            (parsed * 100).toInt() / 100.0
+        }
+    }
 }
