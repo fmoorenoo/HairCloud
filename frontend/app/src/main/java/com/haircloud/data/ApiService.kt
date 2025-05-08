@@ -61,11 +61,23 @@ interface ApiService {
     @HTTP(method = "DELETE", path = "/api/barbershops/remove_favorite", hasBody = true)
     fun removeFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
 
-    @GET("/api/barbershops/get_services/{local_id}")
+    @GET("/api/services/get_services/{local_id}")
     fun getServicesByLocalId(@Path("local_id") localId: Int): Call<List<ServiceResponse>>
 
-    @GET("/api/barbershops/get_service/{servicioid}")
+    @GET("/api/services/get_service/{servicioid}")
     fun getService(@Path("servicioid") servicioId: Int): Call<ServiceResponse>
+
+    @POST("/api/services/create_service")
+    fun createService(@Body service: ServiceRequest): Call<ApiResponse>
+
+    @PUT("/api/services/edit_service/{servicioid}")
+    fun editService(
+        @Path("servicioid") servicioId: Int,
+        @Body service: ServiceRequest
+    ): Call<ApiResponse>
+
+    @HTTP(method = "DELETE", path = "/api/services/delete_service/{servicioid}", hasBody = false)
+    fun deleteService(@Path("servicioid") servicioId: Int): Call<ApiResponse>
 
     @GET("/api/barbershops/get_barbershop_reviews/{local_id}")
     fun getBarbershopReviews(@Path("local_id") localId: Int): Call<List<ReviewResponse>>
