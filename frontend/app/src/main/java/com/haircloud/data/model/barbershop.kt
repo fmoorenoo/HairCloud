@@ -50,4 +50,5 @@ data class BarberResponse(
     val especialidad: String?,
     val fechacontratacion: String,
     val localid: Int,
+    val rol: String,
 )
