@@ -281,9 +281,11 @@ def get_barbers(localid):
     cursor = connection.cursor()
 
     cursor.execute("""
-        SELECT * FROM peluqueros
-        WHERE localid = %s
-        ORDER BY nombre
+        SELECT p.*, u.rol
+        FROM peluqueros p
+        JOIN usuarios u ON p.usuarioid = u.usuarioid
+        WHERE p.localid = %s
+        ORDER BY p.nombre
     """, (localid,))
 
     peluqueros = cursor.fetchall()

@@ -174,7 +174,9 @@ class BarbershopViewModel : ViewModel() {
                 onSuccess = {
                     _deleteReviewState.value = DeleteReviewState.Success
                     getBarbershopReviews(localId)
-                    getBarbershopById(clienteId, localId)
+                    if (clienteId != -1) {
+                        getBarbershopById(clienteId, localId)
+                    }
                 },
                 onFailure = {
                     _deleteReviewState.value = DeleteReviewState.Error(it.message ?: "Error al eliminar reseña")
