@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,6 +68,19 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
 
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
+
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredServices = when (val state = servicesState) {
+        is BarberServiceState.Success -> {
+            val query = searchQuery.lowercase()
+            state.services.filter {
+                it.nombre.lowercase().contains(query) ||
+                        it.precio.toString().contains(query) ||
+                        it.duracion.toString().contains(query)
+            }
+        }
+        else -> emptyList()
+    }
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
@@ -190,7 +202,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Text(
-                            text = "Administrar servicios",
+                            text = if (isAdmin) "Administrar servicios" else "Servicios",
                             color = Color.White,
                             style = TextStyle(fontFamily = defaultFont),
                             fontSize = 25.sp,
@@ -232,29 +244,67 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                         }
                     }
                     is BarberServiceState.Success -> {
-                        val services = (servicesState as BarberServiceState.Success).services
-
-                        if (services.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxWidth().height(400.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "No hay servicios disponibles",
-                                    color = Color.White,
-                                    style = TextStyle(fontFamily = defaultFont),
-                                    fontSize = 18.sp,
-                                    textAlign = TextAlign.Center
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            label = { Text("Buscador (nombre, precio o duración)") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = "Buscar",
+                                    tint = Color.White
                                 )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF444444),
+                                unfocusedBorderColor = Color(0xFF666666),
+                                focusedLabelColor = Color(0xFFAAAAAA),
+                                unfocusedLabelColor = Color(0xFF888888),
+                                cursorColor = Color.White,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            singleLine = true
+                        )
+
+                        if (filteredServices.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(400.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(
+                                        imageVector = Icons.Default.SearchOff,
+                                        contentDescription = "Sin resultados",
+                                        tint = Color.Gray.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(72.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "No se encontraron servicios",
+                                        color = Color.Gray.copy(alpha = 0.8f),
+                                        fontSize = 19.sp,
+                                        fontFamily = defaultFont
+                                    )
+                                }
                             }
                         } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxWidth().weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                items(services) { service ->
+                                items(filteredServices) { service ->
                                     ServiceCard(
                                         service = service,
                                         defaultFont = defaultFont,
                                         darkSurface = darkSurface,
-                                        isAdmin = true,
+                                        isAdmin = isAdmin,
                                         onEdit = {
                                             selectedService = it
                                             showEditDialog = true
@@ -270,6 +320,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                                 }
                             }
                         }
+
                     }
                     else -> {  }
                 }
@@ -436,7 +487,7 @@ fun ServiceCard(
                         text = "${service.duracion} minutos",
                         color = Color.White.copy(alpha = 0.8f),
                         style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 15.sp
+                        fontSize = 17.sp
                     )
                 }
 
