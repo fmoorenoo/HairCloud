@@ -102,4 +102,22 @@ class BarberRepository {
             Result.failure(Exception("Error en la conexión"))
         }
     }
+
+    suspend fun toggleBarberRole(usuarioId: Int): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.toggleBarberRole(usuarioId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al cambiar el rol")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -82,6 +82,17 @@ class BarberViewModel : ViewModel() {
         _barberUpdateState.value = BarberUpdateState.Idle
     }
 
+    fun toggleBarberRole(usuarioId: Int) {
+        _barberUpdateState.value = BarberUpdateState.Updating
+        viewModelScope.launch {
+            val result = repository.toggleBarberRole(usuarioId)
+            _barberUpdateState.value = if (result.isSuccess) {
+                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
+            } else {
+                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al cambiar rol")
+            }
+        }
+    }
 }
 
 sealed class GetBarberState {

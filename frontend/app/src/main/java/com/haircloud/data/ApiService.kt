@@ -146,4 +146,7 @@ interface ApiService {
         @Path("user_id") userId: Int,
         @Body updateData: Map<String, String?>
     ): Call<ApiResponse>
+
+    @PUT("/api/barbers/toggle_barber_role/{user_id}")
+    fun toggleBarberRole(@Path("user_id") userId: Int): Call<ApiResponse>
 }
