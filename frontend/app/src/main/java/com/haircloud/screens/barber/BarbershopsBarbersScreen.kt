@@ -27,12 +27,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.data.model.BarberResponse
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.BarberViewModel
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.BarbersState
 
@@ -50,6 +52,8 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
     val blackWhiteGradient =
         Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    val barberViewModel: BarberViewModel = viewModel()
+
 
 
     LaunchedEffect(snackbarMessage) {
@@ -215,8 +219,17 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                                 modifier = Modifier.fillMaxWidth().weight(1f),
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
+
                                 items(filteredBarbers) { barber ->
-                                    BarberCard(barber = barber, defaultFont = defaultFont, userId = userId)
+                                    BarberCard(
+                                        barber = barber,
+                                        defaultFont = defaultFont,
+                                        userId = userId,
+                                        isAdmin = isAdmin,
+                                        onToggleRole = { usuarioId ->
+                                            barberViewModel.toggleBarberRole(usuarioId)
+                                        }
+                                    )
                                 }
                                 item { Spacer(modifier = Modifier.height(40.dp)) }
                             }
@@ -230,7 +243,13 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
 }
 
 @Composable
-fun BarberCard(barber: BarberResponse, defaultFont: FontFamily, userId: Int?) {
+fun BarberCard(
+    barber: BarberResponse,
+    defaultFont: FontFamily,
+    userId: Int?,
+    isAdmin: Boolean = false,
+    onToggleRole: (Int) -> Unit = {}
+) {
     val isYou = userId == barber.usuarioid
     val backgroundColor = if (isYou) Color(0xFF4F4F4F) else Color(0xFF2C2C2C)
     val borderColor = if (isYou) Color(0xFFFFFFFF) else Color.Transparent
@@ -323,6 +342,41 @@ fun BarberCard(barber: BarberResponse, defaultFont: FontFamily, userId: Int?) {
                     )
                 }
             }
+            if (isAdmin && !isYou) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Permisos de gestión",
+                        color = textColor,
+                        fontSize = 16.sp,
+                        fontFamily = defaultFont
+                    )
+
+                    var isSemiadmin by remember { mutableStateOf(barber.rol == "semiadmin") }
+
+                    Switch(
+                        checked = isSemiadmin,
+                        onCheckedChange = {
+                            isSemiadmin = it
+                            onToggleRole(barber.usuarioid)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF7EDA9C),
+                            uncheckedThumbColor = Color.Gray,
+                            checkedTrackColor = Color(0xFF1E3A28),
+                            uncheckedTrackColor = Color.DarkGray
+                        )
+                    )
+                }
+            }
+
         }
     }
 }
