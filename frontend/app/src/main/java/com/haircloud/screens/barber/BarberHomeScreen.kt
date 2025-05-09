@@ -75,6 +75,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
     var peluqueroId by remember { mutableIntStateOf(0) }
     var peluqueroRol by remember { mutableStateOf("") }
     var isAdmin by remember { mutableStateOf(false) }
+    var isSemiAdmin by remember { mutableStateOf(false) }
     var isFilterDropdownExpanded by remember { mutableStateOf(false) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -162,6 +163,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
             peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
             peluqueroRol = (barberState as GetBarberState.Success).barber.rol
             isAdmin = peluqueroRol == "admin"
+            isSemiAdmin = peluqueroRol == "semiadmin"
             calendarViewModel.getWeeklySchedule(peluqueroId)
             reloadDates()
         }
@@ -580,7 +582,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                         .clickable {
                             if (!isNavigating) {
                                 isNavigating = true
-                                navController.navigate("barber_settings/$userId/$isAdmin")
+                                navController.navigate("barber_settings/$userId/$isAdmin/$isSemiAdmin")
                             }
                         }
                 ) {

@@ -105,7 +105,8 @@ fun AppNavigation(
         composable("barber_settings/{userId}/{isAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
-            BarberSettingsScreen(navController, userId, isAdmin)
+            val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
+            BarberSettingsScreen(navController, userId, isAdmin, isSemiAdmin)
         }
 
         // Peluqueros Reportes
@@ -119,21 +120,24 @@ fun AppNavigation(
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
-            BarbershopInfoScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1, isAdmin)
+            val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
+            BarbershopInfoScreen(navController, userId?.toInt() ?: -1, localId?.toInt() ?: -1, isAdmin, isSemiAdmin)
         }
 
         // Peluqueros Reviews Barbería
         composable("barbershop_reviews/{localId}/{isAdmin}") { backStackEntry ->
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
-            BarbershopReviewsScreen(navController, localId ?: -1, isAdmin)
+            val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
+            BarbershopReviewsScreen(navController, localId ?: -1, isAdmin, isSemiAdmin)
         }
 
         // Peluqueros Servicios
         composable("barbershop_services/{localId}/{isAdmin}") { backStackEntry ->
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
-            BarbershopServicesScreen(navController, localId?.toInt() ?: -1, isAdmin)
+            val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
+            BarbershopServicesScreen(navController, localId?.toInt() ?: -1, isAdmin, isSemiAdmin)
         }
 
         // Peluqueros Personal

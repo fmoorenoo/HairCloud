@@ -39,7 +39,7 @@ import com.haircloud.viewmodel.GetBarberState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Boolean?) {
+fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Boolean?, isSemiAdmin: Boolean?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     val barberViewModel = remember { BarberViewModel() }
@@ -170,7 +170,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     onClick = {
                         if (!isNavigating) {
                             isNavigating = true
-                            navController.navigate("barbershop_info/$localId/$userId/$isAdmin")
+                            navController.navigate("barbershop_info/$localId/$userId/$isAdmin/$isSemiAdmin")
                         }
                     },
                     defaultFont = defaultFont
@@ -184,7 +184,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     onClick = {
                         if (!isNavigating) {
                             isNavigating = true
-                            navController.navigate("barbershop_services/$localId/$isAdmin")
+                            navController.navigate("barbershop_services/$localId/$isAdmin/$isSemiAdmin")
                         }
                     },
                     defaultFont = defaultFont
@@ -198,7 +198,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     onClick = {
                         if (!isNavigating) {
                             isNavigating = true
-                            navController.navigate("barbershop_barbers/$localId/$userId")
+                            navController.navigate("barbershop_barbers/$localId/$userId/$isAdmin/$isSemiAdmin")
                         }
                     },
                     defaultFont = defaultFont
