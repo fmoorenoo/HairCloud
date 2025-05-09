@@ -40,7 +40,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BarbershopReviewsScreen(navController: NavController, localId: Int, isAdmin: Boolean) {
+fun BarbershopReviewsScreen(navController: NavController, localId: Int, isAdmin: Boolean, isSemiAdmin: Boolean) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val barbershopViewModel: BarbershopViewModel = viewModel()
@@ -205,7 +205,8 @@ fun BarbershopReviewsScreen(navController: NavController, localId: Int, isAdmin:
                                         )
                                     },
                                     defaultFont = defaultFont,
-                                    isAdmin = isAdmin
+                                    isAdmin = isAdmin,
+                                    isSemiAdmin = isSemiAdmin
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
@@ -404,7 +405,8 @@ fun BarberReviewCard(
     review: ReviewResponse,
     onDeleteReview: (Int) -> Unit,
     defaultFont: FontFamily,
-    isAdmin: Boolean
+    isAdmin: Boolean,
+    isSemiAdmin: Boolean
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -465,7 +467,7 @@ fun BarberReviewCard(
             ) {
                 StarRating(review.calificacion.toFloat())
 
-                if (isAdmin) {
+                if (isAdmin || isSemiAdmin) {
                     IconButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.size(40.dp)

@@ -51,7 +51,7 @@ private val blackWhiteGradient =
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BarbershopInfoScreen(navController: NavController, localId: Int, userId: Int, isAdmin: Boolean = false) {
+fun BarbershopInfoScreen(navController: NavController, localId: Int, userId: Int, isAdmin: Boolean = false, isSemiAdmin: Boolean = false) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var isNavigating by remember { mutableStateOf(false) }
@@ -189,6 +189,7 @@ fun BarbershopInfoScreen(navController: NavController, localId: Int, userId: Int
                             navController = navController,
                             barbershop = barbershop,
                             isAdmin = isAdmin,
+                            isSemiAdmin = isSemiAdmin,
                             defaultFont = defaultFont,
                             isEditMode = isEditMode,
                             nombre = nombre,
@@ -374,6 +375,7 @@ fun SuccessState(
     navController: NavController,
     barbershop: BarbershopResponse,
     isAdmin: Boolean,
+    isSemiAdmin: Boolean,
     defaultFont: FontFamily,
     isEditMode: Boolean,
     nombre: String,
@@ -417,6 +419,7 @@ fun SuccessState(
         onValueChange = onNombreChange,
         localId = barbershop.localid,
         isAdmin = isAdmin,
+        isSemiAdmin = isSemiAdmin,
         navController = navController
     )
 
@@ -671,7 +674,8 @@ fun BarbershopHeaderCard(
     onValueChange: (String) -> Unit = {},
     navController: NavController,
     localId: Int,
-    isAdmin: Boolean
+    isAdmin: Boolean,
+    isSemiAdmin: Boolean
 ) {
     var isNavigating by remember { mutableStateOf(false) }
 
@@ -774,7 +778,7 @@ fun BarbershopHeaderCard(
                             .clickable {
                                 if (!isNavigating) {
                                     isNavigating = true
-                                    navController.navigate("barbershop_reviews/$localId/$isAdmin")
+                                    navController.navigate("barbershop_reviews/$localId/$isAdmin/$isSemiAdmin")
                                 }
                             }
                     ) {
