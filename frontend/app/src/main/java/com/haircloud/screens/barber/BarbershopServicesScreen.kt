@@ -48,7 +48,7 @@ import java.util.*
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin: Boolean = false) {
+fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin: Boolean = false, isSemiAdmin: Boolean = false) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     val servicesViewModel = remember { ServicesViewModel() }
@@ -202,7 +202,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Text(
-                            text = if (isAdmin) "Administrar servicios" else "Servicios",
+                            text = if (isAdmin || isSemiAdmin) "Administrar servicios" else "Servicios",
                             color = Color.White,
                             style = TextStyle(fontFamily = defaultFont),
                             fontSize = 25.sp,
@@ -210,7 +210,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                         )
                     }
 
-                    if (isAdmin) {
+                    if (isAdmin || isSemiAdmin) {
                         IconButton(
                             onClick = { showCreateDialog = true }
                         ) {
@@ -305,6 +305,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                                         defaultFont = defaultFont,
                                         darkSurface = darkSurface,
                                         isAdmin = isAdmin,
+                                        isSemiAdmin = isSemiAdmin,
                                         onEdit = {
                                             selectedService = it
                                             showEditDialog = true
@@ -361,6 +362,7 @@ fun ServiceCard(
     defaultFont: FontFamily,
     darkSurface: Color,
     isAdmin: Boolean = false,
+    isSemiAdmin: Boolean = false,
     onEdit: (ServiceResponse) -> Unit,
     onDelete: (Int) -> Unit
 ) {
@@ -491,7 +493,7 @@ fun ServiceCard(
                     )
                 }
 
-                if (isAdmin) {
+                if (isAdmin || isSemiAdmin) {
                     Box {
                         IconButton(
                             onClick = { menuExpanded = true },
