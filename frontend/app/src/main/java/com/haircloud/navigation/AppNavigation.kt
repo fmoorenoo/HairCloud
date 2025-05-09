@@ -102,7 +102,7 @@ fun AppNavigation(
         }
 
         // Peluqueros Settings
-        composable("barber_settings/{userId}/{isAdmin}") { backStackEntry ->
+        composable("barber_settings/{userId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
             val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
@@ -116,7 +116,7 @@ fun AppNavigation(
 //        }
 
         // Peluqueros Info Barbería
-        composable("barbershop_info/{userId}/{localId}/{isAdmin}") { backStackEntry ->
+        composable("barbershop_info/{userId}/{localId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
@@ -125,7 +125,7 @@ fun AppNavigation(
         }
 
         // Peluqueros Reviews Barbería
-        composable("barbershop_reviews/{localId}/{isAdmin}") { backStackEntry ->
+        composable("barbershop_reviews/{localId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
             val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
@@ -133,7 +133,7 @@ fun AppNavigation(
         }
 
         // Peluqueros Servicios
-        composable("barbershop_services/{localId}/{isAdmin}") { backStackEntry ->
+        composable("barbershop_services/{localId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
             val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
