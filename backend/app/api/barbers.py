@@ -179,4 +179,34 @@ def update_barber(user_id):
     return jsonify({"message": "Info actualizada correctamente"}), 200
 
 
+@barbers_bp.route('/toggle_barber_role/<int:user_id>', methods=['PUT'])
+def toggle_barber_role(user_id):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT rol FROM usuarios WHERE usuarioid = %s", (user_id,))
+    result = cursor.fetchone()
+
+    if not result:
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    current_role = result[0]
+
+    if current_role not in ('peluquero', 'semiadmin'):
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "El usuario no tiene rol compatible para cambio"}), 400
+
+    new_role = 'semiadmin' if current_role == 'peluquero' else 'peluquero'
+
+    cursor.execute("UPDATE usuarios SET rol = %s WHERE usuarioid = %s", (new_role, user_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": f"Rol actualizado a {new_role}"}), 200
+
+
 
