@@ -284,7 +284,7 @@ def get_barbers(localid):
         SELECT p.*, u.rol
         FROM peluqueros p
         JOIN usuarios u ON p.usuarioid = u.usuarioid
-        WHERE p.localid = %s
+        WHERE p.localid = %s AND p.activo = TRUE
         ORDER BY p.nombre
     """, (localid,))
 
