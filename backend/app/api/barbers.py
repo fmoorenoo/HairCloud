@@ -229,3 +229,55 @@ def deactivate_barber(user_id):
     return jsonify({"message": "Barbero desactivado correctamente"}), 200
 
 
+@barbers_bp.route('/activate_barber/<int:user_id>', methods=['PUT'])
+def activate_barber(user_id):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM peluqueros WHERE usuarioid = %s", (user_id,))
+    if not cursor.fetchone():
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Barbero no encontrado"}), 404
+
+    cursor.execute("UPDATE peluqueros SET activo = TRUE WHERE usuarioid = %s", (user_id,))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Barbero activado correctamente"}), 200
+
+
+@barbers_bp.route('/get_inactive_barbers', methods=['GET'])
+def get_inactive_barbers():
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT p.*, u.email, u.nombreusuario, u.rol
+        FROM peluqueros p
+        JOIN usuarios u ON p.usuarioid = u.usuarioid
+        WHERE p.activo = FALSE
+        ORDER BY p.nombre
+    """)
+
+    barbers = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+
+    cursor.close()
+    connection.close()
+
+    result = []
+    for barber in barbers:
+        item = {}
+        for i, value in enumerate(barber):
+            if isinstance(value, (datetime, timedelta)):
+                item[column_names[i]] = value.isoformat()
+            else:
+                item[column_names[i]] = value
+        result.append(item)
+
+    return jsonify(result), 200
+
+
