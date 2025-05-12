@@ -1,6 +1,7 @@
 package com.haircloud.screens.barber
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +39,8 @@ import com.haircloud.viewmodel.InactiveBarbersState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+data class BarberToActivate(val usuarioId: Int, val nombre: String, val especialidad: String?)
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?, isAdmin: Boolean = false) {
@@ -52,13 +55,12 @@ fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?, is
     val darkSurface = Color(0xFF1E1E1E)
 
     var isNavigating by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    data class BarberToActivate(val usuarioId: Int, val nombre: String, val especialidad: String?)
 
     var showActivationDialog by remember { mutableStateOf<BarberToActivate?>(null) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
 
+    var selectedTab by remember { mutableStateOf(AddBarberTabs.NEW_BARBER) }
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
@@ -137,193 +139,39 @@ fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?, is
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                when (val state = inactiveBarbersState) {
-                    is InactiveBarbersState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(400.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = Color.White)
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(darkSurface.copy(alpha = 0.7f))
+                        .padding(4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    AddBarberTabs.entries.forEach { tab ->
+                        TabItem(
+                            text = tab.title,
+                            isSelected = selectedTab == tab,
+                            onClick = { selectedTab = tab },
+                            defaultFont = defaultFont
+                        )
                     }
-                    is InactiveBarbersState.Error -> {
-                        val message = state.message
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = message,
-                                color = Color.Red,
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 16.sp
-                            )
-                        }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when (selectedTab) {
+                    AddBarberTabs.NEW_BARBER -> {
+                        NewBarberSection()
                     }
-                    is InactiveBarbersState.Success -> {
-                        val barbers = state.barbers
-
-                        val filteredBarbers = barbers.filter {
-                            searchQuery.isEmpty() ||
-                                    it.nombre.lowercase().contains(searchQuery.lowercase())
-                        }
-
-                        Column {
-                            Text(
-                                text = "Peluqueros anteriores",
-                                color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = defaultFont,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                label = { Text("Buscar peluquero") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF444444),
-                                    unfocusedBorderColor = Color(0xFF666666),
-                                    focusedLabelColor = Color(0xFFAAAAAA),
-                                    unfocusedLabelColor = Color(0xFF888888),
-                                    cursorColor = Color.White,
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
-                                ),
-                                singleLine = true
-                            )
-
-                            if (filteredBarbers.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(100.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(
-                                            imageVector = Icons.Default.SearchOff,
-                                            contentDescription = "Sin resultados",
-                                            tint = Color.Gray.copy(alpha = 0.6f),
-                                            modifier = Modifier.size(40.dp)
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "No se encontraron peluqueros anteriores",
-                                            color = Color.Gray.copy(alpha = 0.8f),
-                                            fontSize = 14.sp,
-                                            fontFamily = defaultFont
-                                        )
-                                    }
-                                }
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    items(filteredBarbers, key = { it.usuarioid }) { barber ->
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    showActivationDialog = BarberToActivate(
-                                                        barber.usuarioid,
-                                                        barber.nombre,
-                                                        barber.especialidad
-                                                    )
-                                                }
-                                                .border(1.dp, Color.Transparent, RoundedCornerShape(16.dp)),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)),
-                                            shape = RoundedCornerShape(16.dp),
-                                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(16.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(60.dp)
-                                                        .clip(CircleShape)
-                                                        .background(Color.DarkGray)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.PersonAdd,
-                                                        contentDescription = null,
-                                                        tint = Color.White,
-                                                        modifier = Modifier
-                                                            .fillMaxSize()
-                                                            .padding(12.dp)
-                                                    )
-                                                }
-
-                                                Spacer(modifier = Modifier.width(16.dp))
-
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(
-                                                        text = barber.nombre,
-                                                        color = Color.White,
-                                                        style = TextStyle(fontFamily = defaultFont),
-                                                        fontSize = 18.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
-
-                                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                                    Text(
-                                                        text = barber.especialidad ?: "Sin especialidad",
-                                                        color = Color.White.copy(alpha = 0.8f),
-                                                        style = TextStyle(fontFamily = defaultFont),
-                                                        fontSize = 16.sp
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    item { Spacer(modifier = Modifier.height(16.dp)) }
-                                }
+                    AddBarberTabs.PREVIOUS_BARBERS -> {
+                        PreviousBarbersSection(
+                            inactiveBarbersState = inactiveBarbersState,
+                            defaultFont = defaultFont,
+                            onBarberActivate = { barberToActivate ->
+                                showActivationDialog = barberToActivate
                             }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Text(
-                                text = "Añadir peluquero nuevo",
-                                color = Color.White,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = defaultFont,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(100.dp)
-                                    .background(Color(0xFF2C2C2C), RoundedCornerShape(16.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Pendiente...",
-                                    color = Color.Gray,
-                                    fontSize = 16.sp,
-                                    fontFamily = defaultFont
-                                )
-                            }
-                        }
+                        )
                     }
-                    else -> {}
                 }
             }
         }
@@ -391,5 +239,220 @@ fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?, is
                 }
             }
         }
+    }
+}
+
+enum class AddBarberTabs(val title: String) {
+    NEW_BARBER("Nuevo peluquero"),
+    PREVIOUS_BARBERS("Peluqueros anteriores")
+}
+
+@Composable
+fun TabItem(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    defaultFont: FontFamily
+) {
+    val backgroundColor by animateFloatAsState(targetValue = if (isSelected) 1f else 0f, label = "tab_background")
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                color = Color.White.copy(
+                    alpha = backgroundColor * 0.2f
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontFamily = defaultFont,
+            fontSize = 16.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
+fun NewBarberSection() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(400.dp)
+            .background(Color(0xFF2C2C2C), RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Crear nuevo peluquero",
+            color = Color.White,
+            fontSize = 18.sp
+        )
+    }
+}
+
+@Composable
+fun PreviousBarbersSection(
+    inactiveBarbersState: InactiveBarbersState,
+    defaultFont: FontFamily,
+    onBarberActivate: (BarberToActivate) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    when (val state = inactiveBarbersState) {
+        is InactiveBarbersState.Loading -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+        is InactiveBarbersState.Error -> {
+            val message = state.message
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = message,
+                    color = Color.Red,
+                    style = TextStyle(fontFamily = defaultFont),
+                    fontSize = 16.sp
+                )
+            }
+        }
+        is InactiveBarbersState.Success -> {
+            val barbers = state.barbers
+
+            val filteredBarbers = barbers.filter {
+                searchQuery.isEmpty() ||
+                        it.nombre.lowercase().contains(searchQuery.lowercase())
+            }
+
+            Column {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Buscar peluquero") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF444444),
+                        unfocusedBorderColor = Color(0xFF666666),
+                        focusedLabelColor = Color(0xFFAAAAAA),
+                        unfocusedLabelColor = Color(0xFF888888),
+                        cursorColor = Color.White,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
+                )
+
+                if (filteredBarbers.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.SearchOff,
+                                contentDescription = "Sin resultados",
+                                tint = Color.Gray.copy(alpha = 0.6f),
+                                modifier = Modifier.size(50.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No se encontraron peluqueros",
+                                color = Color.Gray.copy(alpha = 0.8f),
+                                fontSize = 18.sp,
+                                fontFamily = defaultFont
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredBarbers, key = { it.usuarioid }) { barber ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onBarberActivate( BarberToActivate(
+                                                barber.usuarioid,
+                                                barber.nombre,
+                                                barber.especialidad)
+                                        )
+                                    }
+                                    .border(1.dp, Color.Transparent, RoundedCornerShape(16.dp)),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)),
+                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(60.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.DarkGray)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PersonAdd,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(12.dp)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = barber.nombre,
+                                            color = Color.White,
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Text(
+                                            text = barber.especialidad ?: "Sin especialidad",
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            style = TextStyle(fontFamily = defaultFont),
+                                            fontSize = 16.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                    }
+                }
+            }
+        }
+        else -> {}
     }
 }
