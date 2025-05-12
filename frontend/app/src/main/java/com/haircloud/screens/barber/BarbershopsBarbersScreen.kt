@@ -139,7 +139,7 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                             onClick = {
                                 if (!isNavigating) {
                                     isNavigating = true
-                                    navController.navigate("barbershop_add_barber/$localId/$userId/$isAdmin")
+                                    navController.navigate("barbershop_add_barber/$localId/$userId")
                                 }
                             }
                         ) {
