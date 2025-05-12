@@ -43,7 +43,7 @@ data class BarberToActivate(val usuarioId: Int, val nombre: String, val especial
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?, isAdmin: Boolean = false) {
+fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?) {
     val barberViewModel: BarberViewModel = viewModel()
     val inactiveBarbersState by barberViewModel.inactiveBarbersState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -279,18 +279,138 @@ fun TabItem(
 
 @Composable
 fun NewBarberSection() {
-    Box(
+    var nombreUsuario by remember { mutableStateOf("") }
+    var contrasena by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var nombre by remember { mutableStateOf("") }
+    var especialidad by remember { mutableStateOf("") }
+
+    val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    val darkSurface = Color(0xFF2C2C2C)
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(400.dp)
-            .background(Color(0xFF2C2C2C), RoundedCornerShape(16.dp)),
-        contentAlignment = Alignment.Center
+            .background(darkSurface, RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             text = "Crear nuevo peluquero",
             color = Color.White,
-            fontSize = 18.sp
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = defaultFont,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
+
+        OutlinedTextField(
+            value = nombreUsuario,
+            onValueChange = { nombreUsuario = it },
+            label = { Text("Nombre de usuario", color = Color.White.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF444444),
+                unfocusedBorderColor = Color(0xFF666666),
+                focusedLabelColor = Color(0xFFAAAAAA),
+                unfocusedLabelColor = Color(0xFF888888),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        OutlinedTextField(
+            value = contrasena,
+            onValueChange = { contrasena = it },
+            label = { Text("Contraseña", color = Color.White.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF444444),
+                unfocusedBorderColor = Color(0xFF666666),
+                focusedLabelColor = Color(0xFFAAAAAA),
+                unfocusedLabelColor = Color(0xFF888888),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email", color = Color.White.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF444444),
+                unfocusedBorderColor = Color(0xFF666666),
+                focusedLabelColor = Color(0xFFAAAAAA),
+                unfocusedLabelColor = Color(0xFF888888),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        OutlinedTextField(
+            value = nombre,
+            onValueChange = { nombre = it },
+            label = { Text("Nombre completo", color = Color.White.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF444444),
+                unfocusedBorderColor = Color(0xFF666666),
+                focusedLabelColor = Color(0xFFAAAAAA),
+                unfocusedLabelColor = Color(0xFF888888),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        OutlinedTextField(
+            value = especialidad,
+            onValueChange = { especialidad = it },
+            label = { Text("Especialidad (opcional)", color = Color.White.copy(alpha = 0.7f)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF444444),
+                unfocusedBorderColor = Color(0xFF666666),
+                focusedLabelColor = Color(0xFFAAAAAA),
+                unfocusedLabelColor = Color(0xFF888888),
+                cursorColor = Color.White,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Button(
+            onClick = {
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF284E6E)
+            )
+        ) {
+            Text(
+                "Añadir",
+                color = Color.White,
+                fontFamily = defaultFont,
+                fontSize = 20.sp
+            )
+        }
     }
 }
 
