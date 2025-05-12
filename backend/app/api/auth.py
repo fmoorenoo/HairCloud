@@ -38,8 +38,12 @@ def login():
     cursor = connection.cursor()
 
     # Buscar usuario en la base de datos
-    cursor.execute("SELECT usuarioid, nombreusuario, contraseña, rol FROM usuarios WHERE nombreusuario = %s",
-                   (nombreusuario,))
+    cursor.execute("""
+        SELECT u.usuarioid, u.nombreusuario, u.contraseña, u.rol, p.activo
+        FROM usuarios u
+        LEFT JOIN peluqueros p ON u.usuarioid = p.usuarioid
+        WHERE u.nombreusuario = %s
+    """, (nombreusuario,))
     user = cursor.fetchone()
     cursor.close()
     connection.close()
@@ -47,7 +51,9 @@ def login():
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
 
-    user_id, username, hashed_password, rol = user
+    user_id, username, hashed_password, rol, activo = user
+    if rol in ('peluquero', 'semiadmin') and not activo:
+        return jsonify({"error": "Actualmente no formas parte del personal activo"}), 403
 
     # Verificar contraseña
     if bcrypt.check_password_hash(hashed_password, password):
