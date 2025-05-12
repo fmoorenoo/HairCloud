@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.InactiveBarberResponse
 import com.haircloud.data.repository.BarberRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,9 @@ class BarberViewModel : ViewModel() {
 
     private val _barberUpdateState = MutableStateFlow<BarberUpdateState>(BarberUpdateState.Idle)
     val barberUpdateState: StateFlow<BarberUpdateState> = _barberUpdateState
+
+    private val _inactiveBarbersState = MutableStateFlow<InactiveBarbersState>(InactiveBarbersState.Idle)
+    val inactiveBarbersState: StateFlow<InactiveBarbersState> = _inactiveBarbersState
 
 
     fun getBarber(userId: Int) {
@@ -93,6 +97,42 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+    fun deactivateBarber(usuarioId: Int) {
+        _barberUpdateState.value = BarberUpdateState.Updating
+        viewModelScope.launch {
+            val result = repository.deactivateBarber(usuarioId)
+            _barberUpdateState.value = if (result.isSuccess) {
+                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
+            } else {
+                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al desactivar barbero")
+            }
+        }
+    }
+
+    fun activateBarber(usuarioId: Int) {
+        _barberUpdateState.value = BarberUpdateState.Updating
+        viewModelScope.launch {
+            val result = repository.activateBarber(usuarioId)
+            _barberUpdateState.value = if (result.isSuccess) {
+                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
+            } else {
+                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al activar barbero")
+            }
+        }
+    }
+
+    fun getInactiveBarbers() {
+        _inactiveBarbersState.value = InactiveBarbersState.Loading
+        viewModelScope.launch {
+            val result = repository.getInactiveBarbers()
+            _inactiveBarbersState.value = if (result.isSuccess) {
+                InactiveBarbersState.Success(result.getOrThrow())
+            } else {
+                InactiveBarbersState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
+        }
+    }
 }
 
 sealed class GetBarberState {
@@ -114,6 +154,13 @@ sealed class BarberUpdateState {
     object Updating : BarberUpdateState()
     data class UpdateSuccess(val message: String) : BarberUpdateState()
     data class UpdateError(val message: String) : BarberUpdateState()
+}
+
+sealed class InactiveBarbersState {
+    object Idle : InactiveBarbersState()
+    object Loading : InactiveBarbersState()
+    data class Success(val barbers: List<InactiveBarberResponse>) : InactiveBarbersState()
+    data class Error(val message: String) : InactiveBarbersState()
 }
 
 

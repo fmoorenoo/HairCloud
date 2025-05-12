@@ -4,6 +4,7 @@ import com.haircloud.data.ApiClient
 import com.haircloud.data.ApiResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.InactiveBarberResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -120,4 +121,58 @@ class BarberRepository {
             Result.failure(e)
         }
     }
+
+    suspend fun deactivateBarber(usuarioId: Int): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.deactivateBarber(usuarioId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al desactivar el barbero")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun activateBarber(usuarioId: Int): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.activateBarber(usuarioId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al activar el barbero")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getInactiveBarbers(): Result<List<InactiveBarberResponse>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.getInactiveBarbers().execute()
+            }
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al obtener barberos inactivos")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }

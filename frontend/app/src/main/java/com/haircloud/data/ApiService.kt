@@ -149,4 +149,13 @@ interface ApiService {
 
     @PUT("/api/barbers/toggle_barber_role/{user_id}")
     fun toggleBarberRole(@Path("user_id") userId: Int): Call<ApiResponse>
+
+    @PUT("/api/barbers/deactivate_barber/{user_id}")
+    fun deactivateBarber(@Path("user_id") userId: Int): Call<ApiResponse>
+
+    @PUT("/api/barbers/activate_barber/{user_id}")
+    fun activateBarber(@Path("user_id") userId: Int): Call<ApiResponse>
+
+    @GET("/api/barbers/get_inactive_barbers")
+    fun getInactiveBarbers(): Call<List<InactiveBarberResponse>>
 }
