@@ -209,4 +209,23 @@ def toggle_barber_role(user_id):
     return jsonify({"message": f"Rol actualizado a {new_role}"}), 200
 
 
+@barbers_bp.route('/deactivate_barber/<int:user_id>', methods=['PUT'])
+def deactivate_barber(user_id):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM peluqueros WHERE usuarioid = %s", (user_id,))
+    if not cursor.fetchone():
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Barbero no encontrado"}), 404
+
+    cursor.execute("UPDATE peluqueros SET activo = FALSE WHERE usuarioid = %s", (user_id,))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Barbero desactivado correctamente"}), 200
+
 
