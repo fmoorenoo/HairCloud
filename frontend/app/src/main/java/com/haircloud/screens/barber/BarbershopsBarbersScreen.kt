@@ -38,6 +38,8 @@ import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarberViewModel
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.BarbersState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -53,6 +55,7 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
     val blackWhiteGradient =
         Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
+    val darkSurface = Color(0xFF1E1E1E)
     val barberViewModel: BarberViewModel = viewModel()
 
 
@@ -94,34 +97,60 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(darkSurface.copy(alpha = 0.8f))
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        onClick = {
-                            if (!isNavigating) {
-                                isNavigating = true
-                                navController.popBackStack()
-                            }
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
+                        IconButton(
+                            onClick = {
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.popBackStack()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = if (isAdmin) "Administrar peluqueros" else "Peluqueros",
+                            color = Color.White,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 25.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = if (isAdmin) "Administrar peluqueros" else "Peluqueros",
-                        color = Color.White,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isAdmin) {
+                        IconButton(
+                            onClick = {
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("barbershop_add_barber/$localId/$userId/$isAdmin")
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Añadir peluquero",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -236,6 +265,12 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                                             }
                                             snackbarType = SnackbarType.INFO
                                             snackbarMessage = mensaje
+                                        },
+                                        onDeleteBarber = { usuarioId ->
+                                            barberViewModel.deactivateBarber(usuarioId)
+                                            snackbarType = SnackbarType.INFO
+                                            snackbarMessage = "Barbero eliminado correctamente"
+                                            barbershopViewModel.getBarbersByLocalId(localId)
                                         }
                                     )
                                 }
@@ -256,137 +291,261 @@ fun BarberCard(
     defaultFont: FontFamily,
     userId: Int?,
     isAdmin: Boolean = false,
-    onToggleRole: (usuarioId: Int, nuevoEstado: Boolean) -> Unit
+    onToggleRole: (usuarioId: Int, nuevoEstado: Boolean) -> Unit,
+    onDeleteBarber: (usuarioId: Int) -> Unit
 ) {
     val isYou = userId == barber.usuarioid
     val backgroundColor = if (isYou) Color(0xFF4F4F4F) else Color(0xFF2C2C2C)
     val borderColor = if (isYou) Color(0xFFFFFFFF) else Color.Transparent
     val textColor = Color.White
     var isSemiadmin by remember { mutableStateOf(barber.rol == "semiadmin") }
+    val coroutineScope = rememberCoroutineScope()
+    var isToggleEnabled by remember { mutableStateOf(true) }
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .border(2.dp, borderColor, RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(70.dp)
-                        .clip(CircleShape)
-                        .background(Color.DarkGray)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.user_profile_1),
-                        contentDescription = "Imagen del peluquero",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (isYou) "${barber.nombre} (Tú)" else barber.nombre,
-                        color = textColor,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = barber.especialidad ?: "Sin especialidad",
-                        color = textColor.copy(alpha = 0.8f),
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 16.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Box {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "Teléfono",
-                        tint = textColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = barber.telefono ?: "No disponible",
-                        color = textColor,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 16.sp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .background(Color.DarkGray)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.user_profile_1),
+                            contentDescription = "Imagen del peluquero",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isYou) "${barber.nombre} (Tú)" else barber.nombre,
+                            color = textColor,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = barber.especialidad ?: "Sin especialidad",
+                            color = textColor.copy(alpha = 0.8f),
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 16.sp
+                        )
+                    }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Fecha de contratación",
-                        tint = textColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = barber.fechacontratacion,
-                        color = textColor,
-                        style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 16.sp
-                    )
-                }
-            }
-            if (isAdmin && !isYou) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Permisos",
-                        color = textColor,
-                        fontSize = 16.sp,
-                        fontFamily = defaultFont
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Switch(
-                        checked = isSemiadmin,
-                        onCheckedChange = {
-                            isSemiadmin = it
-                            onToggleRole(barber.usuarioid, it)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color(0xFF7EDADA),
-                            uncheckedThumbColor = Color.Gray,
-                            checkedTrackColor = Color(0xFF305372),
-                            uncheckedTrackColor = Color.DarkGray
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = "Teléfono",
+                            tint = textColor,
+                            modifier = Modifier.size(20.dp)
                         )
-                    )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = barber.telefono ?: "No disponible",
+                            color = textColor,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Fecha de contratación",
+                            tint = textColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = barber.fechacontratacion,
+                            color = textColor,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                if (isAdmin && !isYou) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Permisos",
+                            color = textColor,
+                            fontSize = 16.sp,
+                            fontFamily = defaultFont
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Switch(
+                            checked = isSemiadmin,
+                            onCheckedChange = { nuevoEstado ->
+                                if (isToggleEnabled) {
+                                    isToggleEnabled = false
+                                    isSemiadmin = nuevoEstado
+                                    coroutineScope.launch {
+                                        delay(500)
+                                        onToggleRole(barber.usuarioid, nuevoEstado)
+                                        isToggleEnabled = true
+                                    }
+                                }
+                            },
+                            enabled = isToggleEnabled,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFF7EDADA),
+                                uncheckedThumbColor = Color.Gray,
+                                checkedTrackColor = Color(0xFF305372),
+                                uncheckedTrackColor = Color.DarkGray
+                            )
+                        )
+                    }
                 }
             }
 
+            if (isAdmin && !isYou) {
+                val darkSurface = Color(0xFF1E1E1E)
+                val darkError = Color(0xFFCF6679)
+                val darkSecondary = Color(0xFFFFFFFF)
+
+                Box(modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp))
+                {
+
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color(0xFF2D2D2D))
+                            .padding(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Opciones",
+                            tint = darkSecondary
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier
+                            .background(darkSurface)
+                    ) {
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar",
+                                    tint = darkError
+                                )
+                            },
+                            text = {
+                                Text(
+                                    "Eliminar peluquero",
+                                    fontFamily = FontFamily.Default,
+                                    color = Color.White
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                showConfirmDialog = true
+                            }
+                        )
+                    }
+                }
+
+                if (showConfirmDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showConfirmDialog = false },
+                        containerColor = darkSurface,
+                        titleContentColor = Color.White,
+                        textContentColor = Color.LightGray,
+                        title = {
+                            Text(
+                                "Confirmar eliminación",
+                                fontFamily = FontFamily.Default,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        },
+                        text = {
+                            Text(
+                                "¿Estás seguro de que deseas eliminar a ${barber.nombre}?\nPodrás volver a añadirlo si lo necesitas",
+                                fontFamily = FontFamily.Default,
+                                lineHeight = 20.sp
+                            )
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    showConfirmDialog = false
+                                    onDeleteBarber(barber.usuarioid)
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = darkError,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    "Eliminar",
+                                    fontFamily = FontFamily.Default,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = { showConfirmDialog = false },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = darkSecondary
+                                )
+                            ) {
+                                Text(
+                                    "Cancelar",
+                                    fontFamily = FontFamily.Default
+                                )
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }
+
 
