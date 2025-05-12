@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -226,8 +227,15 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                                         defaultFont = defaultFont,
                                         userId = userId,
                                         isAdmin = isAdmin,
-                                        onToggleRole = { usuarioId ->
+                                        onToggleRole = { usuarioId, nuevoEstado ->
                                             barberViewModel.toggleBarberRole(usuarioId)
+                                            val mensaje = if (nuevoEstado) {
+                                                "${barbers.find { it.usuarioid == usuarioId }?.nombre ?: "El peluquero"} ahora puede administrar los servicios y las reseñas"
+                                            } else {
+                                                "${barbers.find { it.usuarioid == usuarioId }?.nombre ?: "El peluquero"} ya no tiene permisos de gestión"
+                                            }
+                                            snackbarType = SnackbarType.INFO
+                                            snackbarMessage = mensaje
                                         }
                                     )
                                 }
@@ -248,12 +256,13 @@ fun BarberCard(
     defaultFont: FontFamily,
     userId: Int?,
     isAdmin: Boolean = false,
-    onToggleRole: (Int) -> Unit = {}
+    onToggleRole: (usuarioId: Int, nuevoEstado: Boolean) -> Unit
 ) {
     val isYou = userId == barber.usuarioid
     val backgroundColor = if (isYou) Color(0xFF4F4F4F) else Color(0xFF2C2C2C)
     val borderColor = if (isYou) Color(0xFFFFFFFF) else Color.Transparent
     val textColor = Color.White
+    var isSemiadmin by remember { mutableStateOf(barber.rol == "semiadmin") }
 
     Card(
         modifier = Modifier
@@ -348,29 +357,29 @@ fun BarberCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(top = 4.dp)
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Permisos de gestión",
+                        text = "Permisos",
                         color = textColor,
                         fontSize = 16.sp,
                         fontFamily = defaultFont
                     )
-
-                    var isSemiadmin by remember { mutableStateOf(barber.rol == "semiadmin") }
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     Switch(
                         checked = isSemiadmin,
                         onCheckedChange = {
                             isSemiadmin = it
-                            onToggleRole(barber.usuarioid)
+                            onToggleRole(barber.usuarioid, it)
                         },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color(0xFF7EDA9C),
+                            checkedThumbColor = Color(0xFF7EDADA),
                             uncheckedThumbColor = Color.Gray,
-                            checkedTrackColor = Color(0xFF1E3A28),
+                            checkedTrackColor = Color(0xFF305372),
                             uncheckedTrackColor = Color.DarkGray
                         )
                     )
