@@ -147,5 +147,13 @@ fun AppNavigation(
             val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
             BarbershopBarbersScreen(navController, localId?.toInt() ?: -1, userId?.toInt() ?: -1, isAdmin)
         }
+
+        // Peluqueros Add Barber
+        composable("barbershop_add_barber/{localId}/{userId}/{isAdmin}") { backStackEntry ->
+            val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
+            AddBarberScreen(navController, localId?.toInt() ?: -1, userId?.toInt() ?: -1, isAdmin)
+        }
     }
 }
