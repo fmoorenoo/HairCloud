@@ -20,9 +20,23 @@ class AuthRepository {
             if (response.isSuccessful) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Error en el login"))
+                val errorBody = response.errorBody()?.string() ?: "{}"
+                val errorMsg = try {
+                    JSONObject(errorBody).optString("error", "Error desconocido")
+                } catch (_: Exception) {
+                    "Error desconocido"
+                }
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: HttpException) {
+            val errorMsg = try {
+                val errorBody = e.response()?.errorBody()?.string() ?: "{}"
+                JSONObject(errorBody).optString("error", "Error HTTP")
+            } catch (_: Exception) {
+                "Error HTTP"
+            }
+            Result.failure(Exception(errorMsg))
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

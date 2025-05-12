@@ -31,7 +31,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     tokenManager.saveSession(response.token, response.usuarioid, response.rol)
                     _loginState.value = LoginState.Success(response)
                 } else {
-                    _loginState.value = LoginState.Error("Credenciales incorrectas")
+                    val errorMessage = result.exceptionOrNull()?.message ?: "Error desconocido"
+                    _loginState.value = LoginState.Error(errorMessage)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error(e.message ?: "Error desconocido")
