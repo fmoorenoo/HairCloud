@@ -69,6 +69,9 @@ import com.haircloud.viewmodel.ClientViewModel
 import com.haircloud.viewmodel.DeleteReviewState
 import com.haircloud.viewmodel.ReviewsState
 import java.util.Locale
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) {
@@ -88,6 +91,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val deleteReviewState by barbershopViewModel.deleteReviewState.collectAsState()
     val addReviewState by barbershopViewModel.addReviewState.collectAsState()
     var isNavigating by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(addReviewState) {
         when (addReviewState) {
@@ -452,8 +456,15 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                         InfoRow(
                                             label = "Teléfono",
                                             value = barbershop.telefono,
-                                            icon = Icons.Default.Phone
+                                            icon = Icons.Default.Phone,
+                                            onClick = {
+                                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                                    data = Uri.parse("tel:${barbershop.telefono}")
+                                                }
+                                                context.startActivity(intent)
+                                            }
                                         )
+
                                         InfoRow(
                                             label = "Dirección",
                                             value = "${barbershop.direccion}, ${barbershop.localidad}",
@@ -639,12 +650,14 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
 }
 
 @Composable
-fun InfoRow(label: String, value: String, icon: ImageVector, rating: Float? = null) {
+fun InfoRow(label: String, value: String, icon: ImageVector, rating: Float? = null, onClick: (() -> Unit)? = null) {
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
 
     Row(
         verticalAlignment = Alignment.Top,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
     ) {
         Icon(
             imageVector = icon,
