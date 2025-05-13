@@ -517,11 +517,16 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                                 horaFin = it.horafin.take(5)
                                             )
                                         }
+                                        val peluqueroId = if (barberState is GetBarberState.Success) {
+                                            (barberState as GetBarberState.Success).barber.peluqueroid
+                                        } else -1
 
                                         BarberScheduleDialog(
                                             onDismiss = { showScheduleDialog = false },
                                             onSave = {},
-                                            initialSchedules = workSchedules
+                                            initialSchedules = workSchedules,
+                                            editable = true,
+                                            peluqueroId = peluqueroId
                                         )
                                     }
                                     is WeeklyScheduleState.Loading -> {
