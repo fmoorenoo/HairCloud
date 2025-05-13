@@ -1,5 +1,6 @@
 package com.haircloud.screens.barber
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +37,9 @@ import com.haircloud.utils.CredentialsValidator
 import com.haircloud.viewmodel.AuthViewModel
 import com.haircloud.viewmodel.BarberUpdateState
 import com.haircloud.viewmodel.BarberViewModel
+import com.haircloud.viewmodel.CalendarViewModel
 import com.haircloud.viewmodel.GetBarberState
+import com.haircloud.viewmodel.WeeklyScheduleState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,6 +51,8 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var isNavigating by remember { mutableStateOf(false) }
+    val calendarViewModel: CalendarViewModel = viewModel()
+    val scheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
 
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
@@ -55,6 +60,13 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
     LaunchedEffect(userId) {
         userId?.let {
             barberViewModel.getBarber(it)
+        }
+    }
+
+    LaunchedEffect(barberState) {
+        if (barberState is GetBarberState.Success) {
+            val peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
+            calendarViewModel.getWeeklySchedule(peluqueroId)
         }
     }
 
@@ -203,12 +215,10 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                         }
                     }
 
-                    // LazyColumn para las tarjetas
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(22.dp)
                     ) {
-                        // Tarjeta de información personal
                         item {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -460,6 +470,97 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                     }
                                 }
                             }
+                        }
+
+                        item {
+                            var showScheduleDialog by remember { mutableStateOf(false) }
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showScheduleDialog = true },
+                                colors = CardDefaults.cardColors(containerColor = Color(0x4DB6B6B6)),
+                                shape = RoundedCornerShape(22.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.CalendarMonth,
+                                            contentDescription = "Horario",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            "Ver horario semanal",
+                                            fontSize = 22.sp,
+                                            fontFamily = defaultFont,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (showScheduleDialog) {
+                                when (val state = scheduleState) {
+                                    is WeeklyScheduleState.Success -> {
+                                        val workSchedules = state.schedule.map {
+                                            WorkSchedule(
+                                                diaSemana = it.diasemana,
+                                                horaInicio = it.horainicio.take(5),
+                                                horaFin = it.horafin.take(5)
+                                            )
+                                        }
+
+                                        BarberScheduleDialog(
+                                            onDismiss = { showScheduleDialog = false },
+                                            onSave = {},
+                                            initialSchedules = workSchedules
+                                        )
+                                    }
+                                    is WeeklyScheduleState.Loading -> {
+                                        AlertDialog(
+                                            onDismissRequest = { showScheduleDialog = false },
+                                            confirmButton = {},
+                                            text = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(100.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(color = Color.White)
+                                                }
+                                            },
+                                            containerColor = Color(0xFF2C2C2C)
+                                        )
+                                    }
+                                    is WeeklyScheduleState.Error -> {
+                                        AlertDialog(
+                                            onDismissRequest = { showScheduleDialog = false },
+                                            confirmButton = {
+                                                Button(
+                                                    onClick = { showScheduleDialog = false },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                                                ) {
+                                                    Text("Cerrar", color = Color.White)
+                                                }
+                                            },
+                                            title = { Text("Error", color = Color.White) },
+                                            text = { Text(state.message, color = Color.White) },
+                                            containerColor = Color(0xFF2C2C2C)
+                                        )
+                                    }
+                                    else -> {}
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
                         }
 
                         // Botón de cerrar sesión
