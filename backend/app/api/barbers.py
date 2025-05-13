@@ -1,4 +1,6 @@
 from flask import request, jsonify
+
+from app import bcrypt
 from app.api import barbers_bp
 from app.db.connection import get_connection
 from datetime import datetime, timedelta
@@ -279,5 +281,65 @@ def get_inactive_barbers():
         result.append(item)
 
     return jsonify(result), 200
+
+
+@barbers_bp.route('/create_barber', methods=['POST'])
+def create_barber():
+    data = request.json or {}
+
+    nombreusuario = data.get("nombreusuario")
+    contrasena = data.get("contrasena")
+    email = data.get("email")
+    nombre = data.get("nombre")
+    especialidad = data.get("especialidad")
+    localid = data.get("localid")
+    work_schedules = data.get("horario")
+
+    if not all([nombreusuario, contrasena, email, nombre, localid, work_schedules]):
+        return jsonify({"error": "Faltan campos obligatorios"}), 400
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT 1 FROM usuarios WHERE nombreusuario = %s OR email = %s", (nombreusuario, email))
+    if cursor.fetchone():
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "El nombre de usuario o email ya existen"}), 404
+
+    hashed_password = bcrypt.generate_password_hash(contrasena).decode('utf-8')
+
+    cursor.execute("""
+        INSERT INTO usuarios (nombreusuario, contraseña, rol, localid, email)
+        VALUES (%s, %s, 'peluquero', %s, %s)
+        RETURNING usuarioid
+    """, (nombreusuario, hashed_password, localid, email))
+
+    usuarioid = cursor.fetchone()[0]
+
+    cursor.execute("""
+        INSERT INTO peluqueros (usuarioid, nombre, telefono, especialidad, fechacontratacion, localid, activo)
+        VALUES (%s, %s, NULL, %s, CURRENT_DATE, %s, TRUE)
+        RETURNING peluqueroid
+    """, (usuarioid, nombre, especialidad, localid))
+
+    peluqueroid = cursor.fetchone()[0]
+
+    if work_schedules:
+        for item in work_schedules:
+            dia = item.get("dia")
+            inicio = item.get("inicio")
+            fin = item.get("fin")
+            if dia and inicio and fin:
+                cursor.execute("""
+                    INSERT INTO horarios_peluqueros (peluqueroid, diasemana, horainicio, horafin)
+                    VALUES (%s, %s, %s, %s)
+                """, (peluqueroid, dia, inicio, fin))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Barbero añadido correctamente al personal", "usuarioid": usuarioid}), 201
 
 
