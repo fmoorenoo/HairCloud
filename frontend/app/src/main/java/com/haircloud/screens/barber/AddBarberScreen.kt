@@ -537,16 +537,16 @@ fun BarberScheduleDialog(
     val darkSurface = Color(0xFF2C2C2C)
 
     val daysOfWeek = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
-    var schedules by remember {
-        mutableStateOf(
-            daysOfWeek.map { day ->
-                val existing = initialSchedules.find { it.diaSemana == day }
-                if (existing != null)
-                    DaySchedule(day, true, existing.horaInicio, existing.horaFin)
-                else
-                    DaySchedule(day)
-            }
-        )
+    var schedules by remember { mutableStateOf(emptyList<DaySchedule>()) }
+
+    LaunchedEffect(initialSchedules) {
+        schedules = daysOfWeek.map { day ->
+            val existing = initialSchedules.find { it.diaSemana == day }
+            if (existing != null)
+                DaySchedule(day, true, existing.horaInicio, existing.horaFin)
+            else
+                DaySchedule(day)
+        }
     }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
