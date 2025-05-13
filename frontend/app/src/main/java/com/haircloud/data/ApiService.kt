@@ -158,4 +158,7 @@ interface ApiService {
 
     @GET("/api/barbers/get_inactive_barbers")
     fun getInactiveBarbers(): Call<List<InactiveBarberResponse>>
+
+    @POST("/api/barbers/create_barber")
+    fun createBarber(@Body request: CreateBarberRequest): Call<ApiResponse>
 }

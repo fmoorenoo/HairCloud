@@ -4,6 +4,7 @@ import com.haircloud.data.ApiClient
 import com.haircloud.data.ApiResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -175,4 +176,21 @@ class BarberRepository {
         }
     }
 
+    suspend fun createBarber(request: CreateBarberRequest): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.createBarber(request).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al crear barbero")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

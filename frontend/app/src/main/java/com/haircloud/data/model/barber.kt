@@ -34,3 +34,19 @@ data class BarberDatesResponse(
     val dates: List<BarberDate>
 )
 
+data class WorkDaySchedule(
+    val dia: String,
+    val inicio: String,
+    val fin: String
+)
+
+data class CreateBarberRequest(
+    val nombreusuario: String,
+    val contrasena: String,
+    val email: String,
+    val nombre: String,
+    val especialidad: String?,
+    val localid: Int,
+    val horario: List<WorkDaySchedule>
+)
+

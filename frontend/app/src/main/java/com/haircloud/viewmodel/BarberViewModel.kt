@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
 import com.haircloud.data.repository.BarberRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,9 @@ class BarberViewModel : ViewModel() {
 
     private val _inactiveBarbersState = MutableStateFlow<InactiveBarbersState>(InactiveBarbersState.Idle)
     val inactiveBarbersState: StateFlow<InactiveBarbersState> = _inactiveBarbersState
+
+    private val _createBarberState = MutableStateFlow<CreateBarberState>(CreateBarberState.Idle)
+    val createBarberState: StateFlow<CreateBarberState> = _createBarberState
 
 
     fun getBarber(userId: Int) {
@@ -133,6 +137,22 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+    fun createBarber(request: CreateBarberRequest) {
+        _createBarberState.value = CreateBarberState.Creating
+        viewModelScope.launch {
+            val result = repository.createBarber(request)
+            _createBarberState.value = if (result.isSuccess) {
+                CreateBarberState.Success(result.getOrThrow().message)
+            } else {
+                CreateBarberState.Error(result.exceptionOrNull()?.message ?: "Error al crear barbero")
+            }
+        }
+    }
+
+    fun resetCreateBarberState() {
+        _createBarberState.value = CreateBarberState.Idle
+    }
 }
 
 sealed class GetBarberState {
@@ -161,6 +181,13 @@ sealed class InactiveBarbersState {
     object Loading : InactiveBarbersState()
     data class Success(val barbers: List<InactiveBarberResponse>) : InactiveBarbersState()
     data class Error(val message: String) : InactiveBarbersState()
+}
+
+sealed class CreateBarberState {
+    object Idle : CreateBarberState()
+    object Creating : CreateBarberState()
+    data class Success(val message: String) : CreateBarberState()
+    data class Error(val message: String) : CreateBarberState()
 }
 
 
