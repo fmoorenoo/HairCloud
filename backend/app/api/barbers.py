@@ -343,3 +343,38 @@ def create_barber():
     return jsonify({"message": "Barbero añadido correctamente al personal", "usuarioid": usuarioid}), 201
 
 
+@barbers_bp.route('/update_barber_schedule/<int:peluquero_id>', methods=['PUT'])
+def update_barber_schedule(peluquero_id):
+    data = request.json or []
+    if not isinstance(data, list):
+        return jsonify({"error": "Se esperaba una lista de horarios"}), 400
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT 1 FROM peluqueros WHERE peluqueroid = %s", (peluquero_id,))
+    if not cursor.fetchone():
+        cursor.close()
+        connection.close()
+        return jsonify({"error": "Peluquero no encontrado"}), 404
+
+    cursor.execute("DELETE FROM horarios_peluqueros WHERE peluqueroid = %s", (peluquero_id,))
+
+    for item in data:
+        dia = item.get("dia")
+        inicio = item.get("inicio")
+        fin = item.get("fin")
+        if not all([dia, inicio, fin]):
+            continue
+        cursor.execute("""
+            INSERT INTO horarios_peluqueros (peluqueroid, diasemana, horainicio, horafin)
+            VALUES (%s, %s, %s, %s)
+        """, (peluquero_id, dia, inicio, fin))
+
+    connection.commit()
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Horario actualizado correctamente"}), 200
+
+
