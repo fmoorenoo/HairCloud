@@ -224,7 +224,7 @@ fun BarbershopServicesScreen(navController: NavController, localId: Int, isAdmin
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 when (servicesState) {
                     is BarberServiceState.Loading -> {
