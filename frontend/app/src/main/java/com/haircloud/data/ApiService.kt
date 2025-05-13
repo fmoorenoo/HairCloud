@@ -161,4 +161,10 @@ interface ApiService {
 
     @POST("/api/barbers/create_barber")
     fun createBarber(@Body request: CreateBarberRequest): Call<ApiResponse>
+
+    @PUT("/api/barbers/update_barber_schedule/{peluquero_id}")
+    fun updateBarberSchedule(
+        @Path("peluquero_id") peluqueroId: Int,
+        @Body schedule: List<WorkDaySchedule>
+    ): Call<ApiResponse>
 }

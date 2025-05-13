@@ -6,7 +6,9 @@ import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
+import com.haircloud.data.model.WorkDaySchedule
 import com.haircloud.data.repository.BarberRepository
+import com.haircloud.screens.barber.WorkSchedule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -152,6 +154,27 @@ class BarberViewModel : ViewModel() {
 
     fun resetCreateBarberState() {
         _createBarberState.value = CreateBarberState.Idle
+    }
+
+
+    fun updateBarberSchedule(peluqueroId: Int, schedule: List<WorkSchedule>) {
+        _barberUpdateState.value = BarberUpdateState.Updating
+        viewModelScope.launch {
+            val formattedSchedule = schedule.map {
+                WorkDaySchedule(
+                    dia = it.diaSemana,
+                    inicio = it.horaInicio,
+                    fin = it.horaFin
+                )
+            }
+
+            val result = repository.updateBarberSchedule(peluqueroId, formattedSchedule)
+            _barberUpdateState.value = if (result.isSuccess) {
+                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
+            } else {
+                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al actualizar horario")
+            }
+        }
     }
 }
 

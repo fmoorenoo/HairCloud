@@ -6,6 +6,7 @@ import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
+import com.haircloud.data.model.WorkDaySchedule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -187,6 +188,24 @@ class BarberRepository {
             } else {
                 val errorJson = response.errorBody()?.string() ?: "{}"
                 val message = JSONObject(errorJson).optString("error", "Error al crear barbero")
+                Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateBarberSchedule(peluqueroId: Int, schedule: List<WorkDaySchedule>): Result<ApiResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                api.updateBarberSchedule(peluqueroId, schedule).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorJson = response.errorBody()?.string() ?: "{}"
+                val message = JSONObject(errorJson).optString("error", "Error al actualizar horario")
                 Result.failure(Exception(message))
             }
         } catch (e: Exception) {
