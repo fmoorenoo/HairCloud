@@ -118,7 +118,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                                 onClick = {
                                     if (!isNavigating) {
                                         isNavigating = true
-                                        navController.navigate("user_manual")
+                                        navController.navigate("barber_user_manual")
                                     }
                                 }
                             ),

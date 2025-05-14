@@ -56,7 +56,7 @@ fun AppNavigation(
             BarberProfileScreen(navController, userId)
         }
 
-        // Manual de usuario
+        // Cliente manual de usuario
         composable("user_manual") {
             UserManualScreen(navController)
         }
@@ -153,6 +153,11 @@ fun AppNavigation(
             val localId = backStackEntry.arguments?.getString("localId")?.toIntOrNull()
             val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
             AddBarberScreen(navController, localId?.toInt() ?: -1, userId?.toInt() ?: -1)
+        }
+
+        // Peluquero manual de usuario
+        composable("barber_user_manual") {
+            BarberManualScreen(navController)
         }
     }
 }

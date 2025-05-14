@@ -218,7 +218,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                 onClick = {
                                     if (!isNavigating) {
                                         isNavigating = true
-                                        navController.navigate("user_manual")
+                                        navController.navigate("barber_user_manual")
                                     }
                                 }
                             ),
