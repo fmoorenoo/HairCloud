@@ -1,5 +1,7 @@
 package com.haircloud.screens.barber
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -295,6 +298,7 @@ fun AppointmentDetailDialog(
 
     var currentEstado by remember { mutableStateOf(cita.estado ?: "Pendiente") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val estadoColor = when (currentEstado.lowercase()) {
         "completada" -> Color(0xFF4CAF50)
@@ -304,7 +308,7 @@ fun AppointmentDetailDialog(
     }
 
     val estadosDisponibles = remember(cita.finalizada) {
-        if (cita.finalizada == true) {
+        if (cita.finalizada) {
             listOf("Completada", "Cancelada")
         } else {
             listOf("Pendiente", "Completada", "Cancelada")
@@ -440,7 +444,15 @@ fun AppointmentDetailDialog(
                                     icon = Icons.Default.Smartphone,
                                     title = "Teléfono",
                                     value = cita.cliente_telefono ?: "No disponible",
-                                    defaultFont = defaultFont
+                                    defaultFont = defaultFont,
+                                    onClick = cita.cliente_telefono?.takeIf { it.isNotBlank() }?.let { telefono ->
+                                        {
+                                            val intent = Intent(Intent.ACTION_DIAL).apply {
+                                                data = Uri.parse("tel:$telefono")
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -618,11 +630,13 @@ fun DetailItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     value: String,
-    defaultFont: FontFamily
+    defaultFont: FontFamily,
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
