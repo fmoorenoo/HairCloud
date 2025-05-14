@@ -459,7 +459,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                             icon = Icons.Default.Phone,
                                             onClick = {
                                                 val intent = Intent(Intent.ACTION_DIAL).apply {
-                                                    data = Uri.parse("tel:${barbershop.telefono}")
+                                                    data = Uri.parse("tel:+34${barbershop.telefono}")
                                                 }
                                                 context.startActivity(intent)
                                             }

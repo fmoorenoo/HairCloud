@@ -448,7 +448,7 @@ fun AppointmentDetailDialog(
                                     onClick = cita.cliente_telefono?.takeIf { it.isNotBlank() }?.let { telefono ->
                                         {
                                             val intent = Intent(Intent.ACTION_DIAL).apply {
-                                                data = Uri.parse("tel:$telefono")
+                                                data = Uri.parse("tel:+34$telefono")
                                             }
                                             context.startActivity(intent)
                                         }
