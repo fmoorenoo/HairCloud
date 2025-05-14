@@ -338,7 +338,7 @@ fun BarberScheduleDialog(
                         onClick = onDismiss,
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
                     ) {
-                        Text("Cancelar", fontFamily = defaultFont)
+                        Text("Cerrar", fontFamily = defaultFont)
                     }
 
                     Button(
@@ -381,7 +381,7 @@ fun BarberScheduleDialog(
                         enabled = !editable || hasChanges,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) {
-                        Text("Guardar", fontFamily = defaultFont, color = Color.White)
+                        Text(text = if (editable) "Actualizar" else "Guardar", fontFamily = defaultFont, color = Color.White)
                     }
 
                 }

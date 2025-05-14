@@ -1,6 +1,5 @@
 package com.haircloud.screens.barber
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -454,7 +453,7 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                                     .padding(start = 8.dp)
                                             ) {
                                                 Text(
-                                                    "Guardar",
+                                                    "Actualizar",
                                                     color = Color.White,
                                                     fontFamily = defaultFont,
                                                     fontWeight = FontWeight.Bold,
@@ -517,9 +516,7 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                                 horaFin = it.horafin.take(5)
                                             )
                                         }
-                                        val peluqueroId = if (barberState is GetBarberState.Success) {
-                                            (barberState as GetBarberState.Success).barber.peluqueroid
-                                        } else -1
+                                        val peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
 
                                         BarberScheduleDialog(
                                             onDismiss = { showScheduleDialog = false },
