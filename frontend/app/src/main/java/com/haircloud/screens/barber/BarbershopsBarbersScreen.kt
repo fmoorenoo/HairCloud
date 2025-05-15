@@ -34,10 +34,13 @@ import com.haircloud.R
 import com.haircloud.data.model.BarberResponse
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.formatHour
 import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarberViewModel
 import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.BarbersState
+import com.haircloud.viewmodel.CalendarViewModel
+import com.haircloud.viewmodel.WeeklyScheduleState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -305,6 +308,16 @@ fun BarberCard(
     var showMenu by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
+    val calendarViewModel: CalendarViewModel = viewModel()
+    val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
+    var showScheduleDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showScheduleDialog) {
+        if (showScheduleDialog) {
+            calendarViewModel.getWeeklySchedule(barber.peluqueroid)
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -332,23 +345,48 @@ fun BarberCard(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (isYou) "${barber.nombre} (Tú)" else barber.nombre,
-                            color = textColor,
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = if (isYou) "${barber.nombre} (Tú)" else barber.nombre,
+                                color = textColor,
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                        Text(
-                            text = barber.especialidad ?: "Sin especialidad",
-                            color = textColor.copy(alpha = 0.8f),
-                            style = TextStyle(fontFamily = defaultFont),
-                            fontSize = 16.sp
-                        )
+                            Text(
+                                text = barber.especialidad ?: "Sin especialidad",
+                                color = textColor.copy(alpha = 0.8f),
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 16.sp
+                            )
+                        }
+
+                        if (isYou) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.DarkGray)
+                            ) {
+                                IconButton(
+                                    onClick = { showScheduleDialog = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = "Ver tu horario",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -393,45 +431,77 @@ fun BarberCard(
                 }
 
                 if (isAdmin && !isYou) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    HorizontalDivider(
+                        color = Color.Gray,
+                        thickness = 1.dp,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 4.dp)
                             .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Permisos",
-                            color = textColor,
-                            fontSize = 16.sp,
-                            fontFamily = defaultFont
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Switch(
-                            checked = isSemiadmin,
-                            onCheckedChange = { nuevoEstado ->
-                                if (isToggleEnabled) {
-                                    isToggleEnabled = false
-                                    isSemiadmin = nuevoEstado
-                                    coroutineScope.launch {
-                                        delay(500)
-                                        onToggleRole(barber.usuarioid, nuevoEstado)
-                                        isToggleEnabled = true
-                                    }
-                                }
-                            },
-                            enabled = isToggleEnabled,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color(0xFF7EDADA),
-                                uncheckedThumbColor = Color.Gray,
-                                checkedTrackColor = Color(0xFF305372),
-                                uncheckedTrackColor = Color.DarkGray
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Horario",
+                                color = textColor,
+                                fontSize = 17.sp,
+                                fontFamily = defaultFont
                             )
-                        )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.DarkGray)
+                            ) {
+                                IconButton(
+                                    onClick = { showScheduleDialog = true },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = "Ver horario semanal",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Permisos",
+                                color = textColor,
+                                fontSize = 17.sp,
+                                fontFamily = defaultFont
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Switch(
+                                checked = isSemiadmin,
+                                onCheckedChange = { nuevoEstado ->
+                                    if (isToggleEnabled) {
+                                        isToggleEnabled = false
+                                        isSemiadmin = nuevoEstado
+                                        coroutineScope.launch {
+                                            delay(500)
+                                            onToggleRole(barber.usuarioid, nuevoEstado)
+                                            isToggleEnabled = true
+                                        }
+                                    }
+                                },
+                                enabled = isToggleEnabled,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    uncheckedThumbColor = Color.Gray,
+                                    checkedTrackColor = Color.Gray,
+                                    uncheckedTrackColor = Color.DarkGray
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -544,6 +614,150 @@ fun BarberCard(
                     )
                 }
             }
+        }
+        if (showScheduleDialog) {
+            val darkSurface = Color(0xFF1E1E1E)
+            val accentColor = Color(0xFF7EDADA)
+            val lightGray = Color(0xFFAAAAAA)
+
+            AlertDialog(
+                onDismissRequest = { showScheduleDialog = false },
+                containerColor = darkSurface,
+                titleContentColor = Color.White,
+                textContentColor = Color.LightGray,
+                title = {
+                    Text(
+                        if (isYou) "Tu horario" else "Horario de ${barber.nombre}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        fontFamily = defaultFont
+                    )
+                },
+                text = {
+                    when (weeklyScheduleState) {
+                        is WeeklyScheduleState.Loading -> {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = accentColor)
+                            }
+                        }
+                        is WeeklyScheduleState.Error -> {
+                            Text(
+                                "Error: ${(weeklyScheduleState as WeeklyScheduleState.Error).message}",
+                                fontSize = 16.sp
+                            )
+                        }
+                        is WeeklyScheduleState.Success -> {
+                            val schedule = (weeklyScheduleState as WeeklyScheduleState.Success).schedule
+                            val dayOrder = listOf("Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo")
+
+                            val sortedSchedule = schedule.sortedBy { entry ->
+                                dayOrder.indexOf(entry.diasemana).takeIf { it >= 0 } ?: Int.MAX_VALUE
+                            }
+
+                            if (sortedSchedule.isEmpty()) {
+                                Text(
+                                    "Este peluquero aún no tiene horario asignado.",
+                                    fontSize = 16.sp,
+                                    fontFamily = defaultFont,
+                                    color = Color.LightGray
+                                )
+                            } else {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "Día",
+                                            modifier = Modifier.weight(1f),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = accentColor,
+                                            fontFamily = defaultFont
+                                        )
+                                        Text(
+                                            text = "Inicio",
+                                            modifier = Modifier.weight(1f),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = accentColor,
+                                            fontFamily = defaultFont
+                                        )
+                                        Text(
+                                            text = "Fin",
+                                            modifier = Modifier.weight(1f),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = accentColor,
+                                            fontFamily = defaultFont
+                                        )
+                                    }
+
+                                    HorizontalDivider(color = lightGray.copy(alpha = 0.3f))
+
+                                    sortedSchedule.forEach { entry ->
+                                        val dayName = entry.diasemana
+                                        val startTime = formatHour(entry.horainicio)
+                                        val endTime = formatHour(entry.horafin)
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = dayName,
+                                                modifier = Modifier.weight(1f),
+                                                color = Color.White,
+                                                fontSize = 17.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                fontFamily = defaultFont
+                                            )
+                                            Text(
+                                                text = startTime,
+                                                modifier = Modifier.weight(1f),
+                                                color = Color.White,
+                                                fontSize = 17.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                fontFamily = defaultFont
+                                            )
+                                            Text(
+                                                text = endTime,
+                                                modifier = Modifier.weight(1f),
+                                                color = Color.White,
+                                                fontSize = 17.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                fontFamily = defaultFont
+                                            )
+                                        }
+
+                                        if (entry != sortedSchedule.last()) {
+                                            HorizontalDivider(color = lightGray.copy(alpha = 0.2f))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else -> {
+                            Text("No hay datos disponibles.", fontSize = 16.sp)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showScheduleDialog = false },
+                        colors = ButtonDefaults.textButtonColors(contentColor = accentColor)
+                    ) {
+                        Text("Cerrar", fontSize = 17.sp)
+                    }
+                }
+            )
         }
     }
 }
