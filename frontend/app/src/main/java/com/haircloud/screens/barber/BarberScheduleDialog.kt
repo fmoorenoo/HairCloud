@@ -80,7 +80,6 @@ fun BarberScheduleDialog(
         original?.horaInicio != day.startTime || original.horaFin != day.endTime
     }
 
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -164,10 +163,8 @@ fun BarberScheduleDialog(
                                             onValueChange = { value ->
                                                 if (value.isEmpty() || (value.toIntOrNull() in 0..23 && value.length <= 2)) {
                                                     startHour = value
-                                                    if (value.isNotEmpty() && startMinute.isNotEmpty()) {
-                                                        schedules = schedules.toMutableList().also {
-                                                            it[index] = it[index].copy(startTime = "$value:$startMinute")
-                                                        }
+                                                    schedules = schedules.toMutableList().also {
+                                                        it[index] = it[index].copy(startTime = "$value:${startMinute}")
                                                     }
                                                 }
                                             },
@@ -200,10 +197,8 @@ fun BarberScheduleDialog(
                                             onValueChange = { value ->
                                                 if (value.isEmpty() || (value.toIntOrNull() in 0..59 && value.length <= 2)) {
                                                     startMinute = value
-                                                    if (startHour.isNotEmpty() && value.isNotEmpty()) {
-                                                        schedules = schedules.toMutableList().also {
-                                                            it[index] = it[index].copy(startTime = "${startHour}:$value")
-                                                        }
+                                                    schedules = schedules.toMutableList().also {
+                                                        it[index] = it[index].copy(startTime = "${startHour}:$value")
                                                     }
                                                 }
                                             },
@@ -243,10 +238,8 @@ fun BarberScheduleDialog(
                                             onValueChange = { value ->
                                                 if (value.isEmpty() || (value.toIntOrNull() in 0..23 && value.length <= 2)) {
                                                     endHour = value
-                                                    if (value.isNotEmpty() && endMinute.isNotEmpty()) {
-                                                        schedules = schedules.toMutableList().also {
-                                                            it[index] = it[index].copy(endTime = "$value:$endMinute")
-                                                        }
+                                                    schedules = schedules.toMutableList().also {
+                                                        it[index] = it[index].copy(endTime = "$value:${endMinute}")
                                                     }
                                                 }
                                             },
@@ -279,10 +272,8 @@ fun BarberScheduleDialog(
                                             onValueChange = { value ->
                                                 if (value.isEmpty() || (value.toIntOrNull() in 0..59 && value.length <= 2)) {
                                                     endMinute = value
-                                                    if (endHour.isNotEmpty() && value.isNotEmpty()) {
-                                                        schedules = schedules.toMutableList().also {
-                                                            it[index] = it[index].copy(endTime = "${endHour}:$value")
-                                                        }
+                                                    schedules = schedules.toMutableList().also {
+                                                        it[index] = it[index].copy(endTime = "${endHour}:$value")
                                                     }
                                                 }
                                             },
@@ -329,6 +320,23 @@ fun BarberScheduleDialog(
                     }
                 }
 
+                val hasHoursMissing = schedules.any {
+                    it.isActive && (it.startTime.split(":").getOrNull(0).isNullOrEmpty() ||
+                            it.endTime.split(":").getOrNull(0).isNullOrEmpty())
+                }
+
+                val isScheduleValid = schedules.filter { it.isActive }.all { schedule ->
+                    val (startH, startM) = schedule.startTime.split(":").let { Pair(it.getOrNull(0), it.getOrNull(1)) }
+                    val (endH, endM) = schedule.endTime.split(":").let { Pair(it.getOrNull(0), it.getOrNull(1)) }
+
+                    val validStartHour = !startH.isNullOrEmpty() && startH.toIntOrNull() in 0..23
+                    val validEndHour = !endH.isNullOrEmpty() && endH.toIntOrNull() in 0..23
+
+                    val validStartMinute = startM.isNullOrEmpty() || startM.toIntOrNull() in 0..59
+                    val validEndMinute = endM.isNullOrEmpty() || endM.toIntOrNull() in 0..59
+
+                    validStartHour && validEndHour && validStartMinute && validEndMinute
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -343,6 +351,16 @@ fun BarberScheduleDialog(
 
                     Button(
                         onClick = {
+                            if (hasHoursMissing) {
+                                val daysWithMissingHours = schedules.filter {
+                                    it.isActive && (it.startTime.split(":").getOrNull(0).isNullOrEmpty() ||
+                                            it.endTime.split(":").getOrNull(0).isNullOrEmpty())
+                                }.joinToString(", ") { it.day }
+
+                                errorMessage = "Error ($daysWithMissingHours)\nDebe especificar la hora de inicio y fin."
+                                return@Button
+                            }
+
                             val invalidDays = schedules.filter {
                                 it.isActive && it.startTime.isNotBlank() && it.endTime.isNotBlank()
                             }.filter {
@@ -362,12 +380,19 @@ fun BarberScheduleDialog(
 
                             if (invalidDays.isNotEmpty()) {
                                 val dayNames = invalidDays.joinToString(", ") { it.day }
-                                errorMessage = "Error ($dayNames)\n La hora de inicio debe ser anterior a la hora de fin."
+                                errorMessage = "Error ($dayNames)\nLa hora de inicio debe ser anterior a la hora de fin."
                             } else {
                                 val selected = schedules.filter {
                                     it.isActive && it.startTime.isNotBlank() && it.endTime.isNotBlank()
                                 }.map {
-                                    WorkSchedule(it.day, it.startTime, it.endTime)
+                                    val (startH, startM) = it.startTime.split(":").let {
+                                        Pair(it[0], it.getOrNull(1) ?: "00")
+                                    }
+                                    val (endH, endM) = it.endTime.split(":").let {
+                                        Pair(it[0], it.getOrNull(1) ?: "00")
+                                    }
+
+                                    WorkSchedule(it.day, "$startH:$startM", "$endH:$endM")
                                 }
 
                                 if (editable) {
@@ -378,7 +403,7 @@ fun BarberScheduleDialog(
                                 onDismiss()
                             }
                         },
-                        enabled = !editable || hasChanges,
+                        enabled = (!editable || hasChanges) && isScheduleValid && !hasHoursMissing,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                     ) {
                         Text(text = if (editable) "Actualizar" else "Guardar", fontFamily = defaultFont, color = Color.White)
