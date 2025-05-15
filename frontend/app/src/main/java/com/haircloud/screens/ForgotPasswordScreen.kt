@@ -48,9 +48,8 @@ fun ForgotPasswordScreen(
     var buttonsEnabled by remember { mutableStateOf(true) }
     var isNavigating by remember { mutableStateOf(false) }
 
-    val blueWhiteGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
-    )
+    val blackWhiteGradient =
+        Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val headersFont = FontFamily(
         Font(R.font.headers_font, FontWeight.Normal)
     )
@@ -108,7 +107,7 @@ fun ForgotPasswordScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = blueWhiteGradient
+                brush = blackWhiteGradient
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -124,7 +123,8 @@ fun ForgotPasswordScreen(
                 Text(
                     text = "HairCloud",
                     style = TextStyle(fontFamily = headersFont, fontSize = 55.sp),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFFFFFFF),
                 )
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
@@ -138,13 +138,13 @@ fun ForgotPasswordScreen(
 
             Text(
                 text = "Verificación",
-                color = Color(0XFF132946),
+                color = Color(0xFFDADADA),
                 textAlign = TextAlign.Center,
                 style = TextStyle(
                     fontFamily = headersFont,
-                    fontSize = 35.sp,
+                    fontSize = 30.sp,
                     shadow = Shadow(
-                        color = Color(0xFF7C7C7C),
+                        color = Color(0xFF212121),
                         offset = Offset(3f, 10f),
                         blurRadius = 15f
                     )

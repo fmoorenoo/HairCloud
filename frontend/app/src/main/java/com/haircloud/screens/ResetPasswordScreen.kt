@@ -55,15 +55,14 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
     var buttonsEnabled by remember { mutableStateOf(true) }
     var isNavigating by remember { mutableStateOf(false) }
 
-    val blueWhiteGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFF77AEE2), Color(0xFFFFFFFF))
-    )
+    val blackWhiteGradient =
+        Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 23.sp)
 
     Box(
-        modifier = Modifier.fillMaxSize().background(brush = blueWhiteGradient),
+        modifier = Modifier.fillMaxSize().background(brush = blackWhiteGradient),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -78,7 +77,8 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
                 Text(
                     text = "HairCloud",
                     style = TextStyle(fontFamily = headersFont, fontSize = 55.sp),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFFFFFFF),
                 )
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
@@ -91,13 +91,13 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
             Spacer(modifier = Modifier.height(40.dp))
             Text(
                 text = "Cambiar contraseña",
-                color = Color(0XFF132946),
+                color = Color(0xFFDADADA),
                 textAlign = TextAlign.Center,
                 style = TextStyle(
                     fontFamily = headersFont,
-                    fontSize = 35.sp,
+                    fontSize = 30.sp,
                     shadow = Shadow(
-                        color = Color(0xFF7C7C7C),
+                        color = Color(0xFF212121),
                         offset = Offset(3f, 10f),
                         blurRadius = 15f
                     )
