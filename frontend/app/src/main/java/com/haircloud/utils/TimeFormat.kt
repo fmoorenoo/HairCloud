@@ -28,6 +28,11 @@ fun formatTime(dateTimeString: String): String {
     }
 }
 
+// Convertir hora a formato sin segundos (12:30)
+fun formatHour(time: String): String {
+    return time.trim().take(5)
+}
+
 // Convertir fecha a formato largo (Lunes 20 de Mayo)
 fun formatDateToLong(date: LocalDate): String {
     val dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
