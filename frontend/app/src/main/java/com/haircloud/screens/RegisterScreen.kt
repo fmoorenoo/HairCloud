@@ -39,6 +39,7 @@ import com.haircloud.viewmodel.ForgotPasswordState
 import com.haircloud.viewmodel.RegisterState
 import com.haircloud.viewmodel.AuthViewModel
 import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.RequirementsDialog
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
 
@@ -265,40 +266,11 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         }
 
                         if (showDialog) {
-                            AlertDialog(
-                                onDismissRequest = { showDialog = false },
-                                confirmButton = {
-                                    Button(
-                                        onClick = { showDialog = false },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF132946),
-                                            contentColor = Color.White
-                                        ),
-                                        shape = RoundedCornerShape(10.dp)
-                                    ) {
-                                        Text("Entendido", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                },
-                                title = {
-                                    Text(
-                                        text = dialogTitle,
-                                        style = TextStyle(fontFamily = defaultFont, fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                                        color = Color(0xFF132946),
-                                        textAlign = TextAlign.Center
-                                    )
-                                },
-                                text = {
-                                    Text(
-                                        text = dialogMessage,
-                                        style = TextStyle(fontFamily = defaultFont, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                                        color = Color(0xFF333333),
-                                    )
-                                },
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.White),
-                                containerColor = Color(0xFF9FCBE7),
-                                shape = RoundedCornerShape(12.dp)
+                            RequirementsDialog(
+                                title = dialogTitle,
+                                message = dialogMessage,
+                                onDismiss = { showDialog = false },
+                                fontFamily = defaultFont
                             )
                         }
                     }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ChecklistRtl
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
@@ -36,7 +37,9 @@ import androidx.navigation.NavController
 import com.haircloud.R
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.WorkDaySchedule
+import com.haircloud.utils.CredentialsValidator
 import com.haircloud.utils.CustomSnackbarHost
+import com.haircloud.utils.RequirementsDialog
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarberViewModel
@@ -316,11 +319,16 @@ fun NewBarberSection(
     var workSchedules by remember { mutableStateOf(listOf<WorkSchedule>()) }
     var showScheduleDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val camposValidos = nombreUsuario.isNotBlank() && contrasena.isNotBlank()
-            && email.isNotBlank() && nombre.isNotBlank() && workSchedules.isNotEmpty()
+    val isUsernameValid = CredentialsValidator.isUsernameValid(nombreUsuario)
+    val isPasswordValid = CredentialsValidator.isPasswordValid(contrasena)
+    val camposValidos = isUsernameValid && isPasswordValid &&
+            email.isNotBlank() && nombre.isNotBlank() && workSchedules.isNotEmpty()
 
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
     val darkSurface = Color(0xFF2C2C2C)
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogTitle by remember { mutableStateOf("") }
+    var dialogMessage by remember { mutableStateOf("") }
 
     val createState by barberViewModel.createBarberState.collectAsState()
 
@@ -359,42 +367,76 @@ fun NewBarberSection(
             fontFamily = defaultFont,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-
-        OutlinedTextField(
-            value = nombreUsuario,
-            onValueChange = { nombreUsuario = it },
-            label = { Text("Nombre de usuario", color = Color.White.copy(alpha = 0.7f)) },
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF444444),
-                unfocusedBorderColor = Color(0xFF666666),
-                focusedLabelColor = Color(0xFFAAAAAA),
-                unfocusedLabelColor = Color(0xFF888888),
-                cursorColor = Color.White,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-        OutlinedTextField(
-            value = contrasena,
-            onValueChange = { contrasena = it },
-            label = { Text("Contraseña", color = Color.White.copy(alpha = 0.7f)) },
+            OutlinedTextField(
+                value = nombreUsuario,
+                onValueChange = { nombreUsuario = it },
+                label = { Text("Nombre de usuario", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = if (isUsernameValid || nombreUsuario.isEmpty()) Color(
+                        0xFF444444
+                    ) else Color(0xFFB74A5A),
+                    unfocusedBorderColor = Color(0xFF666666),
+                    focusedLabelColor = Color(0xFFAAAAAA),
+                    unfocusedLabelColor = Color(0xFF888888),
+                    cursorColor = Color.White,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            if (!isUsernameValid && nombreUsuario.isNotEmpty()) {
+                ErrorRow {
+                    dialogTitle = "Nombre de usuario"
+                    dialogMessage = "Entre 6 y 20 caracteres\n" +
+                            "Solo letras, números, '_' y '.'\n" +
+                            "No puede contener espacios"
+                    showDialog = true
+                }
+            }
+        }
+
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF444444),
-                unfocusedBorderColor = Color(0xFF666666),
-                focusedLabelColor = Color(0xFFAAAAAA),
-                unfocusedLabelColor = Color(0xFF888888),
-                cursorColor = Color.White,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-            ),
-            shape = RoundedCornerShape(12.dp)
-        )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            OutlinedTextField(
+                value = contrasena,
+                onValueChange = { contrasena = it },
+                label = { Text("Contraseña", color = Color.White.copy(alpha = 0.7f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = if (isUsernameValid || nombreUsuario.isEmpty()) Color(
+                        0xFF444444
+                    ) else Color(0xFFB74A5A),
+                    unfocusedBorderColor = Color(0xFF666666),
+                    focusedLabelColor = Color(0xFFAAAAAA),
+                    unfocusedLabelColor = Color(0xFF888888),
+                    cursorColor = Color.White,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            if (!isPasswordValid && contrasena.isNotEmpty()) {
+                ErrorRow {
+                    dialogTitle = "Contraseña"
+                    dialogMessage = "Al menos cuatro letras\n" +
+                            "Al menos un número\n" +
+                            "Solo los símbolos: '-', '_', '.'\n" +
+                            "No puede contener espacios"
+                    showDialog = true
+                }
+            }
+        }
 
         OutlinedTextField(
             value = email,
@@ -517,6 +559,16 @@ fun NewBarberSection(
                     workSchedules = selectedSchedules
                 },
                 initialSchedules = workSchedules
+            )
+        }
+
+
+        if (showDialog) {
+            RequirementsDialog(
+                title = dialogTitle,
+                message = dialogMessage,
+                onDismiss = { showDialog = false },
+                fontFamily = defaultFont
             )
         }
     }
@@ -685,3 +737,33 @@ fun PreviousBarbersSection(
         else -> {}
     }
 }
+
+@Composable
+fun ErrorRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceAround
+    ) {
+        Text(
+            text = "Ver requisitos",
+            style = TextStyle(
+                fontFamily = FontFamily.Default,
+                color = Color(0xFFC74E4D),
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            ),
+            textAlign = TextAlign.Center
+        )
+
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Filled.ChecklistRtl,
+                contentDescription = "Información",
+                tint = Color(0xFFC74E4D),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
