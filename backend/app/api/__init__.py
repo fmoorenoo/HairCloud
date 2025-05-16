@@ -8,5 +8,7 @@ calendar_bp = Blueprint('calendar', __name__)
 dates_bp = Blueprint('dates', __name__)
 barbers_bp = Blueprint('barbers', __name__)
 services_bp = Blueprint('services', __name__)
+mail_bp = Blueprint('mail', __name__)
 
-from . import auth, clients, barbershops, calendar, dates, barbers, services
+
+from . import auth, clients, barbershops, calendar, dates, barbers, services, mail
