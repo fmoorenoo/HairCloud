@@ -46,6 +46,8 @@ import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.CalendarViewModel
 import com.haircloud.viewmodel.DateOperationState
 import com.haircloud.viewmodel.DatesViewModel
+import com.haircloud.viewmodel.MailState
+import com.haircloud.viewmodel.MailViewModel
 import com.haircloud.viewmodel.SingleServiceState
 import com.haircloud.viewmodel.WeeklyScheduleState
 import kotlinx.coroutines.delay
@@ -63,6 +65,8 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     val barbershopViewModel = remember { BarbershopViewModel() }
     val calendarViewModel = remember { CalendarViewModel() }
     val datesViewModel = remember { DatesViewModel() }
+    val mailViewModel = remember { MailViewModel() }
+    val mailState by mailViewModel.mailState.collectAsState()
     val addDateState by datesViewModel.addDateState.collectAsState()
     val barbersState by barbershopViewModel.barbersState.collectAsState()
     val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
@@ -123,6 +127,17 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     LaunchedEffect(localId) {
         localId?.let {
             barbershopViewModel.getBarbersByLocalId(it)
+        }
+    }
+
+    LaunchedEffect(mailState) {
+        when (mailState) {
+            is MailState.Success -> {
+                snackbarMessage = "Cita enviada al correo"
+                snackbarType = SnackbarType.SUCCESS
+                mailViewModel.resetMailState()
+            }
+            else -> {}
         }
     }
 
@@ -462,6 +477,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                 )
 
                 datesViewModel.addDate(request)
+                mailViewModel.sendInfoDate(request)
             },
             barber = selectedBarber,
             serviceName = serviceName,
