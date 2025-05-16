@@ -46,3 +46,206 @@ Este código es válido por {minutes} minutos."""
     msg.html = html_message
 
     mail.send(msg)
+
+
+def send_booking_info_email(recipient, local_info, barber_name, service_info, hora_inicio, hora_fin, fecha):
+    subject = "Confirmación de tu cita - HairCloud"
+    title = "Tu cita ha sido confirmada"
+
+    html_message = f"""
+    <html>
+    <head>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+            body {{
+                font-family: 'Poppins', Arial, sans-serif;
+                background-color: #f8fafc;
+                margin: 0;
+                padding: 0;
+                -webkit-font-smoothing: antialiased;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: auto;
+                background-color: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+            }}
+            .header {{
+                background-color: #3B82F6;
+                color: white;
+                padding: 30px 25px;
+                text-align: center;
+            }}
+            .header h1 {{
+                margin: 0;
+                font-weight: 600;
+                font-size: 24px;
+            }}
+            .content {{
+                padding: 25px;
+            }}
+            .local-info {{
+                background-color: #f1f5f9;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 25px;
+            }}
+            .local-name {{
+                font-size: 18px;
+                font-weight: 600;
+                color: #0f172a;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }}
+            .info-row {{
+                display: flex;
+                margin-bottom: 12px;
+                align-items: center;
+            }}
+            .info-icon {{
+                width: 22px;
+                margin-right: 10px;
+                opacity: 0.7;
+            }}
+            .info-text {{
+                font-size: 14px;
+                color: #334155;
+            }}
+            .service-box {{
+                background-color: #eff6ff;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 25px;
+            }}
+            .service-name {{
+                font-size: 16px;
+                font-weight: 600;
+                color: #1e40af;
+                margin-top: 0;
+                margin-bottom: 15px;
+            }}
+            .service-detail {{
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }}
+            .service-label {{
+                color: #64748b;
+            }}
+            .service-value {{
+                color: #334155;
+                font-weight: 500;
+            }}
+            .appointment-box {{
+                background-color: #f0fdf4;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 25px;
+                border-left: 4px solid #22c55e;
+            }}
+            .time-row {{
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+            }}
+            .time-label {{
+                color: #64748b;
+                font-size: 14px;
+            }}
+            .time-value {{
+                color: #0f172a;
+                font-weight: 500;
+                font-size: 14px;
+            }}
+            .footer {{
+                text-align: center;
+                padding: 20px;
+                background-color: #f8fafc;
+                color: #64748b;
+                font-size: 13px;
+            }}
+            .logo {{
+                text-align: center;
+                margin-bottom: 10px;
+            }}
+            .divider {{
+                height: 1px;
+                background-color: #e2e8f0;
+                margin: 15px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{title}</h1>
+            </div>
+            <div class="content">
+                <div class="local-info">
+                    <h2 class="local-name">{local_info['nombre']}</h2>
+                    <div class="info-row">
+                        <span class="info-icon">📍</span>
+                        <span class="info-text">{local_info['direccion']}, {local_info['localidad']}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">📞</span>
+                        <span class="info-text">{local_info['telefono']}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-icon">💇</span>
+                        <span class="info-text"><strong>Peluquero:</strong> {barber_name}</span>
+                    </div>
+                </div>
+
+                <div class="service-box">
+                    <h3 class="service-name">{service_info['nombre']}</h3>
+                    <div class="service-detail">
+                        <span class="service-label">Descripción:</span><br>
+                        <span class="service-value">{service_info['descripcion']}</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="service-detail">
+                        <span class="service-label">Duración:</span><br>
+                        <span class="service-value">{service_info['duracion']} minutos</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="service-detail">
+                        <span class="service-label">Precio:</span><br>
+                        <span class="service-value">{service_info['precio']}€</span>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #1e3a8a; font-size: 20px; font-weight: 600; margin: 0;">📅 {fecha}</h2>
+                </div>
+
+                <div class="appointment-box">
+                    <div class="time-row">
+                        <span class="time-label">Inicio:</span><br>
+                        <span class="time-value">{hora_inicio}</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="time-row">
+                        <span class="time-label">Fin:</span><br>
+                        <span class="time-value">{hora_fin}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="logo">
+                    <strong style="color: #3B82F6;">HairCloud</strong>
+                </div>
+                <p>Gracias por reservar con nosotros. Si necesitas realizar algún cambio, ponte en contacto con el local.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    msg = Message(subject, recipients=[recipient])
+    msg.html = html_message
+    mail.send(msg)
