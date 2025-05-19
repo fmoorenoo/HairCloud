@@ -377,4 +377,48 @@ def update_barber_schedule(peluquero_id):
 
     return jsonify({"message": "Horario actualizado correctamente"}), 200
 
+@barbers_bp.route('/get_barber_activity/<int:peluqueroid>', methods=['GET'])
+def get_barber_activity(peluqueroid):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        DELETE FROM actividad_peluquero
+        WHERE peluqueroid = %s AND fecha < %s
+    """, (peluqueroid, datetime.now() - timedelta(days=7)))
+
+    cursor.execute("""
+        SELECT 
+            a.actividadid, a.tipo, a.fecha,
+            c.nombre AS cliente_nombre,
+            ci.fechainicio, ci.fechafin, ci.estado,
+            s.nombre AS servicio_nombre,
+            l.nombre AS local_nombre
+        FROM actividad_peluquero a
+        LEFT JOIN citas ci ON a.citaid = ci.citaid
+        LEFT JOIN clientes c ON a.clienteid = c.clienteid
+        LEFT JOIN servicios s ON ci.servicioid = s.servicioid
+        LEFT JOIN local l ON ci.localid = l.localid
+        WHERE a.peluqueroid = %s
+        ORDER BY a.fecha DESC
+    """, (peluqueroid,))
+
+    actividades = cursor.fetchall()
+    column_names = [desc[0] for desc in cursor.description]
+
+    cursor.close()
+    connection.close()
+
+    result = []
+    for row in actividades:
+        actividad = {}
+        for i, value in enumerate(row):
+            if isinstance(value, datetime):
+                actividad[column_names[i]] = value.strftime('%Y-%m-%d %H:%M')
+            else:
+                actividad[column_names[i]] = value
+        result.append(actividad)
+
+    return jsonify(result), 200
 
