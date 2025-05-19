@@ -581,21 +581,45 @@ fun DateCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.AccessTime,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "$formattedStartTime - $formattedEndTime",
-                        color = accentColor,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        style = TextStyle(fontFamily = defaultFont)
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically ) {
+                        Icon(
+                            imageVector = Icons.Filled.AccessTime,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "$formattedStartTime - $formattedEndTime",
+                            color = accentColor,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            style = TextStyle(fontFamily = defaultFont)
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (appointment.estado.equals("No completada", ignoreCase = true)) {
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFF888888), shape = RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = "No completada",
+                                    color = Color(0xFFEAEAEA),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = TextStyle(fontFamily = defaultFont)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
