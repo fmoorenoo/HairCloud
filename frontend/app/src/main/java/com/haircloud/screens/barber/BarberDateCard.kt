@@ -694,6 +694,7 @@ fun AppointmentDetailDialog(
                         },
                         textStyle = TextStyle(fontFamily = defaultFont, fontSize = 16.sp, color = Color.White),
                         modifier = Modifier.fillMaxWidth(),
+                        maxLines = 4,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
