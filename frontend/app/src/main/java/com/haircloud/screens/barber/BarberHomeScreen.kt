@@ -49,11 +49,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
-enum class FilterState(string: String) {
+enum class FilterState(val label: String) {
     ALL("Todas"),
     PENDING("Pendientes"),
     COMPLETED("Completadas"),
-    CANCELLED("Canceladas")
+    CANCELLED("Canceladas"),
+    NOT_COMPLETED("No completadas")
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -143,7 +144,23 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
         }
     }
 
-    val totalCitas = citasPendientes + citasCompletadas + citasCanceladas
+    val citasNoCompletadas = remember(barberDatesState, selectedDate) {
+        when (barberDatesState) {
+            is BarberDatesState.Success -> {
+                (barberDatesState as BarberDatesState.Success).citas.count { cita ->
+                    val citaDate = try {
+                        LocalDate.parse(cita.fechainicio.substring(0, 10))
+                    } catch (_: Exception) {
+                        null
+                    }
+                    citaDate == selectedDate && cita.estado.equals("No completada", ignoreCase = true)
+                }
+            }
+            else -> 0
+        }
+    }
+
+    val totalCitas = citasPendientes + citasCompletadas + citasCanceladas + citasNoCompletadas
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
@@ -401,7 +418,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                 color = Color.White,
                                 style = TextStyle(
                                     fontFamily = defaultFont,
-                                    fontSize = 25.sp,
+                                    fontSize = 23.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
                                 modifier = Modifier.weight(1f)
@@ -417,6 +434,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                             FilterState.PENDING -> Color(0xFF946B11)
                                             FilterState.COMPLETED -> Color(0xFF3A863D)
                                             FilterState.CANCELLED -> Color(0xFFAD2F26)
+                                            FilterState.NOT_COMPLETED -> Color(0xFF9E9E9E)
                                         },
                                         contentColor = Color.White
                                     )
@@ -426,6 +444,7 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                                         FilterState.PENDING -> "Pendi... ($citasPendientes)"
                                         FilterState.COMPLETED -> "Comple... ($citasCompletadas)"
                                         FilterState.CANCELLED -> "Cancel... ($citasCanceladas)"
+                                        FilterState.NOT_COMPLETED -> "No com... ($citasNoCompletadas)"
                                     }
                                     Text(
                                         text = filterLabel,
@@ -521,6 +540,33 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
 
                                         modifier = Modifier.background(
                                             if (selectedFilterState == FilterState.COMPLETED) Color(0xFF4CAF50) else Color(0xFF2A2A2A)
+                                        )
+                                    )
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "No completadas ($citasNoCompletadas)",
+                                                style = TextStyle(fontFamily = defaultFont),
+                                                fontSize = 16.sp,
+                                                color = if (selectedFilterState == FilterState.NOT_COMPLETED) Color.White else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedFilterState = FilterState.NOT_COMPLETED
+                                            isFilterDropdownExpanded = false
+                                        },
+                                        leadingIcon = {
+                                            if (selectedFilterState == FilterState.NOT_COMPLETED) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color.White
+                                                )
+                                            }
+                                        },
+                                        modifier = Modifier.background(
+                                            if (selectedFilterState == FilterState.NOT_COMPLETED) Color(0xFF9E9E9E) else Color(0xFF2A2A2A)
                                         )
                                     )
 
