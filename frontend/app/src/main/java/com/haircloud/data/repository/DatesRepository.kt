@@ -35,10 +35,14 @@ class DatesRepository {
         }
     }
 
-    suspend fun updateDateEstado(citaId: Int, estado: String): Result<ApiResponse> {
+    suspend fun updateDateEstado(citaId: Int, estado: String, motivo: String? = null): Result<ApiResponse> {
+        val body = mutableMapOf<String, String>("estado" to estado)
+        motivo?.let {
+            body["motivo"] = it.trim()
+        }
         return try {
             val response = withContext(Dispatchers.IO) {
-                api.updateDateEstado(citaId, mapOf("estado" to estado)).execute()
+                api.updateDateEstado(citaId, body).execute()
             }
             handleApiResponse(response, "Error al actualizar el estado de la cita")
         } catch (_: Exception) {

@@ -42,10 +42,10 @@ class DatesViewModel : ViewModel() {
         }
     }
 
-    fun updateDateEstado(citaId: Int, estado: String) {
+    fun updateDateEstado(citaId: Int, estado: String, motivo: String? = null) {
         _updateEstadoState.value = DateOperationState.Loading
         viewModelScope.launch {
-            val result = repository.updateDateEstado(citaId, estado)
+            val result = repository.updateDateEstado(citaId, estado, motivo)
             _updateEstadoState.value = result.fold(
                 onSuccess = { DateOperationState.Success(it.message) },
                 onFailure = { DateOperationState.Error(it.message ?: "Error al actualizar estado") }
