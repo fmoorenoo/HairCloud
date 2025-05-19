@@ -131,7 +131,7 @@ def get_client_dates(client_id):
         JOIN servicios s ON c.servicioid = s.servicioid
         JOIN peluqueros b ON c.peluqueroid = b.peluqueroid
         JOIN local l ON c.localid = l.localid
-        WHERE c.clienteid = %s
+        WHERE c.clienteid = %s AND c.estado != 'Cancelada'
         ORDER BY c.fechainicio ASC
     """, (client_id,))
 
@@ -166,7 +166,7 @@ def get_client_stats(client_id):
     cursor.execute("""
         SELECT COUNT(*) 
         FROM citas 
-        WHERE clienteid = %s AND fechafin < %s
+        WHERE clienteid = %s AND fechafin < %s AND estado NOT IN ('Cancelada', 'No completada')
     """, (client_id, now))
     total_citas_finalizadas = cursor.fetchone()[0]
 
@@ -175,7 +175,7 @@ def get_client_stats(client_id):
         SELECT l.nombre, COUNT(*) as total
         FROM citas c
         JOIN local l ON c.localid = l.localid
-        WHERE c.clienteid = %s AND c.fechafin < %s
+        WHERE c.clienteid = %s AND c.fechafin < %s AND c.estado NOT IN ('Cancelada', 'No completada')
         GROUP BY l.nombre
         ORDER BY total DESC
         LIMIT 1
@@ -191,7 +191,7 @@ def get_client_stats(client_id):
         JOIN servicios s ON c.servicioid = s.servicioid
         JOIN peluqueros b ON c.peluqueroid = b.peluqueroid
         JOIN local l ON c.localid = l.localid
-        WHERE c.clienteid = %s AND c.fechainicio > %s
+        WHERE c.clienteid = %s AND c.fechainicio > %s AND c.estado NOT IN ('Cancelada', 'No completada')
         ORDER BY c.fechainicio ASC
         LIMIT 1
     """, (client_id, now))
@@ -209,7 +209,7 @@ def get_client_stats(client_id):
         FROM citas c
         JOIN servicios s ON c.servicioid = s.servicioid
         JOIN local l ON c.localid = l.localid
-        WHERE c.clienteid = %s AND c.fechafin < %s
+        WHERE c.clienteid = %s AND c.fechafin < %s AND c.estado NOT IN ('Cancelada', 'No completada')
         GROUP BY s.nombre, l.nombre
         ORDER BY total DESC
         LIMIT 1
