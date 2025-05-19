@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +40,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.haircloud.data.model.BarberDate
+import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.formatTime
+import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarberDatesState
 import com.haircloud.viewmodel.DateOperationState
 import com.haircloud.viewmodel.DatesViewModel
@@ -71,16 +74,18 @@ fun BarberAppointmentsList(
                     FilterState.PENDING -> it.estado.equals("Pendiente", ignoreCase = true)
                     FilterState.COMPLETED -> it.estado.equals("Completada", ignoreCase = true)
                     FilterState.CANCELLED -> it.estado.equals("Cancelada", ignoreCase = true)
+                    FilterState.NOT_COMPLETED -> it.estado.equals("No completada", ignoreCase = true)
                 }
                 matchesDate && matchesFilter
             }
             if (citas.isEmpty()) {
                 var word = ""
-                when (filterState) {
-                    FilterState.ALL -> word = ""
-                    FilterState.PENDING -> word = "pendientes"
-                    FilterState.COMPLETED -> word = "completadas"
-                    FilterState.CANCELLED -> word = "canceladas"
+                word = when (filterState) {
+                    FilterState.ALL -> ""
+                    FilterState.PENDING -> "pendientes"
+                    FilterState.COMPLETED -> "completadas"
+                    FilterState.CANCELLED -> "canceladas"
+                    FilterState.NOT_COMPLETED -> "no completadas"
                 }
                 Box(
                     modifier = Modifier
@@ -153,6 +158,7 @@ fun BarberAppointmentCard(
         "pendiente" -> Color(0xFFCB9217)
         "completada" -> Color(0xFF4CAF50)
         "cancelada" -> Color(0xFFF44336)
+        "no completada" -> Color(0xFF9E9E9E)
         else -> Color.Gray
     }
 
@@ -160,6 +166,7 @@ fun BarberAppointmentCard(
         "pendiente" -> "Pendiente"
         "completada" -> "Completada"
         "cancelada" -> "Cancelada"
+        "no completada" -> "No completada"
         else -> cita.estado ?: "Desconocido"
     }
 
@@ -299,22 +306,35 @@ fun AppointmentDetailDialog(
     var currentEstado by remember { mutableStateOf(cita.estado ?: "Pendiente") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var snackbarType by remember { mutableStateOf(SnackbarType.INFO) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var motivo by remember { mutableStateOf("") }
+
 
     val estadoColor = when (currentEstado.lowercase()) {
         "completada" -> Color(0xFF4CAF50)
         "cancelada" -> Color(0xFFFF5252)
         "pendiente" -> Color(0xFFFFB74D)
+        "no completada" -> Color(0xFF9E9E9E)
         else -> Color.Gray
     }
 
     val estadosDisponibles = remember(cita.finalizada) {
         if (cita.finalizada) {
-            listOf("Completada", "Cancelada")
+            listOf("Completada", "No completada")
         } else {
-            listOf("Pendiente", "Completada", "Cancelada")
+            listOf("Pendiente", "Completada")
         }
     }
 
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+            snackbarHostState.showTypedSnackbar(it, type = snackbarType)
+            snackbarMessage = null
+        }
+    }
 
     LaunchedEffect(updateEstadoState) {
         if (updateEstadoState is DateOperationState.Success) {
@@ -322,7 +342,6 @@ fun AppointmentDetailDialog(
             onDismiss()
         }
     }
-
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -468,7 +487,20 @@ fun AppointmentDetailDialog(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clickable { isDropdownExpanded = true }
+                                        .clickable {
+                                            if (cita.estado.equals(
+                                                    "Cancelada",
+                                                    ignoreCase = true
+                                                )
+                                            ) {
+                                                snackbarMessage =
+                                                    "No puedes modificar una cita cancelada"
+                                                snackbarType = SnackbarType.ERROR
+                                            } else {
+                                                isDropdownExpanded = true
+                                            }
+                                        }
+
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(estadoColor.copy(alpha = 0.2f))
                                         .padding(horizontal = 16.dp, vertical = 10.dp)
@@ -484,12 +516,13 @@ fun AppointmentDetailDialog(
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp
                                         )
-
-                                        Icon(
-                                            imageVector = Icons.Default.KeyboardArrowDown,
-                                            contentDescription = "Cambiar estado",
-                                            tint = estadoColor
-                                        )
+                                        if (!cita.estado.equals("Cancelada", ignoreCase = true)) {
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardArrowDown,
+                                                contentDescription = "Cambiar estado",
+                                                tint = estadoColor
+                                            )
+                                        }
                                     }
                                 }
 
@@ -536,6 +569,43 @@ fun AppointmentDetailDialog(
                             }
                         }
                     }
+                    if (!cita.estado.equals("Cancelada", ignoreCase = true) && !cita.finalizada) {
+                        item {
+                            DetailSection(
+                                title = "Cancelar cita",
+                                defaultFont = defaultFont
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        showConfirmDialog = true
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(48.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = Color(0xFFA13E3E),
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.EventBusy,
+                                        contentDescription = "Cancelar cita",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Cancelar cita",
+                                        color = Color.White,
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 AnimatedVisibility(
@@ -551,7 +621,8 @@ fun AppointmentDetailDialog(
                     ) {
                         Button(
                             onClick = {
-                                datesViewModel.updateDateEstado(cita.citaid, currentEstado)
+                                val motivoFinal = if (currentEstado == "Cancelada") motivo else null
+                                datesViewModel.updateDateEstado(cita.citaid, currentEstado, motivoFinal)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -578,6 +649,82 @@ fun AppointmentDetailDialog(
                                     fontSize = 16.sp
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (showConfirmDialog) {
+        Dialog(onDismissRequest = { showConfirmDialog = false }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF2C2C2C)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Cancelar cita",
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = defaultFont,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    Text(
+                        text = "Esta acción es irreversible",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontFamily = defaultFont,
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = motivo,
+                        onValueChange = { motivo = it },
+                        label = {
+                            Text("Motivo (opcional)", color = Color(0xFFAAAAAA), fontFamily = defaultFont)
+                        },
+                        textStyle = TextStyle(fontFamily = defaultFont, fontSize = 16.sp, color = Color.White),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedContainerColor = Color(0xFF1F1F1F),
+                            unfocusedContainerColor = Color(0xFF1F1F1F),
+                            focusedBorderColor = Color(0xFF3D8EE6),
+                            unfocusedBorderColor = Color(0xFF666666)
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        TextButton(
+                            onClick = { showConfirmDialog = false },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+                        ) {
+                            Text("Cancelar")
+                        }
+
+                        Button(
+                            onClick = {
+                                currentEstado = "Cancelada"
+                                datesViewModel.updateDateEstado(cita.citaid, currentEstado, motivo)
+                                showConfirmDialog = false
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFA13E3E))
+                        ) {
+                            Text("Confirmar")
                         }
                     }
                 }
