@@ -125,6 +125,23 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                         contentScale = ContentScale.Inside
                     )
 
+                    IconButton(
+                        onClick = {
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("barber_notifications/$peluqueroId")
+                            }
+                        },
+                        modifier = Modifier.size(55.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChatBubbleOutline,
+                            contentDescription = "Chat",
+                            tint = Color(0xFFCCCCCC),
+                            modifier = Modifier.size(45.dp)
+                        )
+                    }
+
                     Image(
                         painter = painterResource(id = R.drawable.user_profile_1),
                         contentDescription = "Profile",

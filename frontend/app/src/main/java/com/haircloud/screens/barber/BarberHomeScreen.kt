@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -241,6 +242,23 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
                             ),
                         contentScale = ContentScale.Inside
                     )
+
+                    IconButton(
+                        onClick = {
+                            if (!isNavigating) {
+                                isNavigating = true
+                                navController.navigate("barber_notifications/$peluqueroId")
+                            }
+                        },
+                        modifier = Modifier.size(55.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChatBubbleOutline,
+                            contentDescription = "Chat",
+                            tint = Color(0xFFCCCCCC),
+                            modifier = Modifier.size(45.dp)
+                        )
+                    }
 
                     Image(
                         painter = painterResource(id = R.drawable.user_profile_1),
