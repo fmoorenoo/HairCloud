@@ -101,7 +101,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
     }
 
     LaunchedEffect(updateEstadoState) {
-        when (val state = updateEstadoState) {
+        when (updateEstadoState) {
             is DateOperationState.Success -> {
                 snackbarMessage = "Cita cancelada con éxito"
                 snackbarType = SnackbarType.SUCCESS
@@ -110,7 +110,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
             }
 
             is DateOperationState.Error -> {
-                snackbarMessage = state.message
+                snackbarMessage = "Error al cancelar la cita"
                 snackbarType = SnackbarType.ERROR
                 datesViewModel.resetUpdateEstadoState()
                 clientId?.let { clientViewModel.getDates(it) }
