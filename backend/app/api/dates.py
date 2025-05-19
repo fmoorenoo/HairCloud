@@ -2,7 +2,7 @@ from flask import jsonify, request
 from app.api import dates_bp
 from app.db.connection import get_connection
 from datetime import datetime, timedelta
-
+from app.utils.email import send_cancellation_email
 
 @dates_bp.route('/add_date', methods=['POST'])
 def add_date():
@@ -81,11 +81,12 @@ def delete_date(citaid):
 def update_date(citaid):
     data = request.get_json()
     nuevo_estado = data.get("estado")
+    motivo = data.get("motivo")
 
     if not nuevo_estado:
         return jsonify({'error': 'Se requiere el nuevo estado'}), 400
 
-    if nuevo_estado not in ["Pendiente", "Completada", "Cancelada"]:
+    if nuevo_estado not in ["Pendiente", "Completada", "Cancelada", "No completada"]:
         return jsonify({'error': 'Estado no válido'}), 400
 
     connection = get_connection()
@@ -105,8 +106,53 @@ def update_date(citaid):
         WHERE citaid = %s
     """, (nuevo_estado, citaid))
 
+    if nuevo_estado == "Cancelada":
+        cursor.execute("""
+            SELECT c.nombre, c.telefono, u.email, u.nombreusuario,
+                   ci.fechainicio, ci.fechafin, ci.servicioid,
+                   s.nombre, s.descripcion, s.duracion,
+                   l.nombre, l.direccion, l.localidad,
+                   p.nombre
+            FROM citas ci
+            JOIN clientes c ON ci.clienteid = c.clienteid
+            JOIN usuarios u ON c.usuarioid = u.usuarioid
+            JOIN servicios s ON ci.servicioid = s.servicioid
+            JOIN local l ON ci.localid = l.localid
+            JOIN peluqueros p ON ci.peluqueroid = p.peluqueroid
+            WHERE ci.citaid = %s
+        """, (citaid,))
+        info = cursor.fetchone()
+        if info:
+            email = info[2]
+            cliente_nombre = info[0]
+            fecha = info[4].strftime('%d/%m/%Y')
+            hora_inicio = info[4].strftime('%H:%M')
+            hora_fin = info[5].strftime('%H:%M')
+            servicio_nombre = info[7]
+            barber_name = info[13]
+            local_info = {
+                'nombre': info[10],
+                'direccion': info[11],
+                'localidad': info[12]
+            }
+
+            if not motivo:
+                motivo = "No hay motivo especificado"
+
+            send_cancellation_email(
+                recipient=email,
+                cliente_nombre=cliente_nombre,
+                fecha=fecha,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                servicio_nombre=servicio_nombre,
+                local_info=local_info,
+                barber_name=barber_name,
+                motivo=motivo
+            )
+
     connection.commit()
     cursor.close()
     connection.close()
 
-    return jsonify({'message': f'Estado actualizado a "{nuevo_estado}" correctamente'}), 200
+    return jsonify({'message': f'Estado actualizado a "{nuevo_estado}"'}), 200
