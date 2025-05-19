@@ -59,7 +59,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
     val snackbarHostState = remember { SnackbarHostState() }
     val clientViewModel = remember { ClientViewModel() }
     val datesViewModel = remember { DatesViewModel() }
-    val deleteState by datesViewModel.deleteDateState.collectAsState()
+    val updateEstadoState by datesViewModel.updateEstadoState.collectAsState()
     val clientState by clientViewModel.clientState.collectAsState()
     val appointmentsState by clientViewModel.appointmentsState.collectAsState()
     var isNavigating by remember { mutableStateOf(false) }
@@ -100,19 +100,19 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
         }
     }
 
-    LaunchedEffect(deleteState) {
-        when (val state = deleteState) {
+    LaunchedEffect(updateEstadoState) {
+        when (val state = updateEstadoState) {
             is DateOperationState.Success -> {
-                snackbarMessage = state.message
+                snackbarMessage = "Cita cancelada con éxito"
                 snackbarType = SnackbarType.SUCCESS
-                datesViewModel.resetDeleteDateState()
+                datesViewModel.resetUpdateEstadoState()
                 clientId?.let { clientViewModel.getDates(it) }
             }
 
             is DateOperationState.Error -> {
                 snackbarMessage = state.message
                 snackbarType = SnackbarType.ERROR
-                datesViewModel.resetDeleteDateState()
+                datesViewModel.resetUpdateEstadoState()
                 clientId?.let { clientViewModel.getDates(it) }
             }
 
@@ -266,7 +266,7 @@ fun ClientDatesScreen(navController: NavController, userId: Int?) {
                                                 defaultFont = defaultFont,
                                                 shadeIndex = index,
                                                 onCancelAppointment = { citaId ->
-                                                    datesViewModel.deleteDate(citaId)
+                                                    datesViewModel.updateDateEstado(citaId, "Cancelada", "Cita cancelada por el cliente")
                                                 }
                                             )
                                         }
