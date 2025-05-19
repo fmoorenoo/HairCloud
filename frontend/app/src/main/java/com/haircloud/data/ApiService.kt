@@ -170,4 +170,7 @@ interface ApiService {
 
     @POST("/mail/send_info_date")
     fun sendInfoDate(@Body request: AddDateRequest): Call<ApiResponse>
+
+    @GET("/barbers/get_barber_activity/{peluqueroid}")
+    fun getBarberActivity(@Path("peluqueroid") peluqueroId: Int): Call<List<BarberActivityResponse>>
 }

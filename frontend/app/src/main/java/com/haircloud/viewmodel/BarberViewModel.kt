@@ -2,6 +2,7 @@ package com.haircloud.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.haircloud.data.model.BarberActivityResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
 import com.haircloud.data.model.CreateBarberRequest
@@ -31,6 +32,8 @@ class BarberViewModel : ViewModel() {
     private val _createBarberState = MutableStateFlow<CreateBarberState>(CreateBarberState.Idle)
     val createBarberState: StateFlow<CreateBarberState> = _createBarberState
 
+    private val _barberActivityState = MutableStateFlow<BarberActivityState>(BarberActivityState.Idle)
+    val barberActivityState: StateFlow<BarberActivityState> = _barberActivityState
 
     fun getBarber(userId: Int) {
         _barberState.value = GetBarberState.Loading
@@ -176,6 +179,18 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+    fun getBarberActivity(peluqueroId: Int) {
+        _barberActivityState.value = BarberActivityState.Loading
+        viewModelScope.launch {
+            val result = repository.getBarberActivity(peluqueroId)
+            _barberActivityState.value = if (result.isSuccess) {
+                BarberActivityState.Success(result.getOrThrow())
+            } else {
+                BarberActivityState.Error(result.exceptionOrNull()?.message ?: "Error al cargar actividad")
+            }
+        }
+    }
 }
 
 sealed class GetBarberState {
@@ -211,6 +226,13 @@ sealed class CreateBarberState {
     object Creating : CreateBarberState()
     data class Success(val message: String) : CreateBarberState()
     data class Error(val message: String) : CreateBarberState()
+}
+
+sealed class BarberActivityState {
+    object Idle : BarberActivityState()
+    object Loading : BarberActivityState()
+    data class Success(val actividades: List<BarberActivityResponse>) : BarberActivityState()
+    data class Error(val message: String) : BarberActivityState()
 }
 
 

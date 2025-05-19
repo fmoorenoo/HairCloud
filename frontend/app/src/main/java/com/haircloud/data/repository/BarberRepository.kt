@@ -2,6 +2,7 @@ package com.haircloud.data.repository
 
 import com.haircloud.data.ApiClient
 import com.haircloud.data.ApiResponse
+import com.haircloud.data.model.BarberActivityResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
 import com.haircloud.data.model.CreateBarberRequest
@@ -207,6 +208,22 @@ class BarberRepository {
                 val errorJson = response.errorBody()?.string() ?: "{}"
                 val message = JSONObject(errorJson).optString("error", "Error al actualizar horario")
                 Result.failure(Exception(message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getBarberActivity(peluqueroId: Int): Result<List<BarberActivityResponse>> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.instance.getBarberActivity(peluqueroId).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception("Error al obtener la actividad del peluquero"))
             }
         } catch (e: Exception) {
             Result.failure(e)

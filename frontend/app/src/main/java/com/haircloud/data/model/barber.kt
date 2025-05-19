@@ -50,3 +50,14 @@ data class CreateBarberRequest(
     val horario: List<WorkDaySchedule>
 )
 
+data class BarberActivityResponse(
+    val actividadid: Int,
+    val tipo: String,
+    val fecha: String,
+    val cliente_nombre: String,
+    val fechainicio: String,
+    val fechafin: String,
+    val estado: String,
+    val servicio_nombre: String,
+    val local_nombre: String
+)
