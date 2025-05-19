@@ -403,15 +403,15 @@ fun ServiceCard(
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF1E3A28),
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color(0xFF37628C),
                     tonalElevation = 4.dp
                 ) {
                     Text(
                         text = format.format(service.precio),
-                        color = Color(0xFF7EDA9C),
+                        color = Color(0xFFFFFFFF),
                         style = TextStyle(fontFamily = defaultFont),
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
