@@ -159,5 +159,11 @@ fun AppNavigation(
         composable("barber_user_manual") {
             BarberManualScreen(navController)
         }
+
+        // Peluquero notificaciones
+        composable("barber_notifications/{peluqueroId}") {
+            val peluqueroId = it.arguments?.getString("peluqueroId")?.toIntOrNull()
+            BarberNotifications(navController, peluqueroId?.toInt() ?: -1)
+        }
     }
 }
