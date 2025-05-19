@@ -328,7 +328,7 @@ def send_cancellation_email(recipient, cliente_nombre, fecha, hora_inicio, hora_
             </div>
             <div class="content">
                 <p>Hola {cliente_nombre},</p>
-                <p>Lamentamos informarte que tu cita con {barber_name} en {local_info['nombre']} ha sido <strong>cancelada</strong>.</p>
+                <p>Tu cita con {barber_name} en {local_info['nombre']} ha sido <strong>cancelada</strong>.</p>
                 <div class="motivo">
                     <strong>Motivo:</strong> {motivo}
                 </div>
