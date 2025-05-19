@@ -30,7 +30,15 @@ def add_date():
     cursor.execute("""
         INSERT INTO citas (clienteid, peluqueroid, servicioid, fechainicio, fechafin, estado, localid)
         VALUES (%s, %s, %s, %s, %s, 'Pendiente', %s)
+        RETURNING citaid
     """, (clienteid, peluqueroid, servicioid, fechainicio, fechafin, localid))
+
+    citaid = cursor.fetchone()[0]
+
+    cursor.execute("""
+        INSERT INTO actividad_peluquero (peluqueroid, tipo, citaid, clienteid)
+        VALUES (%s, 'Reserva', %s, %s)
+    """, (peluqueroid, citaid, clienteid))
 
     connection.commit()
     cursor.close()
@@ -150,6 +158,17 @@ def update_date(citaid):
                 barber_name=barber_name,
                 motivo=motivo
             )
+
+        if motivo.strip() == "Cita cancelada por el cliente":
+            cursor.execute("""
+                INSERT INTO actividad_peluquero (peluqueroid, tipo, citaid, clienteid)
+                VALUES (
+                    (SELECT peluqueroid FROM citas WHERE citaid = %s),
+                    'Cancelada',
+                    %s,
+                    (SELECT clienteid FROM citas WHERE citaid = %s)
+                )
+            """, (citaid, citaid, citaid))
 
     connection.commit()
     cursor.close()
