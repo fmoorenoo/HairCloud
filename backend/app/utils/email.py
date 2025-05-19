@@ -249,3 +249,105 @@ def send_booking_info_email(recipient, local_info, barber_name, service_info, ho
     msg = Message(subject, recipients=[recipient])
     msg.html = html_message
     mail.send(msg)
+
+
+def send_cancellation_email(recipient, cliente_nombre, fecha, hora_inicio, hora_fin, servicio_nombre, local_info, barber_name, motivo):
+    subject = "Cancelación de tu cita - HairCloud"
+    title = "Tu cita ha sido cancelada"
+
+    html_message = f"""
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: 'Poppins', Arial, sans-serif;
+                background-color: #f8fafc;
+                margin: 0;
+                padding: 0;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: auto;
+                background-color: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background-color: #ef4444;
+                color: white;
+                padding: 30px 25px;
+                text-align: center;
+            }}
+            .header h1 {{
+                margin: 0;
+                font-size: 24px;
+                font-weight: 600;
+            }}
+            .content {{
+                padding: 25px;
+                color: #1e293b;
+            }}
+            .content p {{
+                font-size: 16px;
+                margin-bottom: 15px;
+            }}
+            .motivo {{
+                background-color: #fef2f2;
+                border-left: 4px solid #dc2626;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                font-size: 14px;
+            }}
+            .info-box {{
+                background-color: #fef2f2;
+                border-left: 4px solid #dc2626;
+                padding: 20px;
+                border-radius: 8px;
+            }}
+            .info-row {{
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                font-size: 14px;
+            }}
+            .footer {{
+                text-align: center;
+                font-size: 13px;
+                padding: 20px;
+                color: #64748b;
+                background-color: #f8fafc;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{title}</h1>
+            </div>
+            <div class="content">
+                <p>Hola {cliente_nombre},</p>
+                <p>Lamentamos informarte que tu cita con {barber_name} en {local_info['nombre']} ha sido <strong>cancelada</strong>.</p>
+                <div class="motivo">
+                    <strong>Motivo:</strong> {motivo}
+                </div>
+                <div class="info-box">
+                    <div class="info-row"><strong>Servicio:</strong> {servicio_nombre}</div>
+                    <div class="info-row"><strong>Fecha:</strong> {fecha}</div>
+                    <div class="info-row"><strong>Hora inicio:</strong> {hora_inicio}</div>
+                    <div class="info-row"><strong>Hora fin:</strong> {hora_fin}</div>
+                </div>
+                <p style="margin-top: 20px;">Si necesitas más información o deseas reprogramar tu cita, no dudes en contactarnos.</p>
+            </div>
+            <div class="footer">
+                © {datetime.now().year} HairCloud. Gracias por confiar en nosotros.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    msg = Message(subject, recipients=[recipient])
+    msg.html = html_message
+    mail.send(msg)
