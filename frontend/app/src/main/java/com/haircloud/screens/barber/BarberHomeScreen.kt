@@ -620,12 +620,18 @@ fun BarberHomeScreen(navController: NavController, userId: Int?) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        BarberAppointmentsList(
-                            barberDatesState = barberDatesState,
-                            defaultFont = defaultFont,
-                            selectedDate = selectedDate,
-                            filterState = selectedFilterState
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 420.dp)
+                        ) {
+                            BarberAppointmentsList(
+                                barberDatesState = barberDatesState,
+                                defaultFont = defaultFont,
+                                selectedDate = selectedDate,
+                                filterState = selectedFilterState
+                            )
+                        }
                     }
                 }
             }
