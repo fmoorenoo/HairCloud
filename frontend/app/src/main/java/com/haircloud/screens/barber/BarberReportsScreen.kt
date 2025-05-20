@@ -5,12 +5,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,13 +36,12 @@ import com.haircloud.viewmodel.GetBarberState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Boolean?, isSemiAdmin: Boolean?) {
+fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boolean?, isSemiAdmin: Boolean?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     val barberViewModel = remember { BarberViewModel() }
     val barbershopViewModel = remember { BarbershopViewModel() }
     val barberState by barberViewModel.barberState.collectAsState()
-    val scrollState = rememberScrollState()
 
     var peluqueroId by remember { mutableIntStateOf(0) }
     var localId by remember { mutableIntStateOf(0) }
@@ -100,7 +96,6 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .verticalScroll(scrollState)
             ) {
                 Row(
                     modifier = Modifier
@@ -169,7 +164,7 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Ajustes",
+                        text = "Reportes",
                         color = Color.White,
                         style = TextStyle(fontFamily = defaultFont),
                         fontSize = 45.sp,
@@ -179,166 +174,82 @@ fun BarberSettingsScreen(navController: NavController, userId: Int?, isAdmin: Bo
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                SettingsOption(
-                    icon = Icons.Default.Store,
-                    title = "Información del Local",
-                    onClick = {
-                        if (!isNavigating) {
-                            isNavigating = true
-                            navController.navigate("barbershop_info/$localId/$userId/$isAdmin/$isSemiAdmin")
-                        }
-                    },
-                    defaultFont = defaultFont
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SettingsOption(
-                    icon = Icons.Default.ContentCut,
-                    title = "Servicios",
-                    onClick = {
-                        if (!isNavigating) {
-                            isNavigating = true
-                            navController.navigate("barbershop_services/$localId/$isAdmin/$isSemiAdmin")
-                        }
-                    },
-                    defaultFont = defaultFont
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SettingsOption(
-                    icon = Icons.Default.People,
-                    title = "Peluqueros",
-                    onClick = {
-                        if (!isNavigating) {
-                            isNavigating = true
-                            navController.navigate("barbershop_barbers/$localId/$userId/$isAdmin")
-                        }
-                    },
-                    defaultFont = defaultFont
-                )
             }
-
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(top = 16.dp)
             ) {
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(90.dp)
-                        .align(Alignment.Top)
-                        .background(Color(0xA9FFFFFF), shape = RoundedCornerShape(20.dp))
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .padding(16.dp)
+                        .align(Alignment.BottomCenter),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Ajustes",
-                        tint = Color(0xFF282828),
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(55.dp)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(75.dp)
-                        .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
-                        .clickable {
-                            if (!isNavigating) {
-                                isNavigating = true
-                                navController.navigate("barber_home/$userId")
+                            .size(75.dp)
+                            .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
+                            .clickable {
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("barber_settings/$userId/$isAdmin/$isSemiAdmin")
+                                }
                             }
-                        }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.EventAvailable,
-                        contentDescription = "Citas",
-                        tint = Color(0xFF282828),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(45.dp)
-                    )
-                }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Ajustes",
+                            tint = Color(0xFF282828),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(45.dp)
+                        )
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .size(75.dp)
-                        .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
-                        .clickable {
-                            if (!isNavigating) {
-                                isNavigating = true
-                                navController.navigate("barber_reports/$userId/$isAdmin/$isSemiAdmin")
-                            }
-                        }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.BarChart,
-                        contentDescription = "Reportes",
-                        tint = Color(0xFF282828),
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.Center)
-                            .size(45.dp)
-                    )
+                            .size(75.dp)
+                            .background(Color(0x8BB6B6B6), shape = RoundedCornerShape(20.dp))
+                            .clickable {
+                                if (!isNavigating) {
+                                    isNavigating = true
+                                    navController.navigate("barber_home/$userId")
+                                }
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EventAvailable,
+                            contentDescription = "Citas",
+                            tint = Color(0xFF282828),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(45.dp)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .align(Alignment.Top)
+                            .background(Color(0xA9FFFFFF), shape = RoundedCornerShape(20.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BarChart,
+                            contentDescription = "Reportes",
+                            tint = Color(0xFF282828),
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(55.dp)
+                        )
+                    }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun SettingsOption(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    onClick: () -> Unit,
-    defaultFont: FontFamily
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E1E1E)
-        ),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                text = title,
-                color = Color.White,
-                style = TextStyle(fontFamily = defaultFont),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Navigate",
-                tint = Color.White
-            )
         }
     }
 }

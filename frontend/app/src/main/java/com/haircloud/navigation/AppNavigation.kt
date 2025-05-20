@@ -110,10 +110,12 @@ fun AppNavigation(
         }
 
         // Peluqueros Reportes
-//        composable("barber_reports/{userId}") { backStackEntry ->
-//            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
-//            BarberReportsScreen(navController, userId)
-//        }
+        composable("barber_reports/{userId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull()
+            val isAdmin = backStackEntry.arguments?.getString("isAdmin")?.toBoolean() ?: false
+            val isSemiAdmin = backStackEntry.arguments?.getString("isSemiAdmin")?.toBoolean() ?: false
+            BarberReportsScreen(navController, userId, isAdmin, isSemiAdmin)
+        }
 
         // Peluqueros Info Barbería
         composable("barbershop_info/{userId}/{localId}/{isAdmin}/{isSemiAdmin}") { backStackEntry ->
