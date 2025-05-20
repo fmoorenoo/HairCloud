@@ -422,3 +422,111 @@ def get_barber_activity(peluqueroid):
 
     return jsonify(result), 200
 
+
+@barbers_bp.route('/get_barber_stats', methods=['GET'])
+def get_barber_stats():
+    peluqueroid = request.args.get("peluqueroid", type=int)
+    localid = request.args.get("localid", type=int)
+    start_date_str = request.args.get("start")
+    end_date_str = request.args.get("end")
+
+    if not all([peluqueroid, localid, start_date_str, end_date_str]):
+        return jsonify({"error": "Se requieren 'peluqueroid', 'localid', 'start' y 'end'"}), 400
+
+    try:
+        fecha_inicio = datetime.strptime(start_date_str, "%Y-%m-%d")
+        fecha_fin = datetime.strptime(end_date_str, "%Y-%m-%d") + timedelta(days=1)
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido. Usa YYYY-MM-DD"}), 400
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    # Total de clientes distintos atendidos
+    cursor.execute("""
+        SELECT COUNT(DISTINCT clienteid)
+        FROM citas
+        WHERE peluqueroid = %s AND localid = %s
+        AND fechainicio >= %s AND fechainicio < %s
+        AND estado = 'Completada'
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    total_clientes = cursor.fetchone()[0]
+
+    # Total citas realizadas
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM citas
+        WHERE peluqueroid = %s AND localid = %s
+        AND fechainicio >= %s AND fechainicio < %s
+        AND estado = 'Completada'
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    total_citas = cursor.fetchone()[0]
+
+    # Servicio más solicitado
+    cursor.execute("""
+        SELECT c.servicioid, s.nombre, COUNT(*) as total
+        FROM citas c
+        JOIN servicios s ON c.servicioid = s.servicioid
+        WHERE c.peluqueroid = %s AND c.localid = %s
+        AND c.fechainicio >= %s AND c.fechainicio < %s
+        AND c.estado = 'Completada'
+        GROUP BY c.servicioid, s.nombre
+        ORDER BY total DESC
+        LIMIT 1
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    servicio_data = cursor.fetchone()
+    servicio_mas_solicitado = {
+        "servicioid": servicio_data[0],
+        "nombre": servicio_data[1],
+        "cantidad": servicio_data[2]
+    } if servicio_data else None
+
+    # Ingresos totales
+    cursor.execute("""
+        SELECT SUM(s.precio)
+        FROM citas c
+        JOIN servicios s ON c.servicioid = s.servicioid
+        WHERE c.peluqueroid = %s AND c.localid = %s
+        AND c.fechainicio >= %s AND c.fechainicio < %s
+        AND c.estado = 'Completada'
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    ingresos_totales = cursor.fetchone()[0] or 0.0
+
+    # Cliente más frecuente
+    cursor.execute("""
+        SELECT cl.clienteid, cl.nombre, cl.telefono, COUNT(*) as total_citas
+        FROM citas c
+        JOIN clientes cl ON c.clienteid = cl.clienteid
+        WHERE c.peluqueroid = %s AND c.localid = %s
+        AND c.fechainicio >= %s AND c.fechainicio < %s
+        AND c.estado = 'Completada'
+        GROUP BY cl.clienteid, cl.nombre, cl.telefono
+        ORDER BY total_citas DESC
+        LIMIT 1
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    cliente_data = cursor.fetchone()
+    cliente_mas_frecuente = {
+        "clienteid": cliente_data[0],
+        "nombre": cliente_data[1],
+        "telefono": cliente_data[2],
+        "total_citas": cliente_data[3]
+    } if cliente_data else None
+
+
+    # Media de citas por día
+    dias = (fecha_fin - fecha_inicio).days or 1
+    promedio_citas_por_dia = total_citas / dias
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "total_clientes_atendidos": total_clientes,
+        "total_citas": total_citas,
+        "servicio_mas_solicitado": servicio_mas_solicitado,
+        "cliente_mas_frecuente": cliente_mas_frecuente,
+        "ingresos_totales": float(ingresos_totales),
+        "promedio_citas_por_dia": round(promedio_citas_por_dia, 2)
+    }), 200
+
+
