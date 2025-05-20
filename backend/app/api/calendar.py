@@ -124,7 +124,7 @@ def get_available_slots(peluqueroid):
     cursor.execute("""
         SELECT fechainicio, fechafin
         FROM citas
-        WHERE peluqueroid = %s AND DATE(fechainicio) = %s
+        WHERE peluqueroid = %s AND DATE(fechainicio) = %s AND estado != 'Cancelada'
         ORDER BY fechainicio
     """, (peluqueroid, fecha))
 
