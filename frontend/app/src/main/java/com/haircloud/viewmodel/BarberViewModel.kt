@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.haircloud.data.model.BarberActivityResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.BarberStatsResponse
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
 import com.haircloud.data.model.WorkDaySchedule
@@ -34,6 +35,9 @@ class BarberViewModel : ViewModel() {
 
     private val _barberActivityState = MutableStateFlow<BarberActivityState>(BarberActivityState.Idle)
     val barberActivityState: StateFlow<BarberActivityState> = _barberActivityState
+
+    private val _barberStatsState = MutableStateFlow<BarberStatsState>(BarberStatsState.Idle)
+    val barberStatsState: StateFlow<BarberStatsState> = _barberStatsState
 
     fun getBarber(userId: Int) {
         _barberState.value = GetBarberState.Loading
@@ -191,6 +195,18 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+    fun getBarberStats(peluqueroId: Int, localId: Int, start: String, end: String) {
+        _barberStatsState.value = BarberStatsState.Loading
+        viewModelScope.launch {
+            val result = repository.getBarberStats(peluqueroId, localId, start, end)
+            _barberStatsState.value = if (result.isSuccess) {
+                BarberStatsState.Success(result.getOrThrow())
+            } else {
+                BarberStatsState.Error(result.exceptionOrNull()?.message ?: "Error al obtener estadísticas")
+            }
+        }
+    }
 }
 
 sealed class GetBarberState {
@@ -233,6 +249,13 @@ sealed class BarberActivityState {
     object Loading : BarberActivityState()
     data class Success(val actividades: List<BarberActivityResponse>) : BarberActivityState()
     data class Error(val message: String) : BarberActivityState()
+}
+
+sealed class BarberStatsState {
+    object Idle : BarberStatsState()
+    object Loading : BarberStatsState()
+    data class Success(val stats: BarberStatsResponse) : BarberStatsState()
+    data class Error(val message: String) : BarberStatsState()
 }
 
 

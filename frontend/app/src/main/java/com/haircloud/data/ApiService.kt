@@ -173,4 +173,12 @@ interface ApiService {
 
     @GET("/barbers/get_barber_activity/{peluqueroid}")
     fun getBarberActivity(@Path("peluqueroid") peluqueroId: Int): Call<List<BarberActivityResponse>>
+
+    @GET("/barbers/get_barber_stats")
+    fun getBarberStats(
+        @retrofit2.http.Query("peluqueroid") peluqueroId: Int,
+        @retrofit2.http.Query("localid") localId: Int,
+        @retrofit2.http.Query("start") startDate: String,
+        @retrofit2.http.Query("end") endDate: String
+    ): Call<BarberStatsResponse>
 }

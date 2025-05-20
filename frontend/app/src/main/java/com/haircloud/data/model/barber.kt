@@ -61,3 +61,24 @@ data class BarberActivityResponse(
     val servicio_nombre: String,
     val local_nombre: String
 )
+
+data class BarberStatsResponse(
+    val total_clientes_atendidos: Int,
+    val total_citas: Int,
+    val servicio_mas_solicitado: ServicioMasSolicitado?,
+    val cliente_mas_frecuente: ClienteFrecuente?,
+    val ingresos_totales: Double,
+    val promedio_citas_por_dia: Double
+)
+
+data class ServicioMasSolicitado(
+    val servicioid: Int,
+    val nombre: String,
+    val cantidad: Int
+)
+
+data class ClienteFrecuente(
+    val clienteid: Int,
+    val nombre: String,
+    val total_citas: Int
+)

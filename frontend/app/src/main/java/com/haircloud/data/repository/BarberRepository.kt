@@ -5,6 +5,7 @@ import com.haircloud.data.ApiResponse
 import com.haircloud.data.model.BarberActivityResponse
 import com.haircloud.data.model.GetBarberResponse
 import com.haircloud.data.model.BarberDate
+import com.haircloud.data.model.BarberStatsResponse
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
 import com.haircloud.data.model.WorkDaySchedule
@@ -224,6 +225,23 @@ class BarberRepository {
                 Result.success(response.body() ?: emptyList())
             } else {
                 Result.failure(Exception("Error al obtener la actividad del peluquero"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getBarberStats(peluqueroId: Int, localId: Int, start: String, end: String): Result<BarberStatsResponse> {
+        return try {
+            val response = withContext(Dispatchers.IO) {
+                ApiClient.instance.getBarberStats(peluqueroId, localId, start, end).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
+                Result.failure(Exception(JSONObject(errorMessage).optString("error", "Error al obtener estadísticas")))
             }
         } catch (e: Exception) {
             Result.failure(e)
