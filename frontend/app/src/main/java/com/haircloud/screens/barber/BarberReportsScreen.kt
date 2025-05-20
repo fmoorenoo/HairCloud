@@ -1,12 +1,15 @@
 package com.haircloud.screens.barber
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,12 +30,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.haircloud.R
+import com.haircloud.data.model.BarberStatsResponse
 import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
+import com.haircloud.utils.formatCurrency
 import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.BarberStatsState
 import com.haircloud.viewmodel.BarberViewModel
-import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.GetBarberState
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -40,14 +47,27 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
     val snackbarHostState = remember { SnackbarHostState() }
     var isNavigating by remember { mutableStateOf(false) }
     val barberViewModel = remember { BarberViewModel() }
-    val barbershopViewModel = remember { BarbershopViewModel() }
     val barberState by barberViewModel.barberState.collectAsState()
+    val barberStatsState by barberViewModel.barberStatsState.collectAsState()
+    var showMenu by remember { mutableStateOf(false) }
+    val opcionesFecha = listOf("Hoy", "Esta semana", "Este mes", "Este año", "Personalizado")
 
     var peluqueroId by remember { mutableIntStateOf(0) }
     var localId by remember { mutableIntStateOf(0) }
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
+
+    val today = LocalDate.now()
+    val startOfMonth = today.withDayOfMonth(1)
+
+    var startDate by remember { mutableStateOf(startOfMonth) }
+    var endDate by remember { mutableStateOf(today) }
+
+    val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    val displayDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+    var isCalendarVisible by remember { mutableStateOf(false) }
 
     val blackWhiteGradient =
         Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
@@ -70,7 +90,13 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
         if (barberState is GetBarberState.Success) {
             peluqueroId = (barberState as GetBarberState.Success).barber.peluqueroid
             localId = (barberState as GetBarberState.Success).barber.localid
-            barbershopViewModel.getBarbershopById(userId ?: 0, localId)
+
+            barberViewModel.getBarberStats(
+                peluqueroId,
+                localId,
+                startDate.format(dateFormatter),
+                endDate.format(dateFormatter)
+            )
         }
     }
 
@@ -164,7 +190,7 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Reportes",
+                        text = "Estadísticas",
                         color = Color.White,
                         style = TextStyle(fontFamily = defaultFont),
                         fontSize = 45.sp,
@@ -174,8 +200,171 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0x88171717)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val totalDias = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
+                            Text(
+                                text = "${startDate.format(displayDateFormatter)} - ${endDate.format(displayDateFormatter)} ($totalDias días)",
+                                color = Color.White,
+                                style = TextStyle(fontFamily = defaultFont),
+                                fontSize = 18.sp
+                            )
+
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.DateRange,
+                                        contentDescription = "Cambiar fechas",
+                                        tint = Color.White
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false },
+                                    modifier = Modifier.background(Color(0xFF444444))
+                                ) {
+                                    opcionesFecha.forEach { opcion ->
+                                        DropdownMenuItem(
+                                            text = { Text(opcion, color = Color.White) },
+                                            onClick = {
+                                                showMenu = false
+                                                isCalendarVisible = false
+                                                when (opcion) {
+                                                    "Hoy" -> {
+                                                        startDate = today
+                                                        endDate = today
+                                                    }
+                                                    "Esta semana" -> {
+                                                        startDate = today.minusDays((today.dayOfWeek.value - 1).toLong())
+                                                        endDate = today
+                                                    }
+                                                    "Este mes" -> {
+                                                        startDate = today.withDayOfMonth(1)
+                                                        endDate = today
+                                                    }
+                                                    "Este año" -> {
+                                                        startDate = today.withDayOfYear(1)
+                                                        endDate = today
+                                                    }
+                                                    "Personalizado" -> {
+                                                        isCalendarVisible = true
+                                                    }
+                                                }
+
+                                                if (opcion != "Personalizado" && peluqueroId != 0 && localId != 0) {
+                                                    barberViewModel.getBarberStats(
+                                                        peluqueroId,
+                                                        localId,
+                                                        startDate.format(dateFormatter),
+                                                        endDate.format(dateFormatter)
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AnimatedVisibility(visible = isCalendarVisible) {
+                    StatsDateCalendar(
+                        show = true,
+                        onCancel = { isCalendarVisible = false },
+                        onConfirm = { start, end ->
+                            startDate = start
+                            endDate = end
+                            isCalendarVisible = false
+
+                            if (peluqueroId != 0 && localId != 0) {
+                                barberViewModel.getBarberStats(
+                                    peluqueroId,
+                                    localId,
+                                    start.format(dateFormatter),
+                                    end.format(dateFormatter)
+                                )
+                            }
+                        }
+                    )
+                }
+
+                AnimatedVisibility(visible = !isCalendarVisible) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 490.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 16.dp)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            when (barberStatsState) {
+                                is BarberStatsState.Success -> {
+                                    val stats = (barberStatsState as BarberStatsState.Success).stats
+                                    StatsContent(stats, defaultFont)
+                                }
+                                is BarberStatsState.Error -> {
+                                    Text(
+                                        text = "Error al cargar estadísticas: ${(barberStatsState as BarberStatsState.Error).message}",
+                                        color = Color.White,
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                                is BarberStatsState.Loading -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(300.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(color = Color.White)
+                                    }
+                                }
+                                else -> {
+                                    Text(
+                                        text = "Cargando información...",
+                                        color = Color.White,
+                                        style = TextStyle(fontFamily = defaultFont),
+                                        fontSize = 16.sp,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+                Spacer(modifier = Modifier.height(140.dp))
             }
             Box(
                 modifier = Modifier
@@ -250,6 +439,252 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Person,
+                title = "Clientes atendidos",
+                value = "${stats.total_clientes_atendidos}",
+                defaultFont = defaultFont
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.CalendarMonth,
+                title = "Citas completadas",
+                value = "${stats.total_citas}",
+                defaultFont = defaultFont,
+                color = Color(0x66949494)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Euro,
+                title = "Ingresos totales",
+                value = stats.ingresos_totales.formatCurrency(),
+                defaultFont = defaultFont,
+                color = Color(0x66A6A6A6)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Timeline,
+                title = "Citas/día",
+                value = "%.1f".format(stats.promedio_citas_por_dia),
+                defaultFont = defaultFont
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Close,
+                title = "Canceladas",
+                value = "${stats.total_canceladas}",
+                defaultFont = defaultFont
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            StatsCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.ContentPasteOff,
+                title = "No completadas",
+                value = "${stats.total_no_completadas}",
+                defaultFont = defaultFont,
+                color = Color(0x66A6A6A6)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        stats.cliente_mas_frecuente?.let { cliente ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0x66FFFFFF)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(32.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = "Cliente más frecuente",
+                            color = Color.White,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = cliente.nombre,
+                        color = Color.White,
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "Total de citas: ${cliente.total_citas}",
+                        color = Color.White,
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        stats.servicio_mas_solicitado?.let { servicio ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0x66FFFFFF)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = Color(0xFFFF6B6B),
+                            modifier = Modifier.size(32.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = "Servicio más solicitado",
+                            color = Color.White,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = servicio.nombre,
+                        color = Color.White,
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "Reservado ${servicio.cantidad} veces",
+                        color = Color.White,
+                        style = TextStyle(fontFamily = defaultFont),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StatsCard(
+    modifier: Modifier = Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    value: String,
+    defaultFont: FontFamily,
+    color: Color = Color(0x66FFFFFF)
+) {
+    Card(
+        modifier = modifier
+            .padding(4.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(12.dp).fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = title,
+                color = Color.White,
+                style = TextStyle(fontFamily = defaultFont),
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = value,
+                color = Color.White,
+                style = TextStyle(fontFamily = defaultFont),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
