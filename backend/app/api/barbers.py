@@ -462,6 +462,26 @@ def get_barber_stats():
     """, (peluqueroid, localid, fecha_inicio, fecha_fin))
     total_citas = cursor.fetchone()[0]
 
+    # Citas canceladas
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM citas
+        WHERE peluqueroid = %s AND localid = %s
+        AND fechainicio >= %s AND fechainicio < %s
+        AND estado = 'Cancelada'
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    total_canceladas = cursor.fetchone()[0]
+
+    # Citas no completadas
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM citas
+        WHERE peluqueroid = %s AND localid = %s
+        AND fechainicio >= %s AND fechainicio < %s
+        AND estado = 'No completada'
+    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
+    total_no_completadas = cursor.fetchone()[0]
+
     # Servicio más solicitado
     cursor.execute("""
         SELECT c.servicioid, s.nombre, COUNT(*) as total
@@ -522,6 +542,8 @@ def get_barber_stats():
     return jsonify({
         "total_clientes_atendidos": total_clientes,
         "total_citas": total_citas,
+        "total_canceladas": total_canceladas,
+        "total_no_completadas": total_no_completadas,
         "servicio_mas_solicitado": servicio_mas_solicitado,
         "cliente_mas_frecuente": cliente_mas_frecuente,
         "ingresos_totales": float(ingresos_totales),
