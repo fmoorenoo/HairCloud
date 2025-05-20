@@ -494,13 +494,13 @@ def get_barber_stats():
 
     # Cliente más frecuente
     cursor.execute("""
-        SELECT cl.clienteid, cl.nombre, cl.telefono, COUNT(*) as total_citas
+        SELECT cl.clienteid, cl.nombre, COUNT(*) as total_citas
         FROM citas c
         JOIN clientes cl ON c.clienteid = cl.clienteid
         WHERE c.peluqueroid = %s AND c.localid = %s
         AND c.fechainicio >= %s AND c.fechainicio < %s
         AND c.estado = 'Completada'
-        GROUP BY cl.clienteid, cl.nombre, cl.telefono
+        GROUP BY cl.clienteid, cl.nombre
         ORDER BY total_citas DESC
         LIMIT 1
     """, (peluqueroid, localid, fecha_inicio, fecha_fin))
@@ -508,8 +508,7 @@ def get_barber_stats():
     cliente_mas_frecuente = {
         "clienteid": cliente_data[0],
         "nombre": cliente_data[1],
-        "telefono": cliente_data[2],
-        "total_citas": cliente_data[3]
+        "total_citas": cliente_data[2]
     } if cliente_data else None
 
 
