@@ -5,11 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material3.*
@@ -40,7 +40,6 @@ import java.util.Locale
 
 
 private val TextPrimary = Color(0xFFF5F5F5)
-private val TextSecondary = Color(0xFFBBBBBB)
 
 
 
@@ -107,13 +106,6 @@ fun BarberNotifications(
                         fontWeight = FontWeight.Bold,
                     )
 
-                    Icon(
-                        imageVector = Icons.Default.ChatBubbleOutline,
-                        contentDescription = "Chat",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(45.dp)
-                    )
-
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -122,18 +114,9 @@ fun BarberNotifications(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
-                    VerticalDivider(
-                        color = Color(0xFF3D8EE6),
-                        modifier = Modifier
-                            .width(8.dp)
-                            .height(20.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
                     Text(
                         text = "Últimos 7 días",
-                        color = TextSecondary,
+                        color = Color(0xFFEFEFEF),
                         style = TextStyle(fontFamily = defaultFont),
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Medium
@@ -160,7 +143,7 @@ fun BarberNotifications(
                                 )
                                 Text(
                                     text = errorMessage,
-                                    color = TextSecondary,
+                                    color = Color(0xFFBBBBBB),
                                     style = TextStyle(fontFamily = defaultFont),
                                     fontSize = 14.sp,
                                     textAlign = TextAlign.Center
@@ -183,12 +166,16 @@ fun BarberNotifications(
                     }
                     is BarberActivityState.Success -> {
                         val activities = (activityState as BarberActivityState.Success).actividades
+                        val listState = rememberLazyListState()
 
                         if (activities.isEmpty()) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text("No hay actividad reciente", color = TextPrimary)
                             }
                         } else {
+                            LaunchedEffect(activities) {
+                                listState.scrollToItem(listState.layoutInfo.totalItemsCount)
+                            }
                             val activitiesByDate = mutableMapOf<LocalDate, MutableList<Pair<BarberActivityResponse, LocalDateTime>>>()
 
                             activities.forEach { activity ->
@@ -203,7 +190,8 @@ fun BarberNotifications(
 
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                state = listState
                             ) {
                                 for (date in sortedDates) {
                                     val dateActivities = activitiesByDate[date] ?: continue
@@ -219,7 +207,7 @@ fun BarberNotifications(
                                     }
 
                                     item {
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Spacer(modifier = Modifier.height(12.dp))
                                     }
                                 }
                             }
@@ -239,7 +227,7 @@ fun DateHeader(date: LocalDate) {
     val formattedDate = date.format(formatter.withLocale(locale)).replaceFirstChar { it.uppercase() }
 
     val isToday = date == LocalDate.now()
-    val headerColor = if (isToday) Color(0xFF3D8EE6) else TextSecondary
+    val headerColor = if (isToday) Color(0xFF3DB6E6) else Color(0xFFBBBBBB)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -250,6 +238,7 @@ fun DateHeader(date: LocalDate) {
     ) {
         HorizontalDivider(
             color = headerColor.copy(alpha = 0.5f),
+            thickness = if (isToday) 2.dp else 1.dp,
             modifier = Modifier.weight(1f)
         )
 
@@ -263,7 +252,7 @@ fun DateHeader(date: LocalDate) {
             Text(
                 text = if (isToday) "Hoy, $formattedDate" else formattedDate,
                 color = Color.White,
-                fontSize = 15.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
@@ -271,6 +260,7 @@ fun DateHeader(date: LocalDate) {
 
         HorizontalDivider(
             color = headerColor.copy(alpha = 0.5f),
+            thickness = if (isToday) 2.dp else 1.dp,
             modifier = Modifier.weight(1f)
         )
     }
@@ -280,7 +270,7 @@ fun DateHeader(date: LocalDate) {
 fun ActivityItem(activity: BarberActivityResponse) {
     val isReserva = activity.tipo == "Reserva"
 
-    val backgroundColor = Color(0xFF2A2A2A)
+    val backgroundColor = Color(0xFF333333)
 
     val borderColor = when {
         isReserva -> Color(0xFF3DB43F).copy(alpha = 0.3f)
@@ -329,7 +319,7 @@ fun ActivityItem(activity: BarberActivityResponse) {
                     }
 
                     Text(
-                        text = if (isReserva) "Nueva Reserva" else "Cita Cancelada",
+                        text = if (isReserva) "Nueva Cita" else "Cita Cancelada",
                         color = iconTint,
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp
@@ -339,7 +329,7 @@ fun ActivityItem(activity: BarberActivityResponse) {
 
                     Text(
                         text = formatTime(activity.fecha),
-                        color = TextSecondary,
+                        color = Color(0xFFBBBBBB),
                         fontSize = 17.sp
                     )
                 }
