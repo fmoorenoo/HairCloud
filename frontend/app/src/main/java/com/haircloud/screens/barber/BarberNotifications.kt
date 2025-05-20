@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.material3.*
@@ -88,13 +89,13 @@ fun BarberNotifications(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier
                             .clip(CircleShape)
-                            .size(55.dp)
+                            .size(50.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = TextPrimary,
-                            modifier = Modifier.size(45.dp)
+                            modifier = Modifier.size(40.dp)
                         )
                     }
 
@@ -104,6 +105,13 @@ fun BarberNotifications(
                         style = TextStyle(fontFamily = defaultFont),
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.ChatBubbleOutline,
+                        contentDescription = "Chat",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(45.dp)
                     )
 
                 }
@@ -274,12 +282,12 @@ fun ActivityItem(activity: BarberActivityResponse) {
 
     val borderColor = when {
         isReserva -> Color(0xFF3DB43F).copy(alpha = 0.3f)
-        else -> Color(0xFF914243).copy(alpha = 0.3f)
+        else -> Color(0xFFC94C4D).copy(alpha = 0.3f)
     }
 
     val iconTint = when {
         isReserva -> Color(0xFF3DB43F)
-        else -> Color(0xFF914243)
+        else -> Color(0xFFC94C4D)
     }
 
     Column(
