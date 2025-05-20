@@ -1,5 +1,6 @@
 package com.haircloud.utils
 
+import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -39,4 +40,9 @@ fun formatDateToLong(date: LocalDate): String {
     val dayOfMonth = date.dayOfMonth
     val month = date.month.getDisplayName(TextStyle.FULL, Locale("es", "ES"))
     return "${dayOfWeek.replaceFirstChar { it.uppercase() }} $dayOfMonth de ${month.lowercase()}"
+}
+
+fun Double.formatCurrency(locale: Locale = Locale("es", "ES")): String {
+    val format = NumberFormat.getCurrencyInstance(locale)
+    return format.format(this)
 }
