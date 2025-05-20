@@ -82,7 +82,8 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
     val clientViewModel = remember { ClientViewModel() }
     val clientState by clientViewModel.clientState.collectAsState()
     var clienteId by remember { mutableIntStateOf(-1) }
-    var infoSectionExpanded by remember { mutableStateOf(true) }
+    var infoSectionExpanded by remember { mutableStateOf(false) }
+    var servicesSectionExpanded by remember { mutableStateOf(true) }
     var selectedService by remember { mutableStateOf<ServiceResponse?>(null) }
     var showSelectionCard by remember { mutableStateOf(false) }
     var showReviews by remember { mutableStateOf(false) }
@@ -393,7 +394,10 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { infoSectionExpanded = !infoSectionExpanded },
+                                    .clickable {
+                                        infoSectionExpanded = !infoSectionExpanded
+                                        if (infoSectionExpanded) servicesSectionExpanded = false
+                                    },
                                 colors = CardDefaults.cardColors(
                                     containerColor = Color(0xFF3D8EE6)
                                 ),
@@ -483,6 +487,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                 localId = localId,
                                 onServiceSelected = { service ->
                                     infoSectionExpanded = false
+                                    servicesSectionExpanded = true
                                     selectedService = service
                                     showSelectionCard = service != null
                                 }
@@ -520,7 +525,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                                 style = TextStyle(fontFamily = defaultFont),
                                                 fontSize = 24.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF151515)
+                                                color = Color(0xFFFFFFFF)
                                             )
 
                                             Text(
@@ -528,7 +533,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                                 style = TextStyle(fontFamily = defaultFont),
                                                 fontSize = 24.sp,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = Color(0xFF151515)
+                                                color = Color(0xFFFFFFFF)
                                             )
                                         }
 
@@ -545,7 +550,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                             },
                                             colors = ButtonDefaults.buttonColors(
                                                 containerColor = Color(0xFF151515),
-                                                contentColor = Color(0xFF3D8EE6)
+                                                contentColor = Color(0xFFFFFFFF)
                                             ),
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.fillMaxWidth()
@@ -553,7 +558,7 @@ fun BarberInfoScreen(navController: NavController, userId: Int?, localId: Int?) 
                                             Text(
                                                 text = "Continuar",
                                                 style = TextStyle(fontFamily = defaultFont),
-                                                fontSize = 18.sp,
+                                                fontSize = 20.sp,
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                         }
