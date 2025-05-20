@@ -65,6 +65,8 @@ data class BarberActivityResponse(
 data class BarberStatsResponse(
     val total_clientes_atendidos: Int,
     val total_citas: Int,
+    val total_canceladas: Int,
+    val total_no_completadas: Int,
     val servicio_mas_solicitado: ServicioMasSolicitado?,
     val cliente_mas_frecuente: ClienteFrecuente?,
     val ingresos_totales: Double,
