@@ -114,6 +114,9 @@ def update_barber(user_id):
     telefono = data.get("telefono")
     if telefono == "nulo":
         telefono = None
+    especialidad = data.get("especialidad")
+    if especialidad == "nulo":
+        especialidad = None
 
     connection = get_connection()
     cursor = connection.cursor()
@@ -165,6 +168,9 @@ def update_barber(user_id):
     if "telefono" in data:
         barber_updates.append("telefono = %s")
         barber_values.append(telefono)
+    if "especialidad" in data:
+        barber_updates.append("especialidad = %s")
+        barber_values.append(especialidad)
 
     if barber_updates:
         barber_values.append(user_id)
