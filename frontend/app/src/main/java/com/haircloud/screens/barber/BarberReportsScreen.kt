@@ -685,7 +685,7 @@ fun StatsContent(
                 },
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF1E88E5)
+                containerColor = Color(0xFF2D2D2D)
             )
         ) {
             Row(
@@ -699,13 +699,13 @@ fun StatsContent(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Enviar",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(14.dp))
                 Text(
-                    text = if (emailState is BarberStatsEmailState.Sending) "Enviando..." else "Enviar resumen a mi correo",
+                    text = if (emailState is BarberStatsEmailState.Sending) "Enviando..." else "Enviar a mi correo",
                     color = Color.White,
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = defaultFont
                 )
