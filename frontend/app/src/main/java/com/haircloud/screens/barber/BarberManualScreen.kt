@@ -161,7 +161,7 @@ fun BarberManualScreen(navController: NavController) {
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "• Fecha: Selecciona un día en el calendario\n• Citas: Gestiona tus citas del día seleccionado\n• Filtro: Muestra solo las citas pendientes/completadas/canceladas\n" +
+                                    text = "• Fecha: Selecciona un día en el calendario\n• Citas: Gestiona tus citas del día seleccionado\n• Filtro: Muestra solo las citas pendientes/completadas/no completadas/canceladas\n" +
                                             "• Ve la información del cliente y de su reserva, y cambia el estado de la cita",
                                     color = Color(0xFFE0E0E0),
                                     style = TextStyle(fontFamily = defaultFont),
@@ -264,7 +264,10 @@ fun BarberManualScreen(navController: NavController) {
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "• Pendiente...",
+                                    text = "• Selector de fecha: Elige un rango de fechas para ver las estadísticas. Por defecto verás las del mes actual\n" +
+                                            "• Opciones: Elige entre ver las estadísticas de hoy, esta semana, este mes, este año, o personalizado\n" +
+                                            "• Guardar datos: Recibe las estadísticas generadas por correo electrónico"
+                                    ,
                                     color = Color(0xFFE0E0E0),
                                     style = TextStyle(fontFamily = defaultFont),
                                     fontSize = 22.sp,
