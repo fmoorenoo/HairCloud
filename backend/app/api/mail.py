@@ -1,6 +1,6 @@
 from app.api import mail_bp
 from app.db.connection import get_connection
-from app.utils.email import send_booking_info_email
+from app.utils.email import send_booking_info_email, send_barber_stats_email
 from flask import request, jsonify
 from datetime import datetime
 
@@ -75,6 +75,45 @@ def send_info_date():
         )
 
         return jsonify({"message": "Correo enviado con éxito"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+@mail_bp.route('/send_barber_stats', methods=['POST'])
+def send_barber_stats():
+    connection = None
+    cursor = None
+    try:
+        data = request.get_json()
+        peluqueroid = data['peluqueroid']
+        stats = data['stats']
+        start_date = data['start_date']
+        end_date = data['end_date']
+
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT usuarioid FROM peluqueros WHERE peluqueroid = %s", (peluqueroid,))
+        row = cursor.fetchone()
+        if not row:
+            raise Exception("No se encontró el peluquero.")
+        usuarioid = row[0]
+
+        cursor.execute("SELECT email FROM usuarios WHERE usuarioid = %s", (usuarioid,))
+        row = cursor.fetchone()
+        if not row:
+            raise Exception("No se encontró el usuario.")
+        recipient = row[0]
+
+        send_barber_stats_email(recipient, stats, start_date, end_date)
+        return jsonify({"message": "Estadísticas enviadas con éxito"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
