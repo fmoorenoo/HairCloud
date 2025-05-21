@@ -8,6 +8,7 @@ import com.haircloud.data.model.BarberDate
 import com.haircloud.data.model.BarberStatsResponse
 import com.haircloud.data.model.CreateBarberRequest
 import com.haircloud.data.model.InactiveBarberResponse
+import com.haircloud.data.model.SendBarberStatsRequest
 import com.haircloud.data.model.WorkDaySchedule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -242,6 +243,24 @@ class BarberRepository {
             } else {
                 val errorMessage = response.errorBody()?.string() ?: "Error desconocido"
                 Result.failure(Exception(JSONObject(errorMessage).optString("error", "Error al obtener estadísticas")))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendBarberStatsEmail(peluqueroid: Int, stats: BarberStatsResponse, startDate: String, endDate: String): Result<ApiResponse> {
+        return try {
+            val request = SendBarberStatsRequest(peluqueroid, stats, startDate, endDate)
+            val response = withContext(Dispatchers.IO) {
+                api.sendBarberStats(request).execute()
+            }
+
+            if (response.isSuccessful) {
+                Result.success(response.body()!!)
+            } else {
+                val error = response.errorBody()?.string() ?: "{}"
+                Result.failure(Exception(JSONObject(error).optString("error", "Error al enviar estadísticas")))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -39,6 +39,9 @@ class BarberViewModel : ViewModel() {
     private val _barberStatsState = MutableStateFlow<BarberStatsState>(BarberStatsState.Idle)
     val barberStatsState: StateFlow<BarberStatsState> = _barberStatsState
 
+    private val _barberStatsEmailState = MutableStateFlow<BarberStatsEmailState>(BarberStatsEmailState.Idle)
+    val barberStatsEmailState: StateFlow<BarberStatsEmailState> = _barberStatsEmailState
+
     fun getBarber(userId: Int) {
         _barberState.value = GetBarberState.Loading
         viewModelScope.launch {
@@ -207,6 +210,27 @@ class BarberViewModel : ViewModel() {
             }
         }
     }
+
+    fun sendBarberStatsEmail(
+        peluqueroId: Int,
+        stats: BarberStatsResponse,
+        startDate: String,
+        endDate: String
+    ) {
+        _barberStatsEmailState.value = BarberStatsEmailState.Sending
+        viewModelScope.launch {
+            val result = repository.sendBarberStatsEmail(peluqueroId, stats, startDate, endDate)
+            _barberStatsEmailState.value = if (result.isSuccess) {
+                BarberStatsEmailState.Success(result.getOrThrow().message)
+            } else {
+                BarberStatsEmailState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            }
+        }
+    }
+
+    fun resetBarberStatsEmailState() {
+        _barberStatsEmailState.value = BarberStatsEmailState.Idle
+    }
 }
 
 sealed class GetBarberState {
@@ -258,5 +282,9 @@ sealed class BarberStatsState {
     data class Error(val message: String) : BarberStatsState()
 }
 
-
-
+sealed class BarberStatsEmailState {
+    object Idle : BarberStatsEmailState()
+    object Sending : BarberStatsEmailState()
+    data class Success(val message: String) : BarberStatsEmailState()
+    data class Error(val message: String) : BarberStatsEmailState()
+}

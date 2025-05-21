@@ -84,3 +84,12 @@ data class ClienteFrecuente(
     val nombre: String,
     val total_citas: Int
 )
+
+
+data class SendBarberStatsRequest(
+    val peluqueroid: Int,
+    val stats: BarberStatsResponse,
+    val start_date: String,
+    val end_date: String
+)
+

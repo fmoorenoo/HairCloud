@@ -181,4 +181,7 @@ interface ApiService {
         @retrofit2.http.Query("start") startDate: String,
         @retrofit2.http.Query("end") endDate: String
     ): Call<BarberStatsResponse>
+
+    @POST("/mail/send_barber_stats")
+    fun sendBarberStats(@Body request: SendBarberStatsRequest): Call<ApiResponse>
 }

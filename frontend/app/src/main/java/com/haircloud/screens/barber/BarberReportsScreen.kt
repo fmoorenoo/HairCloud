@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +36,7 @@ import com.haircloud.utils.CustomSnackbarHost
 import com.haircloud.utils.SnackbarType
 import com.haircloud.utils.formatCurrency
 import com.haircloud.utils.showTypedSnackbar
+import com.haircloud.viewmodel.BarberStatsEmailState
 import com.haircloud.viewmodel.BarberStatsState
 import com.haircloud.viewmodel.BarberViewModel
 import com.haircloud.viewmodel.GetBarberState
@@ -205,82 +207,77 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 8.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0x88171717)
                     )
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val totalDias = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
-                            Text(
-                                text = "${startDate.format(displayDateFormatter)} - ${endDate.format(displayDateFormatter)} ($totalDias días)",
-                                color = Color.White,
-                                style = TextStyle(fontFamily = defaultFont),
-                                fontSize = 18.sp
-                            )
+                        val totalDias = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1
+                        Text(
+                            text = "${startDate.format(displayDateFormatter)} - ${endDate.format(displayDateFormatter)} ($totalDias días)",
+                            color = Color.White,
+                            style = TextStyle(fontFamily = defaultFont),
+                            fontSize = 20.sp
+                        )
 
-                            Box {
-                                IconButton(onClick = { showMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = "Cambiar fechas",
-                                        tint = Color.White
-                                    )
-                                }
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = "Cambiar fechas",
+                                    tint = Color.White
+                                )
+                            }
 
-                                DropdownMenu(
-                                    expanded = showMenu,
-                                    onDismissRequest = { showMenu = false },
-                                    modifier = Modifier.background(Color(0xFF444444))
-                                ) {
-                                    opcionesFecha.forEach { opcion ->
-                                        DropdownMenuItem(
-                                            text = { Text(opcion, color = Color.White) },
-                                            onClick = {
-                                                showMenu = false
-                                                isCalendarVisible = false
-                                                when (opcion) {
-                                                    "Hoy" -> {
-                                                        startDate = today
-                                                        endDate = today
-                                                    }
-                                                    "Esta semana" -> {
-                                                        startDate = today.minusDays((today.dayOfWeek.value - 1).toLong())
-                                                        endDate = today
-                                                    }
-                                                    "Este mes" -> {
-                                                        startDate = today.withDayOfMonth(1)
-                                                        endDate = today
-                                                    }
-                                                    "Este año" -> {
-                                                        startDate = today.withDayOfYear(1)
-                                                        endDate = today
-                                                    }
-                                                    "Personalizado" -> {
-                                                        isCalendarVisible = true
-                                                    }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.background(Color(0xFF444444))
+                            ) {
+                                opcionesFecha.forEach { opcion ->
+                                    DropdownMenuItem(
+                                        text = { Text(opcion, color = Color.White) },
+                                        onClick = {
+                                            showMenu = false
+                                            isCalendarVisible = false
+                                            when (opcion) {
+                                                "Hoy" -> {
+                                                    startDate = today
+                                                    endDate = today
                                                 }
-
-                                                if (opcion != "Personalizado" && peluqueroId != 0 && localId != 0) {
-                                                    barberViewModel.getBarberStats(
-                                                        peluqueroId,
-                                                        localId,
-                                                        startDate.format(dateFormatter),
-                                                        endDate.format(dateFormatter)
-                                                    )
+                                                "Esta semana" -> {
+                                                    startDate = today.minusDays((today.dayOfWeek.value - 1).toLong())
+                                                    endDate = today
+                                                }
+                                                "Este mes" -> {
+                                                    startDate = today.withDayOfMonth(1)
+                                                    endDate = today
+                                                }
+                                                "Este año" -> {
+                                                    startDate = today.withDayOfYear(1)
+                                                    endDate = today
+                                                }
+                                                "Personalizado" -> {
+                                                    isCalendarVisible = true
                                                 }
                                             }
-                                        )
-                                    }
+
+                                            if (opcion != "Personalizado" && peluqueroId != 0 && localId != 0) {
+                                                barberViewModel.getBarberStats(
+                                                    peluqueroId,
+                                                    localId,
+                                                    startDate.format(dateFormatter),
+                                                    endDate.format(dateFormatter)
+                                                )
+                                            }
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -314,7 +311,7 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 485.dp)
+                            .heightIn(max = 515.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -325,7 +322,15 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                             when (barberStatsState) {
                                 is BarberStatsState.Success -> {
                                     val stats = (barberStatsState as BarberStatsState.Success).stats
-                                    StatsContent(stats, defaultFont)
+                                    StatsContent(
+                                        stats = stats,
+                                        defaultFont = defaultFont,
+                                        peluqeroId = peluqueroId,
+                                        start = startDate.format(dateFormatter),
+                                        end = endDate.format(dateFormatter),
+                                        barberViewModel = barberViewModel,
+                                        snackbarHostState = snackbarHostState
+                                    )
                                 }
                                 is BarberStatsState.Error -> {
                                     Text(
@@ -363,8 +368,6 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                 }
 
 
-
-                Spacer(modifier = Modifier.height(140.dp))
             }
             Box(
                 modifier = Modifier
@@ -444,9 +447,40 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
 }
 
 @Composable
-fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
+fun StatsContent(
+    stats: BarberStatsResponse,
+    defaultFont: FontFamily,
+    peluqeroId: Int,
+    start: String,
+    end: String,
+    barberViewModel: BarberViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    val emailState by barberViewModel.barberStatsEmailState.collectAsState()
+
+    LaunchedEffect(emailState) {
+        when (emailState) {
+            is BarberStatsEmailState.Success -> {
+                snackbarHostState.showTypedSnackbar(
+                    (emailState as BarberStatsEmailState.Success).message,
+                    type = SnackbarType.SUCCESS
+                )
+                barberViewModel.resetBarberStatsEmailState()
+            }
+            is BarberStatsEmailState.Error -> {
+                snackbarHostState.showTypedSnackbar(
+                    (emailState as BarberStatsEmailState.Error).message,
+                    type = SnackbarType.ERROR
+                )
+                barberViewModel.resetBarberStatsEmailState()
+            }
+            else -> Unit
+        }
+    }
+
+
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -468,7 +502,7 @@ fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
                 title = "Citas completadas",
                 value = "${stats.total_citas}",
                 defaultFont = defaultFont,
-                color = Color(0x66949494)
+                color = Color(0x66797979)
             )
         }
 
@@ -484,7 +518,7 @@ fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
                 title = "Ingresos totales",
                 value = stats.ingresos_totales.formatCurrency(),
                 defaultFont = defaultFont,
-                color = Color(0x66A6A6A6)
+                color = Color(0x66797979)
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -520,7 +554,7 @@ fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
                 title = "No completadas",
                 value = "${stats.total_no_completadas}",
                 defaultFont = defaultFont,
-                color = Color(0x66A6A6A6)
+                color = Color(0x66797979)
             )
         }
 
@@ -635,6 +669,48 @@ fun StatsContent(stats: BarberStatsResponse, defaultFont: FontFamily) {
                 }
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .clickable {
+                    barberViewModel.sendBarberStatsEmail(
+                        peluqueroId = peluqeroId,
+                        stats = stats,
+                        startDate = start,
+                        endDate = end
+                    )
+                },
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFF1E88E5)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Enviar",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (emailState is BarberStatsEmailState.Sending) "Enviando..." else "Enviar resumen a mi correo",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = defaultFont
+                )
+            }
+        }
     }
 }
 
@@ -645,7 +721,7 @@ fun StatsCard(
     title: String,
     value: String,
     defaultFont: FontFamily,
-    color: Color = Color(0x66FFFFFF)
+    color: Color = Color(0x66BBBBBB)
 ) {
     Card(
         modifier = modifier
