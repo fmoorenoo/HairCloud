@@ -152,8 +152,8 @@ fun StatsDateCalendar(
                             .clip(RoundedCornerShape(3.dp))
                             .background(
                                 when {
-                                    isSelected -> Color(0xFFE1E1E1)
-                                    isInRange -> Color(0xFF4A89BE).copy(alpha = 0.2f)
+                                    isSelected -> Color(0xFF9DD0FF).copy(alpha = 0.4f)
+                                    isInRange -> Color(0xFF66B4FF).copy(alpha = 0.1f)
                                     else -> Color.Transparent
                                 }
                             )
@@ -195,7 +195,7 @@ fun StatsDateCalendar(
                 )
                 Text(
                     text = "Confirmar",
-                    color = if (startDate != null && endDate != null) Color.Green else Color.Gray,
+                    color = if (startDate != null && endDate != null) Color(0xFF5FB1FF) else Color.Gray,
                     modifier = Modifier.clickable(
                         enabled = startDate != null && endDate != null
                     ) {
