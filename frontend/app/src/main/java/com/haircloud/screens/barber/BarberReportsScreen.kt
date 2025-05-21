@@ -314,7 +314,7 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 490.dp)
+                            .heightIn(max = 485.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -682,7 +682,7 @@ fun StatsCard(
                 text = value,
                 color = Color.White,
                 style = TextStyle(fontFamily = defaultFont),
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
             )
         }
