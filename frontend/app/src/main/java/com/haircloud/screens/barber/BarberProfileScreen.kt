@@ -152,6 +152,7 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                     var email by remember { mutableStateOf(barber.email) }
                     var nombreUsuario by remember { mutableStateOf(barber.nombreusuario) }
                     var telefono by remember { mutableStateOf(if (barber.telefono.isNullOrEmpty() || barber.telefono == "Sin especificar") "" else barber.telefono) }
+                    var especialidad by remember { mutableStateOf(if (barber.especialidad.isNullOrEmpty()) "" else barber.especialidad) }
 
                     var showDialog by remember { mutableStateOf(false) }
                     var dialogMessage by remember { mutableStateOf("") }
@@ -163,7 +164,8 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                     val hasChanges = nombre != barber.nombre ||
                             email != barber.email ||
                             nombreUsuario != barber.nombreusuario ||
-                            telefono != (if (barber.telefono.isNullOrEmpty() || barber.telefono == "Sin especificar") "" else barber.telefono)
+                            telefono != (if (barber.telefono.isNullOrEmpty() || barber.telefono == "Sin especificar") "" else barber.telefono) ||
+                            especialidad != (if (barber.especialidad.isNullOrEmpty()) "" else barber.especialidad)
 
                     val allFieldsValid = isUsernameValid && isPhoneValid && nombre.isNotEmpty() && email.isNotEmpty()
 
@@ -172,16 +174,19 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                         email = barber.email
                         nombreUsuario = barber.nombreusuario
                         telefono = if (barber.telefono.isNullOrEmpty() || barber.telefono == "Sin especificar") "" else barber.telefono
+                        especialidad = if (barber.especialidad.isNullOrEmpty()) "" else barber.especialidad
                         isEditMode = false
                     }
 
                     fun saveChanges() {
                         val phone = if (telefono.trim().isEmpty()) "nulo" else telefono
+                        val speciality = if (especialidad.trim().isEmpty()) "nulo" else especialidad
                         val updateData = mutableMapOf<String, String?>(
                             "nombre" to nombre,
                             "email" to email,
                             "nombreusuario" to nombreUsuario,
-                            "telefono" to phone
+                            "telefono" to phone,
+                            "especialidad" to speciality
                         )
 
                         barberViewModel.updateBarber(barber.usuarioid, updateData)
@@ -414,7 +419,8 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                             }
                                         }
 
-
+                                        EditInfoField(Icons.Default.ContentCut, "Especialidad", especialidad,
+                                            onValueChange = { especialidad = it }, defaultFont)
 
                                         Row(
                                             modifier = Modifier
@@ -466,6 +472,7 @@ fun BarberProfileScreen(navController: NavController, userId: Int?) {
                                         InfoRow(Icons.Default.Email, "Email", barber.email, Color.White, defaultFont)
                                         InfoRow(Icons.Default.AccountCircle, "Usuario", barber.nombreusuario, Color.White, defaultFont)
                                         InfoRow(Icons.Default.Phone, "Teléfono", barber.telefono ?: "No especificado", Color.White, defaultFont)
+                                        InfoRow(Icons.Default.ContentCut, "Especialidad", barber.especialidad ?: "Sin especialidad", Color.White, defaultFont)
                                     }
                                 }
                             }
