@@ -41,6 +41,7 @@ import coil.request.ImageRequest
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.haircloud.utils.CredentialsValidator
+import com.haircloud.utils.RequirementsDialog
 import kotlinx.coroutines.launch
 
 private val DarkSurface = Color(0xFF1E1E1E)
@@ -582,85 +583,23 @@ fun SuccessState(
             iconTint = AccentColor
         )
     }
-    val dialogFont = defaultFont
-    val dialogShape = RoundedCornerShape(12.dp)
-    val dialogContainerColor = Color(0xFF9FCBE7)
-    val dialogTitleColor = Color(0xFF132946)
-    val dialogTextColor = Color(0xFF333333)
 
     if (showPhoneDialog) {
-        AlertDialog(
-            onDismissRequest = { showPhoneDialog = false },
-            confirmButton = {
-                Button(
-                    onClick = { showPhoneDialog = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF132946),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Entendido", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                }
-            },
-            title = {
-                Text(
-                    text = "Teléfono",
-                    style = TextStyle(fontFamily = dialogFont, fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    color = dialogTitleColor,
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Text(
-                    text = "Solo puede contener dígitos\nLongitud entre 9 y 15 caracteres\nNo puede contener espacios",
-                    style = TextStyle(fontFamily = dialogFont, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                    color = dialogTextColor
-                )
-            },
-            modifier = Modifier
-                .clip(dialogShape)
-                .background(Color.White),
-            containerColor = dialogContainerColor,
-            shape = dialogShape
+        RequirementsDialog(
+            title = "Teléfono",
+            message = "Solo puede contener dígitos\nLongitud entre 9 y 15 caracteres\nNo puede contener espacios",
+            onDismiss = { showPhoneDialog = false },
+            fontFamily = defaultFont
         )
     }
 
+
     if (showHorarioDialog) {
-        AlertDialog(
-            onDismissRequest = { showHorarioDialog = false },
-            confirmButton = {
-                Button(
-                    onClick = { showHorarioDialog = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF132946),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Entendido", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                }
-            },
-            title = {
-                Text(
-                    text = "Horario",
-                    style = TextStyle(fontFamily = dialogFont, fontSize = 30.sp, fontWeight = FontWeight.Bold),
-                    color = dialogTitleColor,
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Text(
-                    text = "Formato: HH:mm o HH:mm:ss\nHoras entre 00 y 23\nMinutos entre 00 y 59\nEjemplo válido: 09:30",
-                    style = TextStyle(fontFamily = dialogFont, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                    color = dialogTextColor
-                )
-            },
-            modifier = Modifier
-                .clip(dialogShape)
-                .background(Color.White),
-            containerColor = dialogContainerColor,
-            shape = dialogShape
+        RequirementsDialog(
+            title = "Horario",
+            message = "Formato: HH:mm o HH:mm:ss\nHoras entre 00 y 23\nMinutos entre 00 y 59\nEjemplo válido: 09:30",
+            onDismiss = { showHorarioDialog = false },
+            fontFamily = defaultFont
         )
     }
 }
