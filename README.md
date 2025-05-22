@@ -18,13 +18,6 @@
 
 ---
 
-## 🚧 Estado del proyecto
-
-> 💡 **En desarrollo**  
-HairCloud aún está en fase de desarrollo. Se están construyendo las funcionalidades básicas y ajustando el diseño.
-
----
-
 ## 🛠️ Tecnologías utilizadas
 
 | Área           | Tecnología                             | Entorno                     |
@@ -32,12 +25,6 @@ HairCloud aún está en fase de desarrollo. Se están construyendo las funcional
 | **Base de Datos** | PostgreSQL                          | PgAdmin                     |
 | **Backend**    | Python + Flask                         | PyCharm                     |
 | **Frontend**   | Kotlin + Jetpack Compose (Android)     | Android Studio              |
-
----
-
-## 📸 Capturas de pantalla (Próximamente)
-
-> Aquí irán las imágenes de la interfaz una vez completadas las primeras vistas funcionales.
 
 ---
 
