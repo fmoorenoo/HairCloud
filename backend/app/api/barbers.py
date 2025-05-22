@@ -393,6 +393,7 @@ def get_barber_activity(peluqueroid):
         DELETE FROM actividad_peluquero
         WHERE peluqueroid = %s AND fecha < %s
     """, (peluqueroid, datetime.now() - timedelta(days=7)))
+    connection.commit()
 
     cursor.execute("""
         SELECT 
