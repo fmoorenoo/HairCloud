@@ -39,7 +39,9 @@ import com.haircloud.utils.showTypedSnackbar
 import com.haircloud.viewmodel.BarberStatsEmailState
 import com.haircloud.viewmodel.BarberStatsState
 import com.haircloud.viewmodel.BarberViewModel
+import com.haircloud.viewmodel.CalendarViewModel
 import com.haircloud.viewmodel.GetBarberState
+import com.haircloud.viewmodel.WeeklyScheduleState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -56,6 +58,8 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
 
     var peluqueroId by remember { mutableIntStateOf(0) }
     var localId by remember { mutableIntStateOf(0) }
+    val calendarViewModel = remember { CalendarViewModel() }
+    val weeklyScheduleState by calendarViewModel.weeklyScheduleState.collectAsState()
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     val snackbarType by remember { mutableStateOf(SnackbarType.SUCCESS) }
@@ -99,6 +103,7 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                 startDate.format(dateFormatter),
                 endDate.format(dateFormatter)
             )
+            calendarViewModel.getWeeklySchedule(peluqueroId)
         }
     }
 
@@ -287,8 +292,26 @@ fun BarberReportsScreen(navController: NavController, userId: Int?, isAdmin: Boo
                 Spacer(modifier = Modifier.height(16.dp))
 
                 AnimatedVisibility(visible = isCalendarVisible) {
+                    val dayNameToCalendarIndex = mapOf(
+                        "Domingo" to 0,
+                        "Lunes" to 1,
+                        "Martes" to 2,
+                        "Miércoles" to 3,
+                        "Jueves" to 4,
+                        "Viernes" to 5,
+                        "Sábado" to 6
+                    )
+                    val workingDays = when (weeklyScheduleState) {
+                        is WeeklyScheduleState.Success -> {
+                            (weeklyScheduleState as WeeklyScheduleState.Success).schedule.mapNotNull {
+                                dayNameToCalendarIndex[it.diasemana]
+                            }
+                        }
+                        else -> listOf()
+                    }
                     StatsDateCalendar(
                         show = true,
+                        workingDays = workingDays,
                         onCancel = { isCalendarVisible = false },
                         onConfirm = { start, end ->
                             startDate = start

@@ -34,6 +34,7 @@ import java.util.*
 @Composable
 fun StatsDateCalendar(
     show: Boolean,
+    workingDays: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7),
     onCancel: () -> Unit,
     onConfirm: (LocalDate, LocalDate) -> Unit
 ) {
@@ -142,6 +143,8 @@ fun StatsDateCalendar(
 
                 items(daysInMonth) { index ->
                     val date = firstDayOfMonth.plusDays(index.toLong())
+                    val dayOfWeek = date.dayOfWeek.value % 7
+                    val isWorkingDay = workingDays.contains(dayOfWeek)
                     val isSelected = date == startDate || date == endDate
                     val isInRange = startDate != null && endDate != null && date > startDate && date < endDate
 
@@ -154,6 +157,7 @@ fun StatsDateCalendar(
                                 when {
                                     isSelected -> Color(0xFF9DD0FF).copy(alpha = 0.4f)
                                     isInRange -> Color(0xFF66B4FF).copy(alpha = 0.1f)
+                                    !isWorkingDay -> Color.Red.copy(alpha = 0.2f)
                                     else -> Color.Transparent
                                 }
                             )
