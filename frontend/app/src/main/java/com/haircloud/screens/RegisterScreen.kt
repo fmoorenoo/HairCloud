@@ -64,7 +64,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val blackWhiteGradient = Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val headersFont = FontFamily(Font(R.font.headers_font, FontWeight.Normal))
     val defaultFont = FontFamily(Font(R.font.default_font, FontWeight.Normal))
-    val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 23.sp)
+    val defaultStyle = TextStyle(fontFamily = defaultFont, fontSize = 18.sp)
 
     // Manejar el estado del registro
     LaunchedEffect(registerState) {

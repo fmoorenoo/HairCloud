@@ -183,8 +183,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         onValueChange = { searchQuery = it },
                         modifier = Modifier
                             .weight(1f),
-                        placeholder = { Text("Buscar por nombre", color = Color(0xFF4D4D4D),
-                            style = TextStyle(fontFamily = defaultFont), fontSize = 26.sp) },
+                        placeholder = { Text("Nombre/dirección", color = Color(0xFF4D4D4D),
+                            style = TextStyle(fontFamily = defaultFont), fontSize = 19.sp) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -204,7 +204,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                         ),
                         textStyle = TextStyle(
                             fontFamily = defaultFont,
-                            fontSize = 26.sp
+                            fontSize = 19.sp
                         ),
                         singleLine = true
                     )
@@ -212,7 +212,7 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                     IconButton(
                         onClick = { showSortMenu = true },
                         modifier = Modifier
-                            .size(67.dp)
+                            .size(60.dp)
                             .background(
                                 color = Color(0xFFD9D9D9),
                                 shape = RoundedCornerShape(22.dp)
@@ -339,7 +339,8 @@ fun ClientHomeScreen(navController: NavController, userId: Int?) {
                                 allBarberias
                             } else {
                                 allBarberias.filter { barbershop ->
-                                    barbershop.nombre.contains(searchQuery, ignoreCase = true)
+                                    barbershop.nombre.contains(searchQuery, ignoreCase = true) ||
+                                            barbershop.direccion.contains(searchQuery, ignoreCase = true)
                                 }
                             }
 

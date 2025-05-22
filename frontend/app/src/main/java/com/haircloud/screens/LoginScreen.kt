@@ -57,7 +57,7 @@ fun LoginScreen(
     )
     val defaultStyle = TextStyle(
         fontFamily = defaultFont,
-        fontSize = 23.sp,
+        fontSize = 18.sp,
     )
 
     Box(
@@ -127,7 +127,7 @@ fun LoginScreen(
                     onValueChange = { username = it },
                     singleLine = true,
                     placeholder = { Text("Introducir", style = defaultStyle) },
-                    textStyle = defaultStyle,
+                    textStyle = TextStyle(fontSize = 18.sp, fontFamily = defaultFont),
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.LightGray, RoundedCornerShape(14.dp))
@@ -148,7 +148,7 @@ fun LoginScreen(
                     onValueChange = { password = it },
                     singleLine = true,
                     placeholder = { Text("*****", style = defaultStyle) },
-                    textStyle = defaultStyle,
+                    textStyle = TextStyle(fontSize = 18.sp, fontFamily = defaultFont),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -234,6 +234,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Column(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top,
                 ) {

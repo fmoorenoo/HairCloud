@@ -58,7 +58,7 @@ fun ForgotPasswordScreen(
     )
     val defaultStyle = TextStyle(
         fontFamily = defaultFont,
-        fontSize = 23.sp,
+        fontSize = 18.sp,
     )
 
     LaunchedEffect(forgotPasswordState) {
@@ -176,7 +176,7 @@ fun ForgotPasswordScreen(
                     keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
                     singleLine = true,
                     placeholder = { Text(text = "example@gmail.com", style = defaultStyle) },
-                    textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                    textStyle = TextStyle(fontSize = 18.sp, fontFamily = defaultFont),
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.LightGray, RoundedCornerShape(14.dp))
@@ -244,7 +244,7 @@ fun ForgotPasswordScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                         placeholder = { Text(text = "Número de 6 dígitos", style = defaultStyle) },
-                        textStyle = TextStyle(fontSize = 23.sp, fontFamily = defaultFont),
+                        textStyle = TextStyle(fontSize = 18.sp, fontFamily = defaultFont),
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.LightGray, RoundedCornerShape(14.dp))
