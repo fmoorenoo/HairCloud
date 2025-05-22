@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.haircloud.screens.*
 import com.haircloud.screens.barber.*
 import com.haircloud.screens.client.*
+import com.haircloud.utils.SplashScreen
 import com.haircloud.viewmodel.AuthViewModel
 
 @Composable
@@ -17,13 +18,14 @@ fun AppNavigation(
     userID: Int?,
     role: String?
 ) {
-    val startDestination = when {
-        token.isNullOrEmpty() || userID == null -> "login"
-        role == "cliente" -> "client_home/$userID"
-        else -> "barber_home/$userID"
-    }
+    // Siempre empieza en splash
+    val startDestination = "splash"
 
     NavHost(navController = navController, startDestination = startDestination) {
+        // Splash
+        composable("splash") {
+            SplashScreen(navController, token, userID, role)
+        }
 
         // Login
         composable("login") {

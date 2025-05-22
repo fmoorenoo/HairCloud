@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -23,15 +24,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.haircloud.R
+import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(
+    navController: NavHostController,
+    token: String?,
+    userId: Int?,
+    role: String?
+) {
     val blackWhiteGradient =
         Brush.verticalGradient(colors = listOf(Color(0xFF212121), Color(0xFF666F77)))
     val headersFont = FontFamily(
         Font(R.font.headers_font, FontWeight.Normal)
     )
+    LaunchedEffect(token, userId, role) {
+        delay(1000)
+        when {
+            token.isNullOrEmpty() || userId == null -> {
+                navController.navigate("login") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+            role == "cliente" -> {
+                navController.navigate("client_home/$userId") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+            else -> {
+                navController.navigate("barber_home/$userId") {
+                    popUpTo("splash") { inclusive = true }
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize().background(brush = blackWhiteGradient),
         contentAlignment = Alignment.Center
