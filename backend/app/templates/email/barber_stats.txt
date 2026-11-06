@@ -1,0 +1,8 @@
+Resumen de tu actividad ({{ start }} - {{ end }})
+
+Clientes atendidos: {{ stats.total_clientes_atendidos }}
+Citas completadas: {{ stats.total_citas }}
+Ingresos: {{ "%.2f"|format(stats.ingresos_totales) }} €
+Citas / día: {{ stats.promedio_citas_por_dia }}
+Canceladas: {{ stats.total_canceladas }}
+No completadas: {{ stats.total_no_completadas }}

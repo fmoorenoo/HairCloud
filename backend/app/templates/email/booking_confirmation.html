@@ -1,0 +1,26 @@
+{% extends "email/base.html" %}
+{% block content %}
+  <div class="box">
+    <h2 class="title">{{ local.nombre }}</h2>
+    <div class="row">📍 {{ local.direccion }}, {{ local.localidad }}</div>
+    <div class="row">📞 {{ local.telefono }}</div>
+    <div class="row">💇 <strong>Peluquero:</strong> {{ barber_name }}</div>
+  </div>
+  <div class="box box-blue">
+    <h3 class="title" style="color:#1e40af;">{{ service.nombre }}</h3>
+    {% if service.descripcion %}
+    <div class="row"><span class="label">Descripción:</span><br><span class="value">{{ service.descripcion }}</span></div>
+    <div class="divider"></div>
+    {% endif %}
+    <div class="row"><span class="label">Duración:</span><br><span class="value">{{ service.duracion }} minutos</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Precio:</span><br><span class="value">{{ price }} €</span></div>
+  </div>
+  <h2 style="text-align:center;color:#1e3a8a;font-size:20px;">📅 {{ fecha }}</h2>
+  <div class="box box-green">
+    <div class="row"><span class="label">Inicio:</span><br><span class="value">{{ hora_inicio }}</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Fin:</span><br><span class="value">{{ hora_fin }}</span></div>
+  </div>
+{% endblock %}
+{% block footer %}Gracias por reservar con nosotros. Puedes cancelar la cita desde la app hasta {{ cancel_minutes }} minutos antes de su inicio.{% endblock %}

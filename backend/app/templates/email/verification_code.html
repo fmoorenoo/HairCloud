@@ -1,0 +1,7 @@
+{% extends "email/base.html" %}
+{% block content %}
+  <p>Hola,</p>
+  <p>{{ intro }}</p>
+  <div class="code">{{ code }}</div>
+  <p class="label">El código es válido durante {{ minutes }} minutos. Si no has solicitado este código, ignora este mensaje: nadie podrá acceder a tu cuenta sin él.</p>
+{% endblock %}

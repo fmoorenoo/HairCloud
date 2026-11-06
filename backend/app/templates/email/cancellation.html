@@ -1,0 +1,14 @@
+{% extends "email/base.html" %}
+{% block content %}
+  <p>Hola {{ client_name }},</p>
+  <p>Tu cita con {{ barber_name }} en {{ local.nombre }} ha sido <strong>cancelada</strong>.</p>
+  <div class="box box-red"><strong>Motivo:</strong> {{ motivo }}</div>
+  <div class="box box-red">
+    <div class="row"><strong>Servicio:</strong> {{ service_name }}</div>
+    <div class="row"><strong>Fecha:</strong> {{ fecha }}</div>
+    <div class="row"><strong>Hora inicio:</strong> {{ hora_inicio }}</div>
+    <div class="row"><strong>Hora fin:</strong> {{ hora_fin }}</div>
+  </div>
+  <p>Si necesitas más información o quieres reservar otra cita, puedes hacerlo desde la aplicación.</p>
+{% endblock %}
+{% block footer %}© {{ year }} HairCloud. Gracias por confiar en nosotros.{% endblock %}

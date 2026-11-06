@@ -1,0 +1,7 @@
+{{ title }}
+
+{{ intro }}
+
+Código: {{ code }}
+
+Válido durante {{ minutes }} minutos. Si no lo has solicitado, ignora este mensaje.

@@ -1,14 +1,16 @@
-from flask import Blueprint
+"""Registro de blueprints bajo el prefijo versionado ``/api/v1``."""
+from __future__ import annotations
 
-# Blueprints
-auth_bp = Blueprint('auth', __name__)
-clients_bp = Blueprint('clients', __name__)
-barbershops_bp = Blueprint('barbershops', __name__)
-calendar_bp = Blueprint('calendar', __name__)
-dates_bp = Blueprint('dates', __name__)
-barbers_bp = Blueprint('barbers', __name__)
-services_bp = Blueprint('services', __name__)
-mail_bp = Blueprint('mail', __name__)
+from flask import Blueprint, Flask
+
+API_PREFIX = "/api/v1"
 
 
-from . import auth, clients, barbershops, calendar, dates, barbers, services, mail
+def register_blueprints(app: Flask) -> None:
+    from . import appointments, auth, barbers, barbershops, health, me, reviews, services
+
+    api = Blueprint("api_v1", __name__, url_prefix=API_PREFIX)
+    for module in (auth, me, barbershops, services, reviews, barbers, appointments):
+        api.register_blueprint(module.bp)
+    app.register_blueprint(api)
+    app.register_blueprint(health.bp)

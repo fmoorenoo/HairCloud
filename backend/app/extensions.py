@@ -1,5 +1,7 @@
-from flask_bcrypt import Bcrypt
-from flask_mail import Mail
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-bcrypt = Bcrypt()
-mail = Mail()
+# Límite global por IP; los endpoints sensibles (login, códigos, registro)
+# añaden límites más estrictos. En producción con varios procesos conviene
+# usar Redis: RATELIMIT_STORAGE_URI=redis://...
+limiter = Limiter(key_func=get_remote_address)

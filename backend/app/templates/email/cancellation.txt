@@ -1,0 +1,6 @@
+Hola {{ client_name }},
+
+Tu cita con {{ barber_name }} en {{ local.nombre }} ha sido cancelada.
+Motivo: {{ motivo }}
+Servicio: {{ service_name }}
+Fecha: {{ fecha }}, de {{ hora_inicio }} a {{ hora_fin }}

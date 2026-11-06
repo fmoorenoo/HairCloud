@@ -1,0 +1,30 @@
+{% extends "email/base.html" %}
+{% block content %}
+  <p style="text-align:center;" class="box box-blue">Desde {{ start }}<br>Hasta {{ end }}</p>
+  <div class="box" style="text-align:center;">
+    <h2 class="title">Resumen general</h2>
+    <div class="stat"><div class="stat-value">{{ stats.total_clientes_atendidos }}</div><div class="label">Clientes atendidos</div></div>
+    <div class="stat"><div class="stat-value">{{ stats.total_citas }}</div><div class="label">Citas completadas</div></div>
+    <div class="stat"><div class="stat-value">{{ "%.2f"|format(stats.ingresos_totales) }}€</div><div class="label">Ingresos</div></div>
+    <div class="stat"><div class="stat-value">{{ stats.promedio_citas_por_dia }}</div><div class="label">Citas / día</div></div>
+    <div class="stat"><div class="stat-value">{{ stats.total_canceladas }}</div><div class="label">Canceladas</div></div>
+    <div class="stat"><div class="stat-value">{{ stats.total_no_completadas }}</div><div class="label">No completadas</div></div>
+  </div>
+  <div class="box box-blue">
+    <h3 class="title" style="color:#1e40af;">Estado de citas</h3>
+    {% for label, count, pct, color in bars %}
+      <div class="row"><span class="label">{{ label }}</span> <strong>{{ count }} ({{ pct }}%)</strong></div>
+      <div class="bar"><div style="width: {{ pct }}%; background-color: {{ color }};"></div></div>
+    {% endfor %}
+  </div>
+  <div class="box box-green">
+    <h3 class="title" style="color:#1e40af;">Datos destacados</h3>
+    <div class="row"><span class="label">Servicio más solicitado</span><br>
+      <span class="value">{{ stats.servicio_mas_solicitado.nombre if stats.servicio_mas_solicitado else "N/A" }}</span>
+      <span class="label">({{ stats.servicio_mas_solicitado.cantidad if stats.servicio_mas_solicitado else 0 }} veces)</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Cliente más frecuente</span><br>
+      <span class="value">{{ stats.cliente_mas_frecuente.nombre if stats.cliente_mas_frecuente else "N/A" }}</span>
+      <span class="label">({{ stats.cliente_mas_frecuente.total_citas if stats.cliente_mas_frecuente else 0 }} visitas)</span></div>
+  </div>
+{% endblock %}

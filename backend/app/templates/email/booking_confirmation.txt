@@ -1,0 +1,8 @@
+Tu cita ha sido confirmada
+
+{{ local.nombre }} — {{ local.direccion }}, {{ local.localidad }} ({{ local.telefono }})
+Peluquero: {{ barber_name }}
+Servicio: {{ service.nombre }} ({{ service.duracion }} min, {{ price }} €)
+Fecha: {{ fecha }}, de {{ hora_inicio }} a {{ hora_fin }}
+
+Puedes cancelar la cita desde la app hasta {{ cancel_minutes }} minutos antes de su inicio.

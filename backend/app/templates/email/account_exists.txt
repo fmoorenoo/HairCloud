@@ -1,0 +1,5 @@
+Ya tienes una cuenta en HairCloud
+
+Alguien ha intentado registrarse con esta dirección de correo, pero ya existe una cuenta asociada.
+Si has olvidado tu contraseña, usa «¿Olvidaste tu contraseña?» en la pantalla de inicio de sesión.
+Si no has sido tú, ignora este mensaje.

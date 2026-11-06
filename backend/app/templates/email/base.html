@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: 'Poppins', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; }
+    .container { max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .header { background-color: {{ header_color | default('#3B82F6') }}; color: #ffffff; padding: 30px 25px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    .content { padding: 25px; }
+    .box { background-color: #f1f5f9; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .box-blue { background-color: #eff6ff; }
+    .box-green { background-color: #f0fdf4; border-left: 4px solid #22c55e; }
+    .box-red { background-color: #fef2f2; border-left: 4px solid #dc2626; }
+    .label { color: #64748b; font-size: 14px; }
+    .value { color: #0f172a; font-weight: 500; font-size: 14px; }
+    .title { font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0; }
+    .row { margin-bottom: 10px; }
+    .divider { height: 1px; background-color: #e2e8f0; margin: 12px 0; }
+    .code { background-color: #0A0A0A; border: 2px dashed #5356ee; color: #6fabf0; padding: 12px; margin: 25px 0; border-radius: 10px; font-size: 33px; font-weight: 600; letter-spacing: 10px; text-align: center; }
+    .footer { text-align: center; padding: 20px; background-color: #f8fafc; color: #64748b; font-size: 13px; }
+    .stat { display: inline-block; vertical-align: top; width: 42%; margin: 5px; padding: 10px; background: #ffffff; border-radius: 8px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 600; color: #3B82F6; }
+    .bar { height: 20px; background-color: #e2e8f0; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+    .bar > div { height: 100%; }
+    @media only screen and (max-width: 480px) { .stat { width: 85%; display: block; margin: 5px auto; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>{{ title }}</h1></div>
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+    <div class="footer">
+      <strong style="color:#3B82F6;">HairCloud</strong>
+      <p>{% block footer %}© {{ year }} HairCloud. Todos los derechos reservados.{% endblock %}</p>
+    </div>
+  </div>
+</body>
+</html>

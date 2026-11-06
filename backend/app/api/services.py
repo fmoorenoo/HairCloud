@@ -1,139 +1,69 @@
-from flask import jsonify, request
-from app.api import services_bp
-from app.db.connection import get_connection
+"""Servicios ofrecidos por un local."""
+from __future__ import annotations
+
+from flask import Blueprint, jsonify
+
+from .. import serializers as ser
+from ..db import fetch_one, transaction
+from ..errors import Conflict, NotFound
+from ..schemas import ServiceIn, parse
+from ..security.auth import SERVICE_MANAGERS, current_user, require_auth
+
+bp = Blueprint("services", __name__, url_prefix="/services")
 
 
-@services_bp.route('/get_services/<int:localid>', methods=['GET'])
-def get_services(localid):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT * FROM servicios
-        WHERE localid = %s
-        ORDER BY servicioid
-    """, (localid,))
-
-    servicios = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    result = []
-    for s in servicios:
-        item = {}
-        for i, value in enumerate(s):
-            item[column_names[i]] = value
-        result.append(item)
-
-    return jsonify(result), 200
+def _service_for_update(cur, servicioid: int) -> dict:
+    cur.execute("SELECT servicioid, localid, nombre FROM servicios WHERE servicioid = %s AND activo FOR UPDATE",
+                (servicioid,))
+    row = cur.fetchone()
+    if row is None:
+        raise NotFound("Servicio no encontrado")
+    current_user().require_local_role(row["localid"], SERVICE_MANAGERS)
+    return row
 
 
-@services_bp.route('/get_service/<int:servicioid>', methods=['GET'])
-def get_service_by_id(servicioid):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT * FROM servicios
-        WHERE servicioid = %s
-    """, (servicioid,))
-
-    servicio = cursor.fetchone()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    if servicio is None:
-        return jsonify({"error": "Servicio no encontrado"}), 404
-
-    result = {}
-    for i, value in enumerate(servicio):
-        result[column_names[i]] = value
-
-    return jsonify(result), 200
+@bp.get("/<int:servicioid>")
+@require_auth()
+def get_service(servicioid: int):
+    row = fetch_one(
+        "SELECT servicioid, nombre, descripcion, duracion, precio, localid FROM servicios WHERE servicioid = %s AND activo",
+        (servicioid,),
+    )
+    if row is None:
+        raise NotFound("Servicio no encontrado")
+    return jsonify(ser.service(row)), 200
 
 
-@services_bp.route('/create_service', methods=['POST'])
-def create_service():
-    data = request.get_json()
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT 1 FROM servicios
-        WHERE nombre = %s AND localid = %s
-    """, (data['nombre'], data['localId']))
-
-    if cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"message": f"Ya existe un servicio con ese nombre"}), 409
-
-    cursor.execute("""
-        INSERT INTO servicios (nombre, descripcion, duracion, precio, localid)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING servicioid
-    """, (
-        data['nombre'],
-        data.get('descripcion'),
-        data['duracion'],
-        data['precio'],
-        data['localId']
-    ))
-
-    servicioid = cursor.fetchone()[0]
-    connection.commit()
-
-    cursor.close()
-    connection.close()
-
-    service_name = data['nombre']
-    message = f'Servicio "{service_name}" creado'
-
-    return jsonify({"message": message, "servicioid": servicioid}), 201
+@bp.put("/<int:servicioid>")
+@require_auth(*SERVICE_MANAGERS)
+def edit_service(servicioid: int):
+    data = parse(ServiceIn)
+    with transaction() as cur:
+        svc = _service_for_update(cur, servicioid)
+        cur.execute(
+            """
+            SELECT 1 FROM servicios
+            WHERE localid = %s AND lower(nombre) = lower(%s) AND activo AND servicioid <> %s
+            """,
+            (svc["localid"], data.nombre, servicioid),
+        )
+        if cur.fetchone():
+            raise Conflict("Ya existe un servicio con ese nombre", code="service_exists")
+        # El local de un servicio no se puede cambiar (antes se aceptaba
+        # "localId" del cliente y se podía mover un servicio a otro local).
+        cur.execute(
+            "UPDATE servicios SET nombre = %s, descripcion = %s, duracion = %s, precio = %s WHERE servicioid = %s",
+            (data.nombre, data.descripcion, data.duracion, data.precio, servicioid),
+        )
+    return jsonify({"message": "Servicio actualizado", "username": None}), 200
 
 
-@services_bp.route('/edit_service/<int:servicioid>', methods=['PUT'])
-def edit_service(servicioid):
-    data = request.get_json()
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        UPDATE servicios
-        SET nombre = %s, descripcion = %s, duracion = %s, precio = %s, localid = %s
-        WHERE servicioid = %s
-    """, (
-        data['nombre'],
-        data.get('descripcion'),
-        data['duracion'],
-        data['precio'],
-        data['localId'],
-        servicioid
-    ))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Servicio actualizado"}), 200
-
-
-@services_bp.route('/delete_service/<int:servicioid>', methods=['DELETE'])
-def delete_service(servicioid):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        DELETE FROM servicios
-        WHERE servicioid = %s
-    """, (servicioid,))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Servicio eliminado"}), 200
+@bp.delete("/<int:servicioid>")
+@require_auth(*SERVICE_MANAGERS)
+def delete_service(servicioid: int):
+    with transaction() as cur:
+        _service_for_update(cur, servicioid)
+        # Baja lógica: antes el DELETE borraba en cascada todas las citas
+        # (pasadas y futuras) de ese servicio, destruyendo el historial.
+        cur.execute("UPDATE servicios SET activo = FALSE WHERE servicioid = %s", (servicioid,))
+    return jsonify({"message": "Servicio eliminado", "username": None}), 200

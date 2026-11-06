@@ -1,560 +1,200 @@
-from flask import request, jsonify
+"""Recursos de un peluquero: horario, disponibilidad, agenda, actividad y estadísticas."""
+from __future__ import annotations
 
-from app import bcrypt
-from app.api import barbers_bp
-from app.db.connection import get_connection
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+from flask import Blueprint, current_app, jsonify, request
 
-@barbers_bp.route('/get_barber/<int:user_id>', methods=['GET'])
-def get_barber(user_id):
-    connection = get_connection()
-    cursor = connection.cursor()
+from .. import serializers as ser
+from ..db import fetch_all, transaction
+from ..errors import BadRequest, Conflict, Forbidden
+from ..extensions import limiter
+from ..schemas import (BarberActiveIn, BarberRoleIn, DateRangeQuery, ScheduleIn, StatsEmailIn,
+                       parse, parse_date_param, parse_int_param, validate_schedule)
+from ..security.audit import audit
+from ..security.auth import (ADMIN, LOCAL_MANAGERS, REVIEW_MODERATORS, STAFF_ROLES, current_user,
+                             get_barber_or_404, require_auth, require_barber_access)
+from ..security.tokens import revoke_all_sessions
+from ..services import appointments as appt
+from ..services import stats as stats_service
+from ..timeutils import now_local
 
-    cursor.execute("""
-        SELECT b.*, u.email, u.nombreusuario, u.rol
-        FROM peluqueros b
-        JOIN usuarios u ON b.usuarioid = u.usuarioid
-        WHERE b.usuarioid = %s
-    """, (user_id,))
+bp = Blueprint("barbers", __name__, url_prefix="/barbers")
 
-    barber = cursor.fetchone()
-    cursor.close()
-    connection.close()
-
-    if not barber:
-        return jsonify({"error": "Barbero no encontrado"}), 404
-
-    barber_data = dict(barber)
-
-    if barber_data.get("fechacontratacion"):
-        barber_data["fechacontratacion"] = barber_data["fechacontratacion"].strftime("%Y-%m-%d")
-
-    return jsonify(barber_data), 200
+# Quién, además del propio peluquero, puede ver su agenda y actividad.
+AGENDA_VIEWERS = REVIEW_MODERATORS
 
 
-@barbers_bp.route('/get_barber_dates/<int:barber_id>', methods=['GET'])
-def get_barber_dates(barber_id):
-    date_str = request.args.get("date")
-    start_date_str = request.args.get("start")
-    end_date_str = request.args.get("end")
+@bp.get("/<int:peluqueroid>/schedule")
+@require_auth()
+def get_schedule(peluqueroid: int):
+    get_barber_or_404(peluqueroid)
+    rows = fetch_all(
+        """
+        SELECT diasemana, horainicio, horafin FROM horarios_peluqueros WHERE peluqueroid = %s
+        ORDER BY array_position(ARRAY['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']::text[],
+                                diasemana::text), horainicio
+        """,
+        (peluqueroid,),
+    )
+    return jsonify([ser.schedule_entry(r) for r in rows]), 200
 
-    # Interpretar rango o fecha individual
-    if date_str:
-        try:
-            selected_date = datetime.strptime(date_str, "%Y-%m-%d")
-            next_day = selected_date + timedelta(days=1)
-            fecha_inicio = selected_date
-            fecha_fin = next_day
-        except ValueError:
-            return jsonify({"error": "Formato de fecha inválido. Usa YYYY-MM-DD"}), 400
-    elif start_date_str and end_date_str:
-        try:
-            fecha_inicio = datetime.strptime(start_date_str, "%Y-%m-%d")
-            fecha_fin = datetime.strptime(end_date_str, "%Y-%m-%d") + timedelta(days=1)
-        except ValueError:
-            return jsonify({"error": "Fechas inválidas. Usa YYYY-MM-DD"}), 400
+
+@bp.put("/<int:peluqueroid>/schedule")
+@require_auth(*STAFF_ROLES)
+def update_schedule(peluqueroid: int):
+    require_barber_access(peluqueroid, manager_roles=LOCAL_MANAGERS)
+    raw = request.get_json(silent=True)
+    # Se acepta tanto {"horario": [...]} como la lista directa que enviaba la app.
+    data = parse(ScheduleIn, {"horario": raw} if isinstance(raw, list) else raw)
+    validate_schedule(data.horario)
+    with transaction() as cur:
+        cur.execute("DELETE FROM horarios_peluqueros WHERE peluqueroid = %s", (peluqueroid,))
+        for item in data.horario:
+            cur.execute(
+                "INSERT INTO horarios_peluqueros (peluqueroid, diasemana, horainicio, horafin) VALUES (%s, %s, %s, %s)",
+                (peluqueroid, item.dia, item.inicio, item.fin),
+            )
+    return jsonify({"message": "Horario actualizado correctamente", "username": None}), 200
+
+
+@bp.get("/<int:peluqueroid>/blocked-hours")
+@require_auth(*STAFF_ROLES)
+def blocked_hours(peluqueroid: int):
+    require_barber_access(peluqueroid, manager_roles=AGENDA_VIEWERS)
+    rows = fetch_all(
+        """
+        SELECT fecha, horainicio, horafin, motivo FROM bloqueoshorarios
+        WHERE peluqueroid = %s AND fecha >= %s ORDER BY fecha, horainicio
+        """,
+        (peluqueroid, now_local().date()),
+    )
+    return jsonify([ser.blocked_hours(r) for r in rows]), 200
+
+
+@bp.get("/<int:peluqueroid>/availability")
+@require_auth()
+@limiter.limit("120 per minute")
+def availability(peluqueroid: int):
+    day = parse_date_param("fecha")
+    servicioid = parse_int_param("servicioid", required=False)
+    duracion = parse_int_param("duracion", required=False, minimum=5, maximum=480)
+    if servicioid is None and duracion is None:
+        raise BadRequest("Indica 'servicioid'", code="missing_param")
+    slots = appt.available_slots(peluqueroid, day, servicioid=servicioid, duration_minutes=duracion)
+    return jsonify(slots), 200
+
+
+@bp.get("/<int:peluqueroid>/appointments")
+@require_auth(*STAFF_ROLES)
+def appointments(peluqueroid: int):
+    require_barber_access(peluqueroid, manager_roles=AGENDA_VIEWERS)
+    single = parse_date_param("date", required=False)
+    if single:
+        start = end = single
     else:
-        return jsonify({"error": "Se requiere 'date' o 'start' y 'end'"}), 400
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        UPDATE citas
-        SET estado = 'Completada'
-        WHERE peluqueroid = %s
-        AND fechafin < NOW()
-        AND estado = 'Pendiente'
-    """, (barber_id,))
-    connection.commit()
-
-    cursor.execute("""
-        SELECT c.*, 
-               s.nombre AS servicio_nombre, s.duracion, s.precio,
-               cl.nombre AS cliente_nombre, cl.telefono AS cliente_telefono
-        FROM citas c
-        JOIN servicios s ON c.servicioid = s.servicioid
-        JOIN clientes cl ON c.clienteid = cl.clienteid
-        WHERE c.peluqueroid = %s 
-        AND c.fechainicio >= %s 
-        AND c.fechainicio < %s
-        ORDER BY c.fechainicio ASC
-    """, (barber_id, fecha_inicio, fecha_fin))
-
-    citas = cursor.fetchall()
-    cursor.close()
-    connection.close()
-
-    citas_list = []
-    now = datetime.now()
-    for cita in citas:
-        cita_dict = dict(cita)
-        fechainicio = cita_dict.get("fechainicio")
-        fechafin = cita_dict.get("fechafin")
-
-        if fechainicio:
-            cita_dict["fechainicio"] = fechainicio.strftime("%Y-%m-%d %H:%M")
-        if fechafin:
-            cita_dict["fechafin"] = fechafin.strftime("%Y-%m-%d %H:%M")
-            cita_dict["finalizada"] = fechafin < now
-        else:
-            cita_dict["finalizada"] = False
-        citas_list.append(cita_dict)
-
-    return jsonify({"dates": citas_list}), 200
-
-
-@barbers_bp.route('/update_barber/<int:user_id>', methods=['PUT'])
-def update_barber(user_id):
-    data = request.json or {}
-    email = data.get("email")
-    nombreusuario = data.get("nombreusuario")
-    nombre = data.get("nombre")
-    telefono = data.get("telefono")
-    if telefono == "nulo":
-        telefono = None
-    especialidad = data.get("especialidad")
-    if especialidad == "nulo":
-        especialidad = None
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM peluqueros WHERE usuarioid = %s", (user_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "Barbero no encontrado"}), 404
-
-    if email:
-        cursor.execute("SELECT 1 FROM usuarios WHERE email = %s AND usuarioid != %s", (email, user_id))
-        if cursor.fetchone():
-            cursor.close()
-            connection.close()
-            return jsonify({"error": "El email ya está en uso por otro usuario"}), 400
-
-    if nombreusuario:
-        cursor.execute("SELECT 1 FROM usuarios WHERE nombreusuario = %s AND usuarioid != %s", (nombreusuario, user_id))
-        if cursor.fetchone():
-            cursor.close()
-            connection.close()
-            return jsonify({"error": "El nombre de usuario ya está en uso"}), 400
-
-    user_updates = []
-    user_values = []
-
-    if email:
-        user_updates.append("email = %s")
-        user_values.append(email)
-    if nombreusuario:
-        user_updates.append("nombreusuario = %s")
-        user_values.append(nombreusuario)
-
-    if user_updates:
-        user_values.append(user_id)
-        cursor.execute(f"""
-            UPDATE usuarios
-            SET {', '.join(user_updates)}
-            WHERE usuarioid = %s
-        """, tuple(user_values))
-
-    barber_updates = []
-    barber_values = []
-
-    if nombre is not None:
-        barber_updates.append("nombre = %s")
-        barber_values.append(nombre)
-    if "telefono" in data:
-        barber_updates.append("telefono = %s")
-        barber_values.append(telefono)
-    if "especialidad" in data:
-        barber_updates.append("especialidad = %s")
-        barber_values.append(especialidad)
-
-    if barber_updates:
-        barber_values.append(user_id)
-        cursor.execute(f"""
-            UPDATE peluqueros
-            SET {', '.join(barber_updates)}
-            WHERE usuarioid = %s
-        """, tuple(barber_values))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Info actualizada correctamente"}), 200
-
-
-@barbers_bp.route('/toggle_barber_role/<int:user_id>', methods=['PUT'])
-def toggle_barber_role(user_id):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT rol FROM usuarios WHERE usuarioid = %s", (user_id,))
-    result = cursor.fetchone()
-
-    if not result:
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
-    current_role = result[0]
-
-    if current_role not in ('peluquero', 'semiadmin'):
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "El usuario no tiene rol compatible para cambio"}), 400
-
-    new_role = 'semiadmin' if current_role == 'peluquero' else 'peluquero'
-
-    cursor.execute("UPDATE usuarios SET rol = %s WHERE usuarioid = %s", (new_role, user_id))
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": f"Rol actualizado a {new_role}"}), 200
-
-
-@barbers_bp.route('/deactivate_barber/<int:user_id>', methods=['PUT'])
-def deactivate_barber(user_id):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM peluqueros WHERE usuarioid = %s", (user_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "Barbero no encontrado"}), 404
-
-    cursor.execute("UPDATE peluqueros SET activo = FALSE WHERE usuarioid = %s", (user_id,))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Barbero desactivado correctamente"}), 200
-
-
-@barbers_bp.route('/activate_barber/<int:user_id>', methods=['PUT'])
-def activate_barber(user_id):
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT * FROM peluqueros WHERE usuarioid = %s", (user_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "Barbero no encontrado"}), 404
-
-    cursor.execute("UPDATE peluqueros SET activo = TRUE WHERE usuarioid = %s", (user_id,))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Barbero activado correctamente"}), 200
-
-
-@barbers_bp.route('/get_inactive_barbers', methods=['GET'])
-def get_inactive_barbers():
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        SELECT p.*, u.email, u.nombreusuario, u.rol
-        FROM peluqueros p
-        JOIN usuarios u ON p.usuarioid = u.usuarioid
-        WHERE p.activo = FALSE
-        ORDER BY p.nombre
-    """)
-
-    barbers = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    result = []
-    for barber in barbers:
-        item = {}
-        for i, value in enumerate(barber):
-            if isinstance(value, (datetime, timedelta)):
-                item[column_names[i]] = value.isoformat()
-            else:
-                item[column_names[i]] = value
-        result.append(item)
-
-    return jsonify(result), 200
-
-
-@barbers_bp.route('/create_barber', methods=['POST'])
-def create_barber():
-    data = request.json or {}
-
-    nombreusuario = data.get("nombreusuario")
-    contrasena = data.get("contrasena")
-    email = data.get("email")
-    nombre = data.get("nombre")
-    especialidad = data.get("especialidad")
-    localid = data.get("localid")
-    work_schedules = data.get("horario")
-
-    if not all([nombreusuario, contrasena, email, nombre, localid, work_schedules]):
-        return jsonify({"error": "Faltan campos obligatorios"}), 400
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT 1 FROM usuarios WHERE nombreusuario = %s OR email = %s", (nombreusuario, email))
-    if cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "El nombre de usuario o email ya existen"}), 404
-
-    hashed_password = bcrypt.generate_password_hash(contrasena).decode('utf-8')
-
-    cursor.execute("""
-        INSERT INTO usuarios (nombreusuario, contraseña, rol, localid, email)
-        VALUES (%s, %s, 'peluquero', %s, %s)
-        RETURNING usuarioid
-    """, (nombreusuario, hashed_password, localid, email))
-
-    usuarioid = cursor.fetchone()[0]
-
-    cursor.execute("""
-        INSERT INTO peluqueros (usuarioid, nombre, telefono, especialidad, fechacontratacion, localid, activo)
-        VALUES (%s, %s, NULL, %s, CURRENT_DATE, %s, TRUE)
-        RETURNING peluqueroid
-    """, (usuarioid, nombre, especialidad, localid))
-
-    peluqueroid = cursor.fetchone()[0]
-
-    if work_schedules:
-        for item in work_schedules:
-            dia = item.get("dia")
-            inicio = item.get("inicio")
-            fin = item.get("fin")
-            if dia and inicio and fin:
-                cursor.execute("""
-                    INSERT INTO horarios_peluqueros (peluqueroid, diasemana, horainicio, horafin)
-                    VALUES (%s, %s, %s, %s)
-                """, (peluqueroid, dia, inicio, fin))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Barbero añadido correctamente al personal", "usuarioid": usuarioid}), 201
-
-
-@barbers_bp.route('/update_barber_schedule/<int:peluquero_id>', methods=['PUT'])
-def update_barber_schedule(peluquero_id):
-    data = request.json or []
-    if not isinstance(data, list):
-        return jsonify({"error": "Se esperaba una lista de horarios"}), 400
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("SELECT 1 FROM peluqueros WHERE peluqueroid = %s", (peluquero_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        connection.close()
-        return jsonify({"error": "Peluquero no encontrado"}), 404
-
-    cursor.execute("DELETE FROM horarios_peluqueros WHERE peluqueroid = %s", (peluquero_id,))
-
-    for item in data:
-        dia = item.get("dia")
-        inicio = item.get("inicio")
-        fin = item.get("fin")
-        if not all([dia, inicio, fin]):
-            continue
-        cursor.execute("""
-            INSERT INTO horarios_peluqueros (peluqueroid, diasemana, horainicio, horafin)
-            VALUES (%s, %s, %s, %s)
-        """, (peluquero_id, dia, inicio, fin))
-
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-    return jsonify({"message": "Horario actualizado correctamente"}), 200
-
-@barbers_bp.route('/get_barber_activity/<int:peluqueroid>', methods=['GET'])
-def get_barber_activity(peluqueroid):
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        DELETE FROM actividad_peluquero
-        WHERE peluqueroid = %s AND fecha < %s
-    """, (peluqueroid, datetime.now() - timedelta(days=7)))
-    connection.commit()
-
-    cursor.execute("""
-        SELECT 
-            a.actividadid, a.tipo, a.fecha,
-            c.nombre AS cliente_nombre,
-            ci.fechainicio, ci.fechafin, ci.estado,
-            s.nombre AS servicio_nombre,
-            l.nombre AS local_nombre
+        rng = DateRangeQuery(start=parse_date_param("start"), end=parse_date_param("end"))
+        start, end = rng.start, rng.end
+    now = now_local()
+    rows = appt.barber_appointments(peluqueroid, start, end)
+    return jsonify({"dates": [ser.barber_appointment(r, now) for r in rows]}), 200
+
+
+@bp.get("/<int:peluqueroid>/activity")
+@require_auth(*STAFF_ROLES)
+def activity(peluqueroid: int):
+    require_barber_access(peluqueroid, manager_roles=AGENDA_VIEWERS)
+    since = now_local() - timedelta(days=current_app.config["ACTIVITY_RETENTION_DAYS"])
+    rows = fetch_all(
+        """
+        SELECT a.actividadid, a.tipo, a.fecha, c.nombre AS cliente_nombre,
+               ci.fechainicio, ci.fechafin, ci.estado_efectivo AS estado,
+               s.nombre AS servicio_nombre, l.nombre AS local_nombre
         FROM actividad_peluquero a
-        LEFT JOIN citas ci ON a.citaid = ci.citaid
-        LEFT JOIN clientes c ON a.clienteid = c.clienteid
-        LEFT JOIN servicios s ON ci.servicioid = s.servicioid
-        LEFT JOIN local l ON ci.localid = l.localid
-        WHERE a.peluqueroid = %s
+        JOIN v_citas ci ON a.citaid = ci.citaid
+        JOIN clientes c ON a.clienteid = c.clienteid
+        JOIN servicios s ON ci.servicioid = s.servicioid
+        JOIN local l ON ci.localid = l.localid
+        WHERE a.peluqueroid = %s AND a.fecha >= %s
         ORDER BY a.fecha DESC
-    """, (peluqueroid,))
-
-    actividades = cursor.fetchall()
-    column_names = [desc[0] for desc in cursor.description]
-
-    cursor.close()
-    connection.close()
-
-    result = []
-    for row in actividades:
-        actividad = {}
-        for i, value in enumerate(row):
-            if isinstance(value, datetime):
-                actividad[column_names[i]] = value.strftime('%Y-%m-%d %H:%M')
-            else:
-                actividad[column_names[i]] = value
-        result.append(actividad)
-
-    return jsonify(result), 200
+        """,
+        (peluqueroid, since),
+    )
+    return jsonify([ser.activity(r) for r in rows]), 200
 
 
-@barbers_bp.route('/get_barber_stats', methods=['GET'])
-def get_barber_stats():
-    peluqueroid = request.args.get("peluqueroid", type=int)
-    localid = request.args.get("localid", type=int)
-    start_date_str = request.args.get("start")
-    end_date_str = request.args.get("end")
-
-    if not all([peluqueroid, localid, start_date_str, end_date_str]):
-        return jsonify({"error": "Se requieren 'peluqueroid', 'localid', 'start' y 'end'"}), 400
-
-    try:
-        fecha_inicio = datetime.strptime(start_date_str, "%Y-%m-%d")
-        fecha_fin = datetime.strptime(end_date_str, "%Y-%m-%d") + timedelta(days=1)
-    except ValueError:
-        return jsonify({"error": "Formato de fecha inválido. Usa YYYY-MM-DD"}), 400
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    # Total de clientes distintos atendidos
-    cursor.execute("""
-        SELECT COUNT(DISTINCT clienteid)
-        FROM citas
-        WHERE peluqueroid = %s AND localid = %s
-        AND fechainicio >= %s AND fechainicio < %s
-        AND estado = 'Completada'
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    total_clientes = cursor.fetchone()[0]
-
-    # Total citas realizadas
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM citas
-        WHERE peluqueroid = %s AND localid = %s
-        AND fechainicio >= %s AND fechainicio < %s
-        AND estado = 'Completada'
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    total_citas = cursor.fetchone()[0]
-
-    # Citas canceladas
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM citas
-        WHERE peluqueroid = %s AND localid = %s
-        AND fechainicio >= %s AND fechainicio < %s
-        AND estado = 'Cancelada'
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    total_canceladas = cursor.fetchone()[0]
-
-    # Citas no completadas
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM citas
-        WHERE peluqueroid = %s AND localid = %s
-        AND fechainicio >= %s AND fechainicio < %s
-        AND estado = 'No completada'
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    total_no_completadas = cursor.fetchone()[0]
-
-    # Servicio más solicitado
-    cursor.execute("""
-        SELECT c.servicioid, s.nombre, COUNT(*) as total
-        FROM citas c
-        JOIN servicios s ON c.servicioid = s.servicioid
-        WHERE c.peluqueroid = %s AND c.localid = %s
-        AND c.fechainicio >= %s AND c.fechainicio < %s
-        AND c.estado = 'Completada'
-        GROUP BY c.servicioid, s.nombre
-        ORDER BY total DESC
-        LIMIT 1
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    servicio_data = cursor.fetchone()
-    servicio_mas_solicitado = {
-        "servicioid": servicio_data[0],
-        "nombre": servicio_data[1],
-        "cantidad": servicio_data[2]
-    } if servicio_data else None
-
-    # Ingresos totales
-    cursor.execute("""
-        SELECT SUM(s.precio)
-        FROM citas c
-        JOIN servicios s ON c.servicioid = s.servicioid
-        WHERE c.peluqueroid = %s AND c.localid = %s
-        AND c.fechainicio >= %s AND c.fechainicio < %s
-        AND c.estado = 'Completada'
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    ingresos_totales = cursor.fetchone()[0] or 0.0
-
-    # Cliente más frecuente
-    cursor.execute("""
-        SELECT cl.clienteid, cl.nombre, COUNT(*) as total_citas
-        FROM citas c
-        JOIN clientes cl ON c.clienteid = cl.clienteid
-        WHERE c.peluqueroid = %s AND c.localid = %s
-        AND c.fechainicio >= %s AND c.fechainicio < %s
-        AND c.estado = 'Completada'
-        GROUP BY cl.clienteid, cl.nombre
-        ORDER BY total_citas DESC
-        LIMIT 1
-    """, (peluqueroid, localid, fecha_inicio, fecha_fin))
-    cliente_data = cursor.fetchone()
-    cliente_mas_frecuente = {
-        "clienteid": cliente_data[0],
-        "nombre": cliente_data[1],
-        "total_citas": cliente_data[2]
-    } if cliente_data else None
+@bp.get("/<int:peluqueroid>/stats")
+@require_auth(*STAFF_ROLES)
+def stats(peluqueroid: int):
+    barber = require_barber_access(peluqueroid, manager_roles=LOCAL_MANAGERS)
+    rng = DateRangeQuery(start=parse_date_param("start"), end=parse_date_param("end"))
+    return jsonify(stats_service.barber_stats(peluqueroid, barber["localid"], rng.start, rng.end)), 200
 
 
-    # Media de citas por día
-    dias = (fecha_fin - fecha_inicio).days or 1
-    promedio_citas_por_dia = total_citas / dias
-
-    cursor.close()
-    connection.close()
-
-    return jsonify({
-        "total_clientes_atendidos": total_clientes,
-        "total_citas": total_citas,
-        "total_canceladas": total_canceladas,
-        "total_no_completadas": total_no_completadas,
-        "servicio_mas_solicitado": servicio_mas_solicitado,
-        "cliente_mas_frecuente": cliente_mas_frecuente,
-        "ingresos_totales": float(ingresos_totales),
-        "promedio_citas_por_dia": round(promedio_citas_por_dia, 2)
-    }), 200
+@bp.post("/<int:peluqueroid>/stats/email")
+@require_auth(*STAFF_ROLES)
+@limiter.limit("5 per hour")
+def email_stats(peluqueroid: int):
+    user = current_user()
+    if user.peluqueroid != peluqueroid:
+        raise Forbidden("Solo puedes enviarte tus propias estadísticas")
+    data = parse(StatsEmailIn)
+    rng = DateRangeQuery(start=data.start_date, end=data.end_date)
+    numbers = stats_service.barber_stats(peluqueroid, user.localid, rng.start, rng.end)
+    stats_service.send_barber_stats(user.email, numbers, rng.start, rng.end)
+    return jsonify({"message": "Estadísticas enviadas con éxito", "username": None}), 200
 
 
+# --------------------------------------------------------------------------
+# Gestión de personal (solo el admin del local)
+# --------------------------------------------------------------------------
+def _managed_barber(peluqueroid: int) -> dict:
+    admin = current_user()
+    barber = get_barber_or_404(peluqueroid)
+    admin.require_local_role(barber["localid"], LOCAL_MANAGERS)
+    if barber["usuarioid"] == admin.usuarioid:
+        raise Forbidden("No puedes modificar tu propia cuenta desde la gestión de personal")
+    if barber["rol"] == ADMIN and not admin.is_superadmin:
+        raise Forbidden("No puedes modificar a otro administrador")
+    return barber
+
+
+@bp.patch("/<int:peluqueroid>/role")
+@require_auth(*LOCAL_MANAGERS)
+def change_role(peluqueroid: int):
+    barber = _managed_barber(peluqueroid)
+    data = parse(BarberRoleIn)
+    if barber["rol"] == data.rol:
+        return jsonify({"message": f"Rol actualizado a {data.rol}", "username": None}), 200
+    with transaction() as cur:
+        cur.execute("UPDATE usuarios SET rol = %s WHERE usuarioid = %s", (data.rol, barber["usuarioid"]))
+    audit("role_changed", usuarioid=barber["usuarioid"], actor=current_user().usuarioid,
+          detalles={"de": barber["rol"], "a": data.rol})
+    return jsonify({"message": f"Rol actualizado a {data.rol}", "username": None}), 200
+
+
+@bp.patch("/<int:peluqueroid>/active")
+@require_auth(*LOCAL_MANAGERS)
+def set_active(peluqueroid: int):
+    barber = _managed_barber(peluqueroid)
+    data = parse(BarberActiveIn)
+    with transaction() as cur:
+        cur.execute("UPDATE peluqueros SET activo = %s WHERE peluqueroid = %s", (data.activo, peluqueroid))
+        pending = 0
+        if not data.activo:
+            # La baja cierra inmediatamente todas sus sesiones.
+            revoke_all_sessions(cur, barber["usuarioid"])
+            cur.execute(
+                "SELECT count(*) AS n FROM citas WHERE peluqueroid = %s AND estado = 'Pendiente' AND fechainicio > %s",
+                (peluqueroid, now_local()),
+            )
+            pending = cur.fetchone()["n"]
+    audit("barber_activated" if data.activo else "barber_deactivated", usuarioid=barber["usuarioid"],
+          actor=current_user().usuarioid)
+    if data.activo:
+        message = "Barbero activado correctamente"
+    else:
+        message = "Barbero desactivado correctamente"
+        if pending:
+            message += f". Tiene {pending} cita(s) pendiente(s) que debes reasignar o cancelar"
+    return jsonify({"message": message, "pending_appointments": pending, "username": None}), 200
