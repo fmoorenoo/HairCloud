@@ -1,19 +1,18 @@
 package com.haircloud.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.haircloud.data.SessionManager
 import com.haircloud.data.model.LoginResponse
 import com.haircloud.data.model.RegisterResponse
 import com.haircloud.data.repository.AuthRepository
-import com.haircloud.data.storage.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
+class AuthViewModel : ViewModel() {
     private val repository = AuthRepository()
-    private val tokenManager = TokenManager(application.applicationContext)
+    private val tokenManager = SessionManager.store
 
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
@@ -22,37 +21,32 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     val registerState: StateFlow<RegisterState> = _registerState
 
     fun login(username: String, password: String) {
+        if (_loginState.value is LoginState.Loading) return
         _loginState.value = LoginState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.login(username, password)
-                if (result.isSuccess) {
-                    val response = result.getOrThrow()
-                    tokenManager.saveSession(response.token, response.usuarioid, response.rol)
-                    _loginState.value = LoginState.Success(response)
-                } else {
-                    val errorMessage = result.exceptionOrNull()?.message ?: "Error desconocido"
-                    _loginState.value = LoginState.Error(errorMessage)
-                }
-            } catch (e: Exception) {
-                _loginState.value = LoginState.Error(e.message ?: "Error desconocido")
-            }
+            _loginState.value = repository.login(username, password).fold(
+                onSuccess = { LoginState.Success(it) },
+                onFailure = { LoginState.Error(it.message ?: "Error desconocido") }
+            )
         }
     }
 
-    fun register(nombre: String, email: String, username: String, password: String) {
+    /**
+     * @param verificationToken token obtenido al verificar el código enviado al email;
+     * el servidor rechaza registros sin email verificado.
+     */
+    fun register(nombre: String, email: String, username: String, password: String, verificationToken: String?) {
+        if (_registerState.value is RegisterState.Loading) return
+        if (verificationToken.isNullOrBlank()) {
+            _registerState.value = RegisterState.Error("Verifica tu correo antes de continuar")
+            return
+        }
         _registerState.value = RegisterState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.register(nombre, email, username, password)
-                if (result.isSuccess) {
-                    _registerState.value = RegisterState.Success(result.getOrThrow())
-                } else {
-                    _registerState.value = RegisterState.Error(result.exceptionOrNull()?.message ?: "No se pudo registrar el usuario")
-                }
-            } catch (e: Exception) {
-                _registerState.value = RegisterState.Error(e.message ?: "Error desconocido")
-            }
+            _registerState.value = repository.register(nombre, email, username, password, verificationToken).fold(
+                onSuccess = { RegisterState.Success(it) },
+                onFailure = { RegisterState.Error(it.message ?: "No se pudo registrar el usuario") }
+            )
         }
     }
 
@@ -68,9 +62,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun getUserIdFlow() = tokenManager.userId
     fun getRoleFlow() = tokenManager.role
 
+    /** Revoca la sesión en el servidor y borra los tokens locales. */
     fun logout() {
-        viewModelScope.launch {
-            tokenManager.clearSession()
+        // No se usa viewModelScope: la pantalla se destruye al navegar al login
+        // y cancelaría la operación antes de terminar.
+        SessionManager.appScope.launch {
+            repository.logout()
         }
     }
 }

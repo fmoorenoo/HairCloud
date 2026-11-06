@@ -102,46 +102,62 @@ class BarberViewModel : ViewModel() {
         _barberUpdateState.value = BarberUpdateState.Idle
     }
 
-    fun toggleBarberRole(usuarioId: Int) {
+    /**
+     * Cambia el rol de un peluquero de su local (solo admin). [onDone] se invoca
+     * al terminar para refrescar la lista con datos reales del servidor.
+     */
+    fun setBarberRole(peluqueroId: Int, makeSemiAdmin: Boolean, onDone: (success: Boolean, message: String) -> Unit = { _, _ -> }) {
         _barberUpdateState.value = BarberUpdateState.Updating
         viewModelScope.launch {
-            val result = repository.toggleBarberRole(usuarioId)
-            _barberUpdateState.value = if (result.isSuccess) {
-                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
-            } else {
-                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al cambiar rol")
+            val result = repository.setBarberRole(peluqueroId, if (makeSemiAdmin) "semiadmin" else "peluquero")
+            _barberUpdateState.value = result.fold(
+                onSuccess = { BarberUpdateState.UpdateSuccess(it.message) },
+                onFailure = { BarberUpdateState.UpdateError(it.message ?: "Error al cambiar rol") }
+            )
+            when (val state = _barberUpdateState.value) {
+                is BarberUpdateState.UpdateSuccess -> onDone(true, state.message)
+                is BarberUpdateState.UpdateError -> onDone(false, state.message)
+                else -> Unit
             }
         }
     }
 
-    fun deactivateBarber(usuarioId: Int) {
+    fun deactivateBarber(peluqueroId: Int, onDone: (success: Boolean, message: String) -> Unit = { _, _ -> }) {
         _barberUpdateState.value = BarberUpdateState.Updating
         viewModelScope.launch {
-            val result = repository.deactivateBarber(usuarioId)
-            _barberUpdateState.value = if (result.isSuccess) {
-                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
-            } else {
-                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al desactivar barbero")
+            val result = repository.deactivateBarber(peluqueroId)
+            _barberUpdateState.value = result.fold(
+                onSuccess = { BarberUpdateState.UpdateSuccess(it.message) },
+                onFailure = { BarberUpdateState.UpdateError(it.message ?: "Error al desactivar barbero") }
+            )
+            when (val state = _barberUpdateState.value) {
+                is BarberUpdateState.UpdateSuccess -> onDone(true, state.message)
+                is BarberUpdateState.UpdateError -> onDone(false, state.message)
+                else -> Unit
             }
         }
     }
 
-    fun activateBarber(usuarioId: Int) {
+    fun activateBarber(peluqueroId: Int, onDone: (success: Boolean, message: String) -> Unit = { _, _ -> }) {
         _barberUpdateState.value = BarberUpdateState.Updating
         viewModelScope.launch {
-            val result = repository.activateBarber(usuarioId)
-            _barberUpdateState.value = if (result.isSuccess) {
-                BarberUpdateState.UpdateSuccess(result.getOrThrow().message)
-            } else {
-                BarberUpdateState.UpdateError(result.exceptionOrNull()?.message ?: "Error al activar barbero")
+            val result = repository.activateBarber(peluqueroId)
+            _barberUpdateState.value = result.fold(
+                onSuccess = { BarberUpdateState.UpdateSuccess(it.message) },
+                onFailure = { BarberUpdateState.UpdateError(it.message ?: "Error al activar barbero") }
+            )
+            when (val state = _barberUpdateState.value) {
+                is BarberUpdateState.UpdateSuccess -> onDone(true, state.message)
+                is BarberUpdateState.UpdateError -> onDone(false, state.message)
+                else -> Unit
             }
         }
     }
 
-    fun getInactiveBarbers() {
+    fun getInactiveBarbers(localId: Int) {
         _inactiveBarbersState.value = InactiveBarbersState.Loading
         viewModelScope.launch {
-            val result = repository.getInactiveBarbers()
+            val result = repository.getInactiveBarbers(localId)
             _inactiveBarbersState.value = if (result.isSuccess) {
                 InactiveBarbersState.Success(result.getOrThrow())
             } else {
@@ -150,10 +166,11 @@ class BarberViewModel : ViewModel() {
         }
     }
 
-    fun createBarber(request: CreateBarberRequest) {
+    fun createBarber(localId: Int, request: CreateBarberRequest) {
+        if (_createBarberState.value is CreateBarberState.Creating) return
         _createBarberState.value = CreateBarberState.Creating
         viewModelScope.launch {
-            val result = repository.createBarber(request)
+            val result = repository.createBarber(localId, request)
             _createBarberState.value = if (result.isSuccess) {
                 CreateBarberState.Success(result.getOrThrow().message)
             } else {
@@ -211,6 +228,7 @@ class BarberViewModel : ViewModel() {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun sendBarberStatsEmail(
         peluqueroId: Int,
         stats: BarberStatsResponse,
@@ -219,7 +237,8 @@ class BarberViewModel : ViewModel() {
     ) {
         _barberStatsEmailState.value = BarberStatsEmailState.Sending
         viewModelScope.launch {
-            val result = repository.sendBarberStatsEmail(peluqueroId, stats, startDate, endDate)
+            // Las cifras se recalculan en el servidor: [stats] no se envía.
+            val result = repository.sendBarberStatsEmail(peluqueroId, startDate, endDate)
             _barberStatsEmailState.value = if (result.isSuccess) {
                 BarberStatsEmailState.Success(result.getOrThrow().message)
             } else {

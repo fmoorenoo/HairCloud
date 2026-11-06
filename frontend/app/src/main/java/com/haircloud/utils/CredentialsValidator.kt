@@ -1,19 +1,25 @@
 package com.haircloud.utils
 
 object CredentialsValidator {
-    /* Requisitos de contraseña:
-     - Al menos 4 letras
-     - Al menos un número
-     - Solo puede contener letras, números y los símbolos: - / . / _
+    /** Texto mostrado al usuario; debe coincidir con la política del servidor (app/schemas.py). */
+    const val PASSWORD_REQUIREMENTS = "Al menos 8 caracteres\n" +
+            "Al menos una letra y un número\n" +
+            "Se permiten símbolos\n" +
+            "No puede contener espacios"
+
+    /* Requisitos de contraseña (los mismos que valida el servidor):
+     - Entre 8 caracteres y 72 bytes (límite de bcrypt)
+     - Al menos una letra y al menos un número
+     - Se permiten símbolos
      - No puede contener espacios
     */
     fun isPasswordValid(password: String): Boolean {
-        val letterCount = password.count { it.isLetter() }
+        val correctLength = password.length >= 8 && password.toByteArray(Charsets.UTF_8).size <= 72
+        val hasLetter = password.any { it.isLetter() }
         val hasNumber = password.any { it.isDigit() }
-        val hasOnlyAllowedChars = password.all { it.isLetterOrDigit() || it in "-._" }
-        val hasNoSpaces = !password.contains(" ")
+        val hasNoSpaces = password.none { it.isWhitespace() }
 
-        return letterCount >= 4 && hasNumber && hasOnlyAllowedChars && hasNoSpaces
+        return correctLength && hasLetter && hasNumber && hasNoSpaces
     }
 
     /* Requisitos de nombre de usuario:

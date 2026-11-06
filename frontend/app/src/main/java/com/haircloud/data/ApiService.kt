@@ -1,187 +1,191 @@
 package com.haircloud.data
 
+import com.haircloud.data.model.*
+import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Path
-import retrofit2.Call
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
-import com.haircloud.data.model.*
-import retrofit2.http.HTTP
+import retrofit2.http.Path
+import retrofit2.http.Query
 
+/** Respuesta genérica de las operaciones de escritura. */
+data class ApiResponse(val message: String, val username: String? = null)
 
-data class ApiResponse(val message: String, val username: String?)
+private const val NO_AUTH = "${ApiClient.NO_AUTH_HEADER}: true"
 
+/**
+ * API REST v1. Las rutas son relativas a `BuildConfig.API_BASE_URL` (…/api/v1/).
+ *
+ * La identidad del usuario la determina el servidor a partir del token: ya
+ * no se envían `clienteid`/`usuarioid` en URLs ni cuerpos.
+ */
 interface ApiService {
-    @POST("/auth/login")
-    fun login(@Body request: LoginRequest): Call<LoginResponse>
+    // ---- Autenticación ----------------------------------------------------
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
-    @POST("/auth/register")
-    fun register(@Body request: RegisterRequest): Call<RegisterResponse>
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/logout")
+    suspend fun logout(@Body request: RefreshRequest): Response<ApiResponse>
 
-    @POST("/auth/send_verification_code")
-    suspend fun sendVerificationCode(@Body requestBody: Map<String, String>): ApiResponse
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/register")
+    suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 
-    @POST("/auth/verify_code")
-    suspend fun verifyCode(@Body requestBody: Map<String, String>): ApiResponse
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/verification-codes")
+    suspend fun sendVerificationCode(@Body request: SendCodeRequest): Response<ApiResponse>
 
-    @POST("/auth/reset_password")
-    suspend fun resetPassword(@Body requestBody: Map<String, String>): ApiResponse
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/verification-codes/verify")
+    suspend fun verifyCode(@Body request: VerifyCodeRequest): Response<VerifyCodeResponse>
 
-    @GET("/clients/get_client/{client_id}")
-    fun getClient(@Path("client_id") clientId: Int): Call<ClientResponse>
+    @retrofit2.http.Headers(NO_AUTH)
+    @POST("auth/password-reset")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ApiResponse>
 
-    @PUT("/clients/update_client/{user_id}")
-    fun updateClient(
-        @Path("user_id") userId: Int,
-        @Body updateData: Map<String, String?>
-    ): Call<ApiResponse>
+    // ---- Cliente autenticado ---------------------------------------------
+    @GET("me/client")
+    suspend fun getClient(): Response<ClientResponse>
 
-    @GET("/barbershops/get_all_barbershops/{client_id}")
-    fun getAllBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+    @PATCH("me/client")
+    suspend fun updateClient(@Body updateData: Map<String, String?>): Response<ApiResponse>
 
-    @GET("/barbershops/get_barbershop/{client_id}/{local_id}")
-    fun getBarbershopById(
-        @Path("client_id") clientId: Int,
-        @Path("local_id") localId: Int
-    ): Call<BarbershopResponse>
+    @GET("me/appointments")
+    suspend fun getClientDates(): Response<DatesResponse>
 
-    @PUT("/barbershops/update_barbershop/{local_id}")
-    fun updateBarbershop(
+    @GET("me/stats")
+    suspend fun getClientStats(): Response<ClientStatsResponse>
+
+    @GET("me/favorites")
+    suspend fun getFavoriteBarbershops(): Response<List<BarbershopResponse>>
+
+    @PUT("me/favorites/{local_id}")
+    suspend fun addFavorite(@Path("local_id") localId: Int): Response<ApiResponse>
+
+    @DELETE("me/favorites/{local_id}")
+    suspend fun removeFavorite(@Path("local_id") localId: Int): Response<ApiResponse>
+
+    // ---- Personal autenticado --------------------------------------------
+    @GET("me/barber")
+    suspend fun getBarber(): Response<GetBarberResponse>
+
+    @PATCH("me/barber")
+    suspend fun updateBarber(@Body updateData: Map<String, String?>): Response<ApiResponse>
+
+    // ---- Locales ---------------------------------------------------------
+    @GET("barbershops")
+    suspend fun getAllBarbershops(): Response<List<BarbershopResponse>>
+
+    @GET("barbershops/{local_id}")
+    suspend fun getBarbershopById(@Path("local_id") localId: Int): Response<BarbershopResponse>
+
+    @PATCH("barbershops/{local_id}")
+    suspend fun updateBarbershop(
         @Path("local_id") localId: Int,
         @Body updateData: Map<String, String?>
-    ): Call<ApiResponse>
+    ): Response<ApiResponse>
 
-    @GET("/barbershops/get_favorite_barbershops/{client_id}")
-    fun getFavoriteBarbershops(@Path("client_id") clientId: Int): Call<List<BarbershopResponse>>
+    @GET("barbershops/{local_id}/services")
+    suspend fun getServicesByLocalId(@Path("local_id") localId: Int): Response<List<ServiceResponse>>
 
-    @POST("/barbershops/add_favorite")
-    fun addFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
+    @POST("barbershops/{local_id}/services")
+    suspend fun createService(@Path("local_id") localId: Int, @Body service: ServiceBody): Response<ApiResponse>
 
-    @HTTP(method = "DELETE", path = "/barbershops/remove_favorite", hasBody = true)
-    fun removeFavorite(@Body body: Map<String, Int>): Call<ApiResponse>
+    @GET("barbershops/{local_id}/reviews")
+    suspend fun getBarbershopReviews(@Path("local_id") localId: Int): Response<List<ReviewResponse>>
 
-    @GET("/services/get_services/{local_id}")
-    fun getServicesByLocalId(@Path("local_id") localId: Int): Call<List<ServiceResponse>>
+    @POST("barbershops/{local_id}/reviews")
+    suspend fun addReview(@Path("local_id") localId: Int, @Body body: ReviewBody): Response<ReviewCreatedResponse>
 
-    @GET("/services/get_service/{servicioid}")
-    fun getService(@Path("servicioid") servicioId: Int): Call<ServiceResponse>
+    @GET("barbershops/{local_id}/barbers")
+    suspend fun getBarbersByLocalId(@Path("local_id") localId: Int): Response<List<BarberResponse>>
 
-    @POST("/services/create_service")
-    fun createService(@Body service: ServiceRequest): Call<ApiResponse>
+    @GET("barbershops/{local_id}/barbers/inactive")
+    suspend fun getInactiveBarbers(@Path("local_id") localId: Int): Response<List<InactiveBarberResponse>>
 
-    @PUT("/services/edit_service/{servicioid}")
-    fun editService(
-        @Path("servicioid") servicioId: Int,
-        @Body service: ServiceRequest
-    ): Call<ApiResponse>
+    @POST("barbershops/{local_id}/barbers")
+    suspend fun createBarber(@Path("local_id") localId: Int, @Body request: CreateBarberRequest): Response<ApiResponse>
 
-    @HTTP(method = "DELETE", path = "/services/delete_service/{servicioid}", hasBody = false)
-    fun deleteService(@Path("servicioid") servicioId: Int): Call<ApiResponse>
+    // ---- Servicios y reseñas ---------------------------------------------
+    @GET("services/{servicio_id}")
+    suspend fun getService(@Path("servicio_id") servicioId: Int): Response<ServiceResponse>
 
-    @GET("/barbershops/get_barbershop_reviews/{local_id}")
-    fun getBarbershopReviews(@Path("local_id") localId: Int): Call<List<ReviewResponse>>
+    @PUT("services/{servicio_id}")
+    suspend fun editService(@Path("servicio_id") servicioId: Int, @Body service: ServiceBody): Response<ApiResponse>
 
-    @POST("/barbershops/add_review")
-    fun addReview(@Body body: ReviewRequest): Call<ApiResponse>
+    @DELETE("services/{servicio_id}")
+    suspend fun deleteService(@Path("servicio_id") servicioId: Int): Response<ApiResponse>
 
-    @HTTP(method = "DELETE", path = "/barbershops/delete_review/{resenaid}", hasBody = false)
-    fun deleteReview(@Path("resenaid") resenaId: Int): Call<ApiResponse>
+    @DELETE("reviews/{resena_id}")
+    suspend fun deleteReview(@Path("resena_id") resenaId: Int): Response<ApiResponse>
 
-    @GET("/barbershops/get_barbers/{local_id}")
-    fun getBarbersByLocalId(@Path("local_id") localId: Int): Call<List<BarberResponse>>
+    // ---- Peluqueros ------------------------------------------------------
+    @GET("barbers/{peluquero_id}/schedule")
+    suspend fun getWeeklySchedule(@Path("peluquero_id") peluqueroId: Int): Response<List<WeeklyScheduleResponse>>
 
-    @GET("/calendar/get_weekly_schedule/{peluqueroid}")
-    fun getWeeklySchedule(@Path("peluqueroid") peluqueroId: Int): Call<List<WeeklyScheduleResponse>>
-
-    @GET("/calendar/get_blocked_hours/{peluqueroid}")
-    fun getBlockedHours(@Path("peluqueroid") peluqueroId: Int): Call<List<BlockedHoursResponse>>
-
-    @GET("/calendar/get_barber_dates/{peluqueroid}")
-    fun getBarberDates(@Path("peluqueroid") peluqueroId: Int): Call<List<DateResponse>>
-
-    @GET("/calendar/get_available_slots/{peluqueroid}")
-    fun getAvailableSlots(
-        @Path("peluqueroid") peluqueroId: Int,
-        @retrofit2.http.Query("fecha") fecha: String,
-        @retrofit2.http.Query("duracion") duracion: Int
-    ): Call<List<AvailableSlot>>
-
-    @POST("/dates/add_date")
-    fun addDate(@Body cita: AddDateRequest): Call<ApiResponse>
-
-    @HTTP(method = "DELETE", path = "/dates/delete_date/{citaid}", hasBody = false)
-    fun deleteDate(@Path("citaid") citaId: Int): Call<ApiResponse>
-
-    @PUT("/dates/update_date/{citaid}")
-    fun updateDateEstado(
-        @Path("citaid") citaId: Int,
-        @Body estado: Map<String, String>
-    ): Call<ApiResponse>
-
-    @GET("/clients/get_client_dates/{client_id}")
-    fun getClientDates(@Path("client_id") clientId: Int): Call<DatesResponse>
-
-    @GET("/clients/get_client_stats/{client_id}")
-    fun getClientStats(@Path("client_id") clientId: Int): Call<ClientStatsResponse>
-
-    @GET("/barbers/get_barber/{user_id}")
-    fun getBarber(@Path("user_id") userId: Int): Call<GetBarberResponse>
-
-    @GET("/barbers/get_barber_dates/{barber_id}")
-    fun getBarberDates(
-        @Path("barber_id") barberId: Int,
-        @retrofit2.http.Query("date") date: String
-    ): Call<BarberDatesResponse>
-
-    @GET("/barbers/get_barber_dates/{barber_id}")
-    fun getBarberDatesInRange(
-        @Path("barber_id") barberId: Int,
-        @retrofit2.http.Query("start") startDate: String,
-        @retrofit2.http.Query("end") endDate: String
-    ): Call<BarberDatesResponse>
-
-    @PUT("/barbers/update_barber/{user_id}")
-    fun updateBarber(
-        @Path("user_id") userId: Int,
-        @Body updateData: Map<String, String?>
-    ): Call<ApiResponse>
-
-    @PUT("/barbers/toggle_barber_role/{user_id}")
-    fun toggleBarberRole(@Path("user_id") userId: Int): Call<ApiResponse>
-
-    @PUT("/barbers/deactivate_barber/{user_id}")
-    fun deactivateBarber(@Path("user_id") userId: Int): Call<ApiResponse>
-
-    @PUT("/barbers/activate_barber/{user_id}")
-    fun activateBarber(@Path("user_id") userId: Int): Call<ApiResponse>
-
-    @GET("/barbers/get_inactive_barbers")
-    fun getInactiveBarbers(): Call<List<InactiveBarberResponse>>
-
-    @POST("/barbers/create_barber")
-    fun createBarber(@Body request: CreateBarberRequest): Call<ApiResponse>
-
-    @PUT("/barbers/update_barber_schedule/{peluquero_id}")
-    fun updateBarberSchedule(
+    @PUT("barbers/{peluquero_id}/schedule")
+    suspend fun updateBarberSchedule(
         @Path("peluquero_id") peluqueroId: Int,
-        @Body schedule: List<WorkDaySchedule>
-    ): Call<ApiResponse>
+        @Body schedule: ScheduleBody
+    ): Response<ApiResponse>
 
-    @POST("/mail/send_info_date")
-    fun sendInfoDate(@Body request: AddDateRequest): Call<ApiResponse>
+    @GET("barbers/{peluquero_id}/blocked-hours")
+    suspend fun getBlockedHours(@Path("peluquero_id") peluqueroId: Int): Response<List<BlockedHoursResponse>>
 
-    @GET("/barbers/get_barber_activity/{peluqueroid}")
-    fun getBarberActivity(@Path("peluqueroid") peluqueroId: Int): Call<List<BarberActivityResponse>>
+    @GET("barbers/{peluquero_id}/availability")
+    suspend fun getAvailableSlots(
+        @Path("peluquero_id") peluqueroId: Int,
+        @Query("fecha") fecha: String,
+        @Query("servicioid") servicioId: Int
+    ): Response<List<AvailableSlot>>
 
-    @GET("/barbers/get_barber_stats")
-    fun getBarberStats(
-        @retrofit2.http.Query("peluqueroid") peluqueroId: Int,
-        @retrofit2.http.Query("localid") localId: Int,
-        @retrofit2.http.Query("start") startDate: String,
-        @retrofit2.http.Query("end") endDate: String
-    ): Call<BarberStatsResponse>
+    @GET("barbers/{peluquero_id}/appointments")
+    suspend fun getBarberDates(
+        @Path("peluquero_id") barberId: Int,
+        @Query("date") date: String
+    ): Response<BarberDatesResponse>
 
-    @POST("/mail/send_barber_stats")
-    fun sendBarberStats(@Body request: SendBarberStatsRequest): Call<ApiResponse>
+    @GET("barbers/{peluquero_id}/appointments")
+    suspend fun getBarberDatesInRange(
+        @Path("peluquero_id") barberId: Int,
+        @Query("start") startDate: String,
+        @Query("end") endDate: String
+    ): Response<BarberDatesResponse>
+
+    @GET("barbers/{peluquero_id}/activity")
+    suspend fun getBarberActivity(@Path("peluquero_id") peluqueroId: Int): Response<List<BarberActivityResponse>>
+
+    @GET("barbers/{peluquero_id}/stats")
+    suspend fun getBarberStats(
+        @Path("peluquero_id") peluqueroId: Int,
+        @Query("start") startDate: String,
+        @Query("end") endDate: String
+    ): Response<BarberStatsResponse>
+
+    @POST("barbers/{peluquero_id}/stats/email")
+    suspend fun sendBarberStats(
+        @Path("peluquero_id") peluqueroId: Int,
+        @Body request: SendBarberStatsRequest
+    ): Response<ApiResponse>
+
+    @PATCH("barbers/{peluquero_id}/role")
+    suspend fun setBarberRole(@Path("peluquero_id") peluqueroId: Int, @Body body: BarberRoleBody): Response<ApiResponse>
+
+    @PATCH("barbers/{peluquero_id}/active")
+    suspend fun setBarberActive(@Path("peluquero_id") peluqueroId: Int, @Body body: BarberActiveBody): Response<ApiResponse>
+
+    // ---- Citas -----------------------------------------------------------
+    @POST("appointments")
+    suspend fun addDate(@Body cita: AddDateRequest): Response<AddDateResponse>
+
+    @PATCH("appointments/{cita_id}/status")
+    suspend fun updateDateEstado(
+        @Path("cita_id") citaId: Int,
+        @Body body: UpdateDateStatusRequest
+    ): Response<ApiResponse>
 }

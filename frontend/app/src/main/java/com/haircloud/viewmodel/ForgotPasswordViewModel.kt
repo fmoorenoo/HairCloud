@@ -2,11 +2,12 @@ package com.haircloud.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.haircloud.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.haircloud.data.repository.AuthRepository
 
+/** Envío y verificación de códigos por email (registro y recuperación de contraseña). */
 class ForgotPasswordViewModel : ViewModel() {
     private val repository = AuthRepository()
 
@@ -14,51 +15,44 @@ class ForgotPasswordViewModel : ViewModel() {
     val forgotPasswordState: StateFlow<ForgotPasswordState> = _forgotPasswordState
 
     fun sendVerificationCode(email: String, purpose: String) {
+        if (_forgotPasswordState.value is ForgotPasswordState.Loading) return
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
-            val result = repository.sendVerificationCode(email, purpose)
-            result.fold(
-                onSuccess = { response ->
-                    val username = response.username ?: "Usuario desconocido"
-                    _forgotPasswordState.value = ForgotPasswordState.CodeSentSuccess(response.message, username)
-                },
-                onFailure = {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeSentError(it.message ?: "Error desconocido")
-                }
+            _forgotPasswordState.value = repository.sendVerificationCode(email, purpose).fold(
+                // El servidor no revela si el email existe: el nombre de usuario
+                // solo se conoce tras verificar el código.
+                onSuccess = { ForgotPasswordState.CodeSentSuccess(it.message, null) },
+                onFailure = { ForgotPasswordState.CodeSentError(it.message ?: "Error desconocido") }
             )
         }
     }
 
     fun verifyCode(email: String, code: String, purpose: String) {
+        if (_forgotPasswordState.value is ForgotPasswordState.Loading) return
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.verifyCode(email, code, purpose)
-                if (result.isSuccess) {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedSuccess("Código verificado correctamente")
-                } else {
-                    _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedError("Código incorrecto o expirado")
-                }
-            } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.CodeVerifiedError(e.message ?: "Error desconocido")
-            }
+            _forgotPasswordState.value = repository.verifyCode(email, code, purpose).fold(
+                onSuccess = {
+                    ForgotPasswordState.CodeVerifiedSuccess(it.message, it.verification_token, it.username)
+                },
+                onFailure = { ForgotPasswordState.CodeVerifiedError(it.message ?: "Código incorrecto o caducado") }
+            )
         }
     }
 
-
-    fun resetPassword(email: String, code: String, newPassword: String) {
+    /**
+     * @param resetToken token devuelto por [verifyCode] (de un solo uso). El
+     * parámetro [email] se conserva por compatibilidad con la pantalla.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun resetPassword(email: String, resetToken: String, newPassword: String) {
+        if (_forgotPasswordState.value is ForgotPasswordState.Loading) return
         _forgotPasswordState.value = ForgotPasswordState.Loading
         viewModelScope.launch {
-            try {
-                val result = repository.resetPassword(email, code, newPassword)
-                if (result.isSuccess) {
-                    _forgotPasswordState.value = ForgotPasswordState.ResetPasswordSuccess("Contraseña restablecida")
-                } else {
-                    _forgotPasswordState.value = ForgotPasswordState.ResetPasswordError("No se pudo restablecer la contraseña")
-                }
-            } catch (e: Exception) {
-                _forgotPasswordState.value = ForgotPasswordState.ResetPasswordError(e.message ?: "Error desconocido")
-            }
+            _forgotPasswordState.value = repository.resetPassword(resetToken, newPassword).fold(
+                onSuccess = { ForgotPasswordState.ResetPasswordSuccess("Contraseña restablecida") },
+                onFailure = { ForgotPasswordState.ResetPasswordError(it.message ?: "No se pudo restablecer la contraseña") }
+            )
         }
     }
 
@@ -71,10 +65,13 @@ sealed class ForgotPasswordState {
     object Idle : ForgotPasswordState()
     object Loading : ForgotPasswordState()
     data class CodeSentSuccess(val message: String, val username: String?) : ForgotPasswordState()
-    data class CodeVerifiedSuccess(val message: String) : ForgotPasswordState()
+    data class CodeVerifiedSuccess(
+        val message: String,
+        val verificationToken: String,
+        val username: String?
+    ) : ForgotPasswordState()
     data class ResetPasswordSuccess(val message: String) : ForgotPasswordState()
     data class CodeSentError(val message: String) : ForgotPasswordState()
     data class CodeVerifiedError(val message: String) : ForgotPasswordState()
     data class ResetPasswordError(val message: String) : ForgotPasswordState()
 }
-

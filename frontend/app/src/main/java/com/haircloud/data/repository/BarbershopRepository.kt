@@ -1,268 +1,58 @@
 package com.haircloud.data.repository
 
 import com.haircloud.data.ApiClient
-import com.haircloud.data.model.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import retrofit2.HttpException
+import com.haircloud.data.apiCall
+import com.haircloud.data.model.BarberResponse
+import com.haircloud.data.model.BarbershopResponse
+import com.haircloud.data.model.ReviewBody
+import com.haircloud.data.model.ReviewResponse
+import com.haircloud.data.model.ServiceResponse
+import kotlin.math.roundToInt
 
+/**
+ * Locales, favoritos, servicios y reseñas. El `clienteId` que reciben algunas
+ * funciones ya no se envía: el servidor lo obtiene del token.
+ */
+@Suppress("UNUSED_PARAMETER")
 class BarbershopRepository {
     private val api = ApiClient.instance
 
-    suspend fun getAllBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getAllBarbershops(clienteId).execute()
-            }
+    suspend fun getAllBarbershops(clienteId: Int): Result<List<BarbershopResponse>> =
+        apiCall("Error al cargar barberías") { api.getAllBarbershops() }
 
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                val errorMessage = try {
-                    val errorJson = response.errorBody()?.string() ?: "{}"
-                    JSONObject(errorJson).getString("error")
-                } catch (_: Exception) {
-                    "Error al obtener las barberías"
-                }
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: HttpException) {
-            val errorMessage = try {
-                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
-                JSONObject(errorJson).getString("error")
-            } catch (_: Exception) {
-                "Error HTTP"
-            }
-            Result.failure(Exception(errorMessage))
-        } catch (_: Exception) {
-            Result.failure(Exception("Error en la conexión"))
-        }
-    }
+    suspend fun getBarbershopById(clienteId: Int, localId: Int): Result<BarbershopResponse> =
+        apiCall("Error al obtener la barbería") { api.getBarbershopById(localId) }
 
-    suspend fun getBarbershopById(clienteId: Int, localId: Int): Result<BarbershopResponse> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getBarbershopById(clienteId, localId).execute()
-            }
+    suspend fun updateBarbershop(localId: Int, updateData: Map<String, String?>): Result<String> =
+        apiCall("Error al actualizar la barbería") { api.updateBarbershop(localId, updateData) }
+            .map { it.message }
 
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("No se encontró la barbería"))
-            } else {
-                val errorMessage = try {
-                    val errorJson = response.errorBody()?.string() ?: "{}"
-                    JSONObject(errorJson).getString("error")
-                } catch (_: Exception) {
-                    "Error al obtener la barbería"
-                }
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: HttpException) {
-            val errorMessage = try {
-                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
-                JSONObject(errorJson).getString("error")
-            } catch (_: Exception) {
-                "Error HTTP"
-            }
-            Result.failure(Exception(errorMessage))
-        } catch (_: Exception) {
-            Result.failure(Exception("Error en la conexión"))
-        }
-    }
+    suspend fun getFavoriteBarbershops(clienteId: Int): Result<List<BarbershopResponse>> =
+        apiCall("Error al cargar favoritos") { api.getFavoriteBarbershops() }
 
-    suspend fun updateBarbershop(localId: Int, updateData: Map<String, String?>): Result<String> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                ApiClient.instance.updateBarbershop(localId, updateData).execute()
-            }
-            if (response.isSuccessful) {
-                Result.success(response.body()?.message ?: "Actualización exitosa")
-            } else {
-                Result.failure(Exception("Error al actualizar la barbería"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
+    suspend fun addFavorite(clienteId: Int, localId: Int): Result<String> =
+        apiCall("Error al agregar favorito") { api.addFavorite(localId) }.map { it.message }
 
-    suspend fun getFavoriteBarbershops(clienteId: Int): Result<List<BarbershopResponse>> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getFavoriteBarbershops(clienteId).execute()
-            }
+    suspend fun removeFavorite(clienteId: Int, localId: Int): Result<String> =
+        apiCall("Error al eliminar favorito") { api.removeFavorite(localId) }.map { it.message }
 
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                val errorMessage = try {
-                    val errorJson = response.errorBody()?.string() ?: "{}"
-                    JSONObject(errorJson).getString("error")
-                } catch (_: Exception) {
-                    "Error al obtener favoritos"
-                }
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (e: HttpException) {
-            val errorMessage = try {
-                val errorJson = e.response()?.errorBody()?.string() ?: "{}"
-                JSONObject(errorJson).getString("error")
-            } catch (_: Exception) {
-                "Error HTTP"
-            }
-            Result.failure(Exception(errorMessage))
-        } catch (_: Exception) {
-            Result.failure(Exception("Error en la conexión"))
-        }
-    }
+    suspend fun getServicesById(localId: Int): Result<List<ServiceResponse>> =
+        apiCall("Error al cargar servicios") { api.getServicesByLocalId(localId) }
 
-    suspend fun addFavorite(clienteId: Int, localId: Int): Result<String> {
-        return try {
-            val body = mapOf("clienteid" to clienteId, "localid" to localId)
-            val response = withContext(Dispatchers.IO) {
-                api.addFavorite(body).execute()
-            }
-            if (response.isSuccessful) {
-                Result.success(response.body()?.message ?: "Favorito agregado")
-            } else {
-                Result.failure(Exception("Error al agregar favorito"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error al conectar con el servidor"))
-        }
-    }
+    suspend fun getService(servicioId: Int): Result<ServiceResponse> =
+        apiCall("Error al cargar el servicio") { api.getService(servicioId) }
 
-    suspend fun removeFavorite(clienteId: Int, localId: Int): Result<String> {
-        return try {
-            val body = mapOf("clienteid" to clienteId, "localid" to localId)
-            val response = withContext(Dispatchers.IO) {
-                api.removeFavorite(body).execute()
-            }
-            if (response.isSuccessful) {
-                Result.success(response.body()?.message ?: "Favorito eliminado")
-            } else {
-                Result.failure(Exception("Error al eliminar favorito"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error al conectar con el servidor"))
-        }
-    }
+    suspend fun getBarbershopReviews(localId: Int): Result<List<ReviewResponse>> =
+        apiCall("Error al cargar reseñas") { api.getBarbershopReviews(localId) }
 
-    suspend fun getServicesById(localId: Int): Result<List<ServiceResponse>> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                ApiClient.instance.getServicesByLocalId(localId).execute()
-            }
+    suspend fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String): Result<String> =
+        apiCall("No se pudo añadir la reseña") {
+            api.addReview(localId, ReviewBody(calificacion.roundToInt(), comentario.trim().ifBlank { null }))
+        }.map { it.message }
 
-            if (response.isSuccessful) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("Error al obtener los servicios"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
+    suspend fun deleteReview(resenaId: Int): Result<String> =
+        apiCall("No se pudo eliminar la reseña") { api.deleteReview(resenaId) }.map { it.message }
 
-    suspend fun getService(servicioId: Int): Result<ServiceResponse> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getService(servicioId).execute()
-            }
-
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("Servicio no encontrado"))
-            } else {
-                Result.failure(Exception("Error al obtener el servicio"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
-
-    suspend fun getBarbershopReviews(localId: Int): Result<List<ReviewResponse>> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getBarbershopReviews(localId).execute()
-            }
-
-            if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
-            } else {
-                Result.failure(Exception("Error al obtener las reseñas"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
-
-    suspend fun addReview(clienteId: Int, localId: Int, calificacion: Double, comentario: String): Result<String> {
-        return try {
-            val body = ReviewRequest(
-                clienteid = clienteId,
-                localid = localId,
-                calificacion = calificacion,
-                comentario = comentario
-            )
-
-            val response = withContext(Dispatchers.IO) {
-                api.addReview(body).execute()
-            }
-
-            if (response.isSuccessful) {
-                Result.success(response.body()?.message ?: "Reseña añadida correctamente")
-            } else {
-                val errorMessage = try {
-                    val errorJson = response.errorBody()?.string() ?: "{}"
-                    JSONObject(errorJson).getString("error")
-                } catch (_: Exception) {
-                    "No se pudo añadir la reseña"
-                }
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
-
-    suspend fun deleteReview(resenaId: Int): Result<String> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.deleteReview(resenaId).execute()
-            }
-
-            if (response.isSuccessful) {
-                Result.success(response.body()?.message ?: "Reseña eliminada")
-            } else {
-                val errorMessage = try {
-                    val errorJson = response.errorBody()?.string() ?: "{}"
-                    JSONObject(errorJson).getString("error")
-                } catch (_: Exception) {
-                    "No se pudo eliminar la reseña"
-                }
-                Result.failure(Exception(errorMessage))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
-
-    suspend fun getBarbersById(localId: Int): Result<List<BarberResponse>> {
-        return try {
-            val response = withContext(Dispatchers.IO) {
-                api.getBarbersByLocalId(localId).execute()
-            }
-
-            if (response.isSuccessful) {
-                Result.success(response.body() ?: emptyList())
-            } else {
-                Result.failure(Exception("Error al obtener peluqueros"))
-            }
-        } catch (_: Exception) {
-            Result.failure(Exception("Error de conexión"))
-        }
-    }
+    suspend fun getBarbersById(localId: Int): Result<List<BarberResponse>> =
+        apiCall("Error al cargar peluqueros") { api.getBarbersByLocalId(localId) }
 }

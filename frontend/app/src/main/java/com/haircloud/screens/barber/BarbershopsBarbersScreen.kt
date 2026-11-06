@@ -260,20 +260,28 @@ fun BarbershopBarbersScreen(navController: NavController, localId: Int, userId: 
                                         userId = userId,
                                         isAdmin = isAdmin,
                                         onToggleRole = { usuarioId, nuevoEstado ->
-                                            barberViewModel.toggleBarberRole(usuarioId)
-                                            val mensaje = if (nuevoEstado) {
-                                                "${barbers.find { it.usuarioid == usuarioId }?.nombre ?: "El peluquero"} ahora puede administrar los servicios y las reseñas"
-                                            } else {
-                                                "${barbers.find { it.usuarioid == usuarioId }?.nombre ?: "El peluquero"} ya no tiene permisos de gestión"
+                                            val nombre = barbers.find { it.usuarioid == usuarioId }?.nombre ?: "El peluquero"
+                                            barbers.find { it.usuarioid == usuarioId }?.let { target ->
+                                                barberViewModel.setBarberRole(target.peluqueroid, nuevoEstado) { ok, error ->
+                                                    barbershopViewModel.getBarbersByLocalId(localId)
+                                                    snackbarType = if (ok) SnackbarType.INFO else SnackbarType.ERROR
+                                                    snackbarMessage = when {
+                                                        !ok -> error
+                                                        nuevoEstado -> "$nombre ahora puede administrar los servicios y las reseñas"
+                                                        else -> "$nombre ya no tiene permisos de gestión"
+                                                    }
+                                                }
                                             }
-                                            snackbarType = SnackbarType.INFO
-                                            snackbarMessage = mensaje
                                         },
                                         onDeleteBarber = { usuarioId ->
-                                            barberViewModel.deactivateBarber(usuarioId)
-                                            snackbarType = SnackbarType.INFO
-                                            snackbarMessage = "Barbero eliminado correctamente"
-                                            barbershopViewModel.getBarbersByLocalId(localId)
+                                            barbers.find { it.usuarioid == usuarioId }?.let { target ->
+                                                // Se refresca la lista cuando el servidor confirma la baja.
+                                                barberViewModel.deactivateBarber(target.peluqueroid) { ok, message ->
+                                                    barbershopViewModel.getBarbersByLocalId(localId)
+                                                    snackbarType = if (ok) SnackbarType.INFO else SnackbarType.ERROR
+                                                    snackbarMessage = message
+                                                }
+                                            }
                                         }
                                     )
                                 }

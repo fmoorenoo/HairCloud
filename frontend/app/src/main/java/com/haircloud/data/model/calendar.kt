@@ -13,13 +13,6 @@ data class BlockedHoursResponse(
     val motivo: String?
 )
 
-data class DateResponse(
-    val citaid: Int,
-    val fechainicio: String,
-    val fechafin: String,
-    val estado: String
-)
-
 data class AvailableSlot(
     val desde: String,
     val hasta: String

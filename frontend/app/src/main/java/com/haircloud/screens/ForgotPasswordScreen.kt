@@ -1,5 +1,6 @@
 package com.haircloud.screens
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,7 +66,7 @@ fun ForgotPasswordScreen(
         when (forgotPasswordState) {
             is ForgotPasswordState.CodeSentSuccess -> {
                 isCodeSent = true
-                verifiedUsername = (forgotPasswordState as ForgotPasswordState.CodeSentSuccess).username ?: "Usuario desconocido"
+                verifiedUsername = (forgotPasswordState as ForgotPasswordState.CodeSentSuccess).username ?: "Usuario"
                 snackbarHostState.showTypedSnackbar(
                     message = "Código enviado con éxito",
                     type = SnackbarType.SUCCESS
@@ -74,7 +75,10 @@ fun ForgotPasswordScreen(
             }
             is ForgotPasswordState.CodeVerifiedSuccess -> {
                 buttonsEnabled = false
-                val verifiedCode = code
+                val verified = forgotPasswordState as ForgotPasswordState.CodeVerifiedSuccess
+                // Se navega con el token de un solo uso, no con el código.
+                val verifiedCode = verified.verificationToken
+                verifiedUsername = verified.username ?: verifiedUsername
                 snackbarHostState.showTypedSnackbar(
                     message = "Código verificado correctamente",
                     type = SnackbarType.SUCCESS
@@ -82,7 +86,7 @@ fun ForgotPasswordScreen(
                 forgotPasswordViewModel.resetForgotPasswordState()
                 if (!isNavigating) {
                     isNavigating = true
-                    navController.navigate("reset_password/$email/$verifiedCode/$verifiedUsername")
+                    navController.navigate("reset_password/${Uri.encode(email)}/$verifiedCode/${Uri.encode(verifiedUsername)}")
                 }
             }
             is ForgotPasswordState.CodeSentError -> {

@@ -35,12 +35,12 @@ data class ReviewResponse(
     val cliente_nombre: String?
 )
 
-data class ReviewRequest(
-    val clienteid: Int,
-    val localid: Int,
-    val calificacion: Double,
-    val comentario: String
+data class ReviewBody(
+    val calificacion: Int,
+    val comentario: String?
 )
+
+data class ReviewCreatedResponse(val message: String, val resenaid: Int)
 
 data class BarberResponse(
     val peluqueroid: Int,
@@ -50,7 +50,7 @@ data class BarberResponse(
     val especialidad: String?,
     val fechacontratacion: String,
     val localid: Int,
-    val rol: String,
+    val rol: String
 )
 
 data class InactiveBarberResponse(

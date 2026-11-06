@@ -203,10 +203,7 @@ fun ResetPasswordScreen(navController: NavController, email: String, code: Strin
 
                         IconButton(onClick = {
                             dialogTitle = "Contraseña"
-                            dialogMessage = "Al menos cuatro letras\n" +
-                                    "Al menos un número\n" +
-                                    "Solo los símbolos: '-', '_', '.'\n" +
-                                    "No puede contener espacios"
+                            dialogMessage = CredentialsValidator.PASSWORD_REQUIREMENTS
                             showDialog = true
                         }) {
                             Icon(

@@ -48,7 +48,7 @@ import com.haircloud.viewmodel.InactiveBarbersState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class BarberToActivate(val usuarioId: Int, val nombre: String, val especialidad: String?)
+data class BarberToActivate(val usuarioId: Int, val nombre: String, val especialidad: String?, val peluqueroId: Int)
 
 data class WorkSchedule(
     val diaSemana: String,
@@ -91,7 +91,7 @@ fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?) {
     }
 
     LaunchedEffect(Unit) {
-        barberViewModel.getInactiveBarbers()
+        barberViewModel.getInactiveBarbers(localId)
     }
 
     Scaffold(
@@ -248,12 +248,10 @@ fun AddBarberScreen(navController: NavController, localId: Int, userId: Int?) {
 
                             Button(
                                 onClick = {
-                                    coroutineScope.launch {
-                                        barberViewModel.activateBarber(barberToActivate.usuarioId)
-                                        delay(500)
-                                        barberViewModel.getInactiveBarbers()
-                                        snackbarType = SnackbarType.SUCCESS
-                                        snackbarMessage = "${barberToActivate.nombre} añadido al personal"
+                                    barberViewModel.activateBarber(barberToActivate.peluqueroId) { ok, error ->
+                                        barberViewModel.getInactiveBarbers(localId)
+                                        snackbarType = if (ok) SnackbarType.SUCCESS else SnackbarType.ERROR
+                                        snackbarMessage = if (ok) "${barberToActivate.nombre} añadido al personal" else error
                                     }
 
                                     showActivationDialog = null
@@ -429,10 +427,7 @@ fun NewBarberSection(
             if (!isPasswordValid && contrasena.isNotEmpty()) {
                 ErrorRow {
                     dialogTitle = "Contraseña"
-                    dialogMessage = "Al menos cuatro letras\n" +
-                            "Al menos un número\n" +
-                            "Solo los símbolos: '-', '_', '.'\n" +
-                            "No puede contener espacios"
+                    dialogMessage = CredentialsValidator.PASSWORD_REQUIREMENTS
                     showDialog = true
                 }
             }
@@ -527,14 +522,11 @@ fun NewBarberSection(
                     email = email,
                     nombre = nombre,
                     especialidad = if (especialidad.isBlank()) null else especialidad,
-                    localid = localId,
                     horario = workSchedules.map {
                         WorkDaySchedule(it.diaSemana, it.horaInicio, it.horaFin)
                     }
                 )
-                coroutineScope.launch {
-                    barberViewModel.createBarber(request)
-                }
+                barberViewModel.createBarber(localId, request)
             },
             enabled = camposValidos,
             modifier = Modifier
@@ -675,7 +667,8 @@ fun PreviousBarbersSection(
                                         onBarberActivate( BarberToActivate(
                                                 barber.usuarioid,
                                                 barber.nombre,
-                                                barber.especialidad)
+                                                barber.especialidad,
+                                                barber.peluqueroid)
                                         )
                                     }
                                     .border(1.dp, Color.Transparent, RoundedCornerShape(16.dp)),

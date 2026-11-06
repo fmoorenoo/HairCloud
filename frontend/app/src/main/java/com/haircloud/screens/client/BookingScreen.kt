@@ -46,8 +46,6 @@ import com.haircloud.viewmodel.BarbershopViewModel
 import com.haircloud.viewmodel.CalendarViewModel
 import com.haircloud.viewmodel.DateOperationState
 import com.haircloud.viewmodel.DatesViewModel
-import com.haircloud.viewmodel.MailState
-import com.haircloud.viewmodel.MailViewModel
 import com.haircloud.viewmodel.SingleServiceState
 import com.haircloud.viewmodel.WeeklyScheduleState
 import kotlinx.coroutines.delay
@@ -65,8 +63,6 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     val barbershopViewModel = remember { BarbershopViewModel() }
     val calendarViewModel = remember { CalendarViewModel() }
     val datesViewModel = remember { DatesViewModel() }
-    val mailViewModel = remember { MailViewModel() }
-    val mailState by mailViewModel.mailState.collectAsState()
     val addDateState by datesViewModel.addDateState.collectAsState()
     val barbersState by barbershopViewModel.barbersState.collectAsState()
     val singleServiceState by barbershopViewModel.singleServiceState.collectAsState()
@@ -107,8 +103,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     LaunchedEffect(selectedBarber, selectedDate) {
         if (selectedBarber != null && selectedDate != null) {
             val fecha = selectedDate.toString()
-            val duracion = duracionServicio
-            calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, duracion)
+            calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, serviceId ?: 0)
         }
     }
 
@@ -127,17 +122,6 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
     LaunchedEffect(localId) {
         localId?.let {
             barbershopViewModel.getBarbersByLocalId(it)
-        }
-    }
-
-    LaunchedEffect(mailState) {
-        when (mailState) {
-            is MailState.Success -> {
-                snackbarMessage = "Cita enviada al correo"
-                snackbarType = SnackbarType.SUCCESS
-                mailViewModel.resetMailState()
-            }
-            else -> {}
         }
     }
 
@@ -463,21 +447,17 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
                     selectedDate,
                     LocalTime.parse(selectedSlot?.desde)
                 )
-                val fechafin = fechainicio.plusMinutes(duracionServicio.toLong())
-
                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
+                // El servidor calcula la hora de fin, el local y el cliente, valida
+                // el hueco y envía el email de confirmación tras guardar la cita.
                 val request = AddDateRequest(
-                    clienteid = clientId ?: 0,
                     peluqueroid = selectedBarber?.peluqueroid ?: 0,
                     servicioid = serviceId ?: 0,
-                    localid = localId ?: 0,
-                    fechainicio = fechainicio.format(formatter),
-                    fechafin = fechafin.format(formatter)
+                    fechainicio = fechainicio.format(formatter)
                 )
 
                 datesViewModel.addDate(request)
-                mailViewModel.sendInfoDate(request)
             },
             barber = selectedBarber,
             serviceName = serviceName,
@@ -506,8 +486,7 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
 
                 if (selectedBarber != null && selectedDate != null) {
                     val fecha = selectedDate.toString()
-                    val duracion = duracionServicio
-                    calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, duracion)
+                    calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, fecha, serviceId ?: 0)
                 }
 
                 snackbarMessage = message
@@ -528,6 +507,11 @@ fun BookingScreen(navController: NavController, userId: Int?, localId: Int?, ser
 
             is DateOperationState.Error -> {
                 val message = (addDateState as DateOperationState.Error).message
+                // El hueco puede haberse ocupado mientras tanto: recargar disponibilidad.
+                if (selectedBarber != null && selectedDate != null) {
+                    calendarViewModel.getAvailableSlots(selectedBarber!!.peluqueroid, selectedDate.toString(), serviceId ?: 0)
+                }
+                selectedSlot = null
                 snackbarHostState.showSnackbar(message)
                 datesViewModel.resetAddDateState()
             }

@@ -56,6 +56,8 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
     val registerState by authViewModel.registerState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var codeSentSuccessfully by remember { mutableStateOf(false) }
+    // Token de un solo uso que demuestra que el email se ha verificado.
+    var verificationToken by remember { mutableStateOf<String?>(null) }
     var buttonsEnabled by remember { mutableStateOf(true) }
     var isNavigating by remember { mutableStateOf(false) }
 
@@ -84,10 +86,12 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                 authViewModel.resetRegisterState()
             }
             is RegisterState.Error -> {
+                val message = (registerState as RegisterState.Error).message
                 snackbarHostState.showTypedSnackbar(
-                    message = (registerState as RegisterState.Error).message,
+                    message = message,
                     type = SnackbarType.ERROR
                 )
+                authViewModel.resetRegisterState()
             }
             else -> {}
         }
@@ -106,6 +110,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                 forgotPasswordViewModel.resetForgotPasswordState()
             }
             is ForgotPasswordState.CodeVerifiedSuccess -> {
+                verificationToken = (forgotPasswordState as ForgotPasswordState.CodeVerifiedSuccess).verificationToken
                 step = 3
                 verificationCode = ""
                 snackbarHostState.showTypedSnackbar(
@@ -249,10 +254,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
 
                                 IconButton(onClick = {
                                     dialogTitle = "Contraseña"
-                                    dialogMessage = "Al menos cuatro letras\n" +
-                                            "Al menos un número\n" +
-                                            "Solo los símbolos: '-', '_', '.'\n" +
-                                            "No puede contener espacios"
+                                    dialogMessage = CredentialsValidator.PASSWORD_REQUIREMENTS
                                     showDialog = true
                                 }) {
                                     Icon(
@@ -287,7 +289,7 @@ fun RegisterScreen(navController: NavController, forgotPasswordViewModel: Forgot
                         when (step) {
                             1 -> forgotPasswordViewModel.sendVerificationCode(email, "email_verification")
                             2 -> forgotPasswordViewModel.verifyCode(email, verificationCode, "email_verification")
-                            3 -> authViewModel.register(name, email, username, password)
+                            3 -> authViewModel.register(name, email, username, password, verificationToken)
                         }
                     },
                     enabled = when (step) {

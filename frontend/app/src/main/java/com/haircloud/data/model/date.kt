@@ -1,13 +1,25 @@
 package com.haircloud.data.model
 
+/**
+ * Petición de reserva. El cliente, el local y la hora de fin los determina el
+ * servidor (antes los enviaba la app y se podían falsificar).
+ */
 data class AddDateRequest(
-    val clienteid: Int,
     val peluqueroid: Int,
     val servicioid: Int,
-    val localid: Int,
-    val fechainicio: String,
-    val fechafin: String
+    val fechainicio: String
 )
+
+data class AddDateResponse(
+    val message: String,
+    val citaid: Int,
+    val fechainicio: String,
+    val fechafin: String,
+    val localid: Int,
+    val estado: String
+)
+
+data class UpdateDateStatusRequest(val estado: String, val motivo: String?)
 
 data class Date(
     val citaid: Int,
@@ -26,7 +38,6 @@ data class Date(
     val local_direccion: String?,
     val finalizada: Boolean
 )
-
 
 data class DatesResponse(
     val appointments: List<Date>

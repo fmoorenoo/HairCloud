@@ -17,9 +17,6 @@ class CalendarViewModel : ViewModel() {
     private val _blockedHoursState = MutableStateFlow<BlockedHoursState>(BlockedHoursState.Idle)
     val blockedHoursState: StateFlow<BlockedHoursState> = _blockedHoursState
 
-    private val _datesState = MutableStateFlow<DatesState>(DatesState.Idle)
-    val datesState: StateFlow<DatesState> = _datesState
-
     private val _availableSlotsState = MutableStateFlow<AvailableSlotsState>(AvailableSlotsState.Idle)
     val availableSlotsState: StateFlow<AvailableSlotsState> = _availableSlotsState
 
@@ -46,21 +43,12 @@ class CalendarViewModel : ViewModel() {
         }
     }
 
-    fun getDates(peluqueroId: Int) {
-        _datesState.value = DatesState.Loading
-        viewModelScope.launch {
-            val result = repository.getBarberDates(peluqueroId)
-            _datesState.value = result.fold(
-                onSuccess = { DatesState.Success(it) },
-                onFailure = { DatesState.Error(it.message ?: "Error al cargar citas") }
-            )
-        }
-    }
-
-    fun getAvailableSlots(peluqueroId: Int, fecha: String, duracion: Int) {
+    /** Huecos libres para un servicio: la duración la decide el servidor según el servicio. */
+    fun getAvailableSlots(peluqueroId: Int, fecha: String, servicioId: Int) {
+        if (servicioId <= 0) return
         _availableSlotsState.value = AvailableSlotsState.Loading
         viewModelScope.launch {
-            val result = repository.getAvailableSlots(peluqueroId, fecha, duracion)
+            val result = repository.getAvailableSlots(peluqueroId, fecha, servicioId)
             _availableSlotsState.value = result.fold(
                 onSuccess = { AvailableSlotsState.Success(it) },
                 onFailure = { AvailableSlotsState.Error(it.message ?: "Error al cargar huecos disponibles") }
@@ -81,13 +69,6 @@ sealed class BlockedHoursState {
     object Loading : BlockedHoursState()
     data class Success(val blocked: List<BlockedHoursResponse>) : BlockedHoursState()
     data class Error(val message: String) : BlockedHoursState()
-}
-
-sealed class DatesState {
-    object Idle : DatesState()
-    object Loading : DatesState()
-    data class Success(val appointments: List<DateResponse>) : DatesState()
-    data class Error(val message: String) : DatesState()
 }
 
 sealed class AvailableSlotsState {

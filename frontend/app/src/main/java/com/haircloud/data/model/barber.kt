@@ -46,9 +46,14 @@ data class CreateBarberRequest(
     val email: String,
     val nombre: String,
     val especialidad: String?,
-    val localid: Int,
     val horario: List<WorkDaySchedule>
 )
+
+data class ScheduleBody(val horario: List<WorkDaySchedule>)
+
+data class BarberRoleBody(val rol: String)
+
+data class BarberActiveBody(val activo: Boolean)
 
 data class BarberActivityResponse(
     val actividadid: Int,
@@ -86,9 +91,8 @@ data class ClienteFrecuente(
 )
 
 
+/** Las estadísticas se recalculan en el servidor: solo se envía el rango. */
 data class SendBarberStatsRequest(
-    val peluqueroid: Int,
-    val stats: BarberStatsResponse,
     val start_date: String,
     val end_date: String
 )
