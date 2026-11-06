@@ -1,1 +1,29 @@
+# Secretos y configuración local
 .env
+*.env
+!.env.example
+local.properties
+
+# Volcados de base de datos (pueden contener datos personales)
+*.sql.bak
+*.dump
+haircloud_backup.sql
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE / herramientas
+.idea/
+.vscode/
+.impeccable/
+
+# Android / Gradle
+.gradle/
+build/
+*.apk
+*.aab
+*.keystore
+*.jks
